@@ -6,4 +6,4 @@ API References
    :toctree: api
    :recursive:
 
-   <<package-name>>
+   mf_gravitas

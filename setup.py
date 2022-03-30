@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-from <<package-name>> import (
+from mf_gravitas import (
     author,
     author_email,
     description,
@@ -36,25 +36,19 @@ def read_file(filepath: str) -> str:
 
 extras_require = {
     "dev": [
-        <<requires::testing
         # Test
         "pytest>=4.6",
         "pytest-cov",
         "pytest-xdist",
         "pytest-timeout",
-        endrequires::testing>>
-        <<requires::docs
         # Docs
         "automl_sphinx_theme",
-        endrequires::docs>>
         # Others
-        <<requires::mypy "mypy", endrequires::mypy>>
-        <<requires::isort "isort", endrequires::isort>>
-        <<requires::black "black", endrequires::black>>
-        <<requires::pydocstyle "pydocstyle", endrequires::pydocstyle>>
-        <<requires::flake8 "flake8", endrequires::flake8>>
-        <<requires::pre-commit "pre-commit", endrequires::pre-commit>>
-    ]
+        "isort",
+        "black",
+        "pydocstyle",
+        "flake8",
+        ]
 }
 
 setuptools.setup(
@@ -64,7 +58,7 @@ setuptools.setup(
     description=description,
     long_description=read_file(os.path.join(HERE, "README.md")),
     long_description_content_type="text/markdown",
-    <<requires::license license="Apache-2.0", endrequires::license>>
+    license="Apache-2.0",
     url=url,
     project_urls=project_urls,
     version=version,
@@ -72,7 +66,7 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=read_file(os.path.join(HERE, "requirements.txt")).split("\n"),
     extras_require=extras_require,
-    <<requires::testing test_suite="pytest", endrequires::testing>>
+    test_suite="pytest",
     platforms=["Linux"],
     classifiers=[
         "Programming Language :: Python :: 3.8",

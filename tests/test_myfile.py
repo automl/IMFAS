@@ -1,6 +1,6 @@
 import pytest
 
-from <<package-name>>.myfile import MyClass
+from mf_gravitas.myfile import MyClass
 
 
 def test_oreos():
