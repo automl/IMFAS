@@ -1,0 +1,5 @@
+defaults:
+  seed: 1
+  dataset: lcbench
+  model: autoencoder
+  training: None # move default behaviour here?

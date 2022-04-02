@@ -1,7 +1,5 @@
 import pytest
 
-from mf_gravitas.src.autoencoder import ParticleGravityAutoencoder
-
 
 def test_oreos():
     """

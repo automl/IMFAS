@@ -187,6 +187,7 @@ class ParticleGravityAutoencoder:
 
         return torch.stack([gravity, self.weights[-1] * algo_pull, ])
 
+    # TODO move the train schedules into separate class?
     def train_gravity(self, train_dataloader, test_dataloader, epochs, lr=0.001):
         """
         Two step training:
@@ -222,6 +223,9 @@ class ParticleGravityAutoencoder:
         print(f'\nTraining {name} with algorithm:')
         return self._train(self._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
 
+    # TODO make class agnostic to the inputs - because dependending on the train schedule,
+    #  e.g. a sequential training procedure, the loss may not need all elements that the dataset
+    #  iter provides.
     def _train(self, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
         losses = []
         test_losses = []
