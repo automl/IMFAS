@@ -2,4 +2,4 @@ defaults:
   seed: 1
   dataset: lcbench
   model: autoencoder
-  training: None # move default behaviour here?
+  training: freeze # move default behaviour here?
