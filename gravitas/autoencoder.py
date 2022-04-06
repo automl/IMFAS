@@ -5,8 +5,11 @@ import torch.distributions as td
 import torch.nn as nn
 from tqdm import tqdm
 
+from gravitas.base_encoder import BaseEncoder
 
-class ParticleGravityAutoencoder:
+
+class AE(BaseEncoder):
+    # TODO allow for algo meta features
     def __init__(
             self,
             input_dim: int = 10,
@@ -27,7 +30,7 @@ class ParticleGravityAutoencoder:
         """
         super().__init__()
         self.device = device
-        weights = [weights[0], *weights[2:], weights[1]]  # fixme: change the doc instead!
+        weights = [weights[0], *weights[2:], weights[1]] # fixme: change the doc instead!
         self.weights = torch.tensor(weights).to(device)
         self.repellent_share = repellent_share
 
@@ -115,8 +118,7 @@ class ParticleGravityAutoencoder:
         reconstruction = self._loss_reconstruction(D0, D0_fwd)
         # batch similarity order + no_repellents
         no_comparisons = A1.shape[1]
-        similarity_order_ind = torch.stack(
-            [torch.argsort(self.cossim(a0, a1)) for a0, a1 in zip(A0, A1)])
+        similarity_order_ind = torch.stack([torch.argsort(self.cossim(a0, a1)) for a0, a1 in zip(A0, A1)])
         no_repellent = int(no_comparisons * self.repellent_share)
 
         # find the repellent forces
@@ -124,8 +126,7 @@ class ParticleGravityAutoencoder:
         Z1_repellents = torch.stack([z1[r] for z1, r in zip(Z1_data, repellents)])
         A1_repellents = torch.stack([a1[r] for a1, r in zip(A1, repellents)])
         mutual_weighted_dist = [(1 - self.cossim(a0, a1)) @ torch.linalg.norm((z0 - z1), dim=1)
-                                for z0, z1, a0, a1 in
-                                zip(Z0_data, Z1_repellents, A0, A1_repellents)]
+                                for z0, z1, a0, a1 in zip(Z0_data, Z1_repellents, A0, A1_repellents)]
         data_repellent = (len(Z1_data) * len(Z1_repellents[0])) ** -1 * sum(mutual_weighted_dist)
 
         # find the attracting forces
@@ -133,12 +134,10 @@ class ParticleGravityAutoencoder:
         Z1_attractors = torch.stack([z1[att] for z1, att in zip(Z1_data, attractors)])
         A1_attractors = torch.stack([a1[att] for a1, att in zip(A1, attractors)])
         mutual_weighted_dist = [self.cossim(a0, a1) @ torch.linalg.norm((z0 - z1), dim=1)
-                                for z0, z1, a0, a1 in
-                                zip(Z0_data, Z1_attractors, A0, A1_attractors)]
+                                for z0, z1, a0, a1 in zip(Z0_data, Z1_attractors, A0, A1_attractors)]
         data_attractor = (len(Z1_data) * len(Z1_attractors[0])) ** -1 * sum(mutual_weighted_dist)
 
-        return torch.stack([data_attractor, (-1) * data_repellent, reconstruction]) @ self.weights[
-                                                                                      :3]
+        return torch.stack([data_attractor, (-1) * data_repellent, reconstruction]) @ self.weights[:3]
 
     def _loss_algorithms(self, D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo):
         # Algorithm performance "gravity" towards dataset (D0: calcualted batchwise)
@@ -148,8 +147,7 @@ class ParticleGravityAutoencoder:
         # --> pull is normalized by batch size & number of algorithms
         # Fixme: make list comprehension more pytorch style by apropriate broadcasting
         # TODO use torch.cdist for distance matrix calculation!
-        dataset_algo_distance = [a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in
-                                 zip(Z0_data, A0)]
+        dataset_algo_distance = [a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in zip(Z0_data, A0)]
         return (len(Z_algo) * len(Z0_data)) ** -1 * sum(dataset_algo_distance)
 
     def loss_gravity(self, D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo):
@@ -184,7 +182,7 @@ class ParticleGravityAutoencoder:
         gravity = self._loss_datasets(
             D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo)
 
-        return torch.stack([gravity, self.weights[-1] * algo_pull, ])
+        return torch.stack([gravity, self.weights[-1] * algo_pull,])
 
     def train_gravity(self, train_dataloader, test_dataloader, epochs, lr=0.001):
         """
@@ -220,6 +218,7 @@ class ParticleGravityAutoencoder:
         # train algorithms
         print(f'\nTraining {name} with algorithm:')
         return self._train(self._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
+
 
     def _train(self, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
         losses = []
@@ -259,8 +258,15 @@ class ParticleGravityAutoencoder:
             # validation every e epochs
             test_timer = 10
             test_losses = []
-            
-            # TODO validation procedure
+            # if e % test_timer == 0:
+            #     # look at the gradient step's effects on validation data
+            #     D_test = train_dataloader.dataset.datasets_meta_features
+            #     D_test = D_test.to(self.device)
+            #     Z_data = self.encode(D_test)
+            #
+            #     tracking.append((self.Z_algo.data.clone(), Z_data))
+
+                # TODO validation procedure
 
         return tracking, losses, test_losses
 

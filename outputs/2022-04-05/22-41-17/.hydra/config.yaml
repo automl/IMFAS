@@ -1,0 +1,6 @@
+agent:
+  nA: 0
+  encoder: AE
+  seed: 123546
+  root_dir: ''
+  suggest_topk: 2
