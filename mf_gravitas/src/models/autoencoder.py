@@ -5,7 +5,7 @@ import torch.distributions as td
 import torch.nn as nn
 from tqdm import tqdm
 
-from gravitas.base_encoder import BaseEncoder
+from mf_gravitas.src.models.base_encoder import BaseEncoder
 
 
 class AE(BaseEncoder):
@@ -218,7 +218,6 @@ class AE(BaseEncoder):
         # train algorithms
         print(f'\nTraining {name} with algorithm:')
         return self._train(self._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
-
 
     def _train(self, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
         losses = []

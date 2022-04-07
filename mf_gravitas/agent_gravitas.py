@@ -6,9 +6,9 @@ import torch
 
 from torch.utils.data import DataLoader
 
-from gravitas.autoencoder import AE
-from gravitas.dataset_gravitas import Dataset_Gravity
-from gravitas.vae import VAE
+from mf_gravitas.src.models.autoencoder import AE
+from mf_gravitas.dataset_gravitas import Dataset_Gravity
+from mf_gravitas.src.models.vae import VAE
 
 from omegaconf import DictConfig
 from hydra.utils import instantiate
@@ -186,7 +186,10 @@ class Agent:
             validation_learning_curves,
             algorithms_meta_features,
             n_compettitors,
-            deselect, topk, deselection_metric)
+            deselect, 
+            topk, 
+            deselection_metric
+        )
 
         self.valid_dataloader = DataLoader(
             self.valid_dataset,
@@ -198,7 +201,8 @@ class Agent:
             dataset_meta_features,
             test_learning_curves,
             algorithms_meta_features,
-            n_compettitors)
+            n_compettitors
+        )
 
         if len(self.valid_dataset.deselected) > 0:
             print(f'The algorithms {self.valid_dataset.deselected} have been deselected')
@@ -229,7 +233,6 @@ class Agent:
                         n_algos=self.valid_dataset.nA,
                         device=device,
                     )
-
 
 
         if training == 'gravity':

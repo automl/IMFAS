@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from gravitas.autoencoder import AE
+from mf_gravitas.src.models.autoencoder import AE
 
 
 class VAE(AE):
