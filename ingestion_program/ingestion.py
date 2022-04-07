@@ -8,7 +8,7 @@ from sklearn.model_selection import KFold
 
 from environment import Meta_Learning_Environment
 
-from mf_gravitas.agent_gravitas import Agent as Agent_Gravitas
+from mf_gravitas.src.agents.agent_gravitas import Agent as Agent_Gravitas
 
 import hydra
 from omegaconf import DictConfig

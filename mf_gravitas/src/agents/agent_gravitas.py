@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from mf_gravitas.src.models.autoencoder import AE
-from mf_gravitas.dataset_gravitas import Dataset_Gravity
+from mf_gravitas.src.dataset.dataset_gravitas import Dataset_Gravity
 from mf_gravitas.src.models.vae import VAE
 
 from omegaconf import DictConfig

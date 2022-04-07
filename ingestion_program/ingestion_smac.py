@@ -270,7 +270,7 @@ list_algorithms.sort()
 
 # === Import the agent submitted by the participant ------------------------
 path.append(submission_dir)
-from mf_gravitas.agent_gravitas import Agent
+from mf_gravitas.src.agents.agent_gravitas import Agent
 
 # === Clear old output
 # clear_output_dir(output_dir)
