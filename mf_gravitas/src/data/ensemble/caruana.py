@@ -1,11 +1,12 @@
+import numpy as np
 import pandas as pd
 
-test_acc = pd.read_csv('/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/data_2k/final_test_accuracy.csv')
 
-def ensemble_selector(loss_function, y_hats, y_true, init_size=1,
-                      replacement=True, max_iter=100):
+def ensemble(loss_table, init_size=1,
+             replacement=True, max_iter=100):
     """
     source: https://gist.github.com/DmitryBorisenko/c9a031b7101e074ed1515e730d05f267
+
     Implementation of the algorithm of Caruana et al. (2004) 'Ensemble
     Selection from Libraries of Models'. Given a loss function mapping
     predicted and ground truth values to a scalar along with a dictionary of
@@ -41,6 +42,12 @@ def ensemble_selector(loss_function, y_hats, y_true, init_size=1,
         with model names across columns and ensemble selection iterations
         across rows. Each value is the weight of a model in the ensemble
     """
+
+    loss_function = lambda y_hat, y_true: y_true - y_hat
+    y_hat_arr = loss_table.to_numpy()[:, 1:]
+    y_hats = {i: y_hat_arr[i] for i in range(len(y_hat_arr))}
+    y_true = np.ones_like(y_hats[0]) * 100
+
     # Step 1: compute losses
     losses = dict()
     for model, y_hat in y_hats.items():
@@ -111,3 +118,10 @@ def ensemble_selector(loss_function, y_hats, y_true, init_size=1,
         model_weights.loc[ix, weights.index] = weights
 
     return ensemble_loss, model_weights.fillna(0).astype(float)
+
+
+if __name__ == '__main__':
+    test_acc = pd.read_csv(
+        '/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/data_2k/final_test_accuracy.csv')
+
+    loss, weights = ensemble(loss_table=test_acc, init_size=1, replacement=False)
