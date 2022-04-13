@@ -1,5 +1,5 @@
-from mf_gravitas.src.data.preprocessings.transformpipeline import TransformPipeline
-from mf_gravitas.src.data.subdatasets.dataset_meta_features import DatasetMetaFeatures
+from src.data.dataset_meta_features import DatasetMetaFeatures
+from src.data.preprocessings.transformpipeline import TransformPipeline
 
 
 class AlgorithmMetaFeatures(DatasetMetaFeatures):
@@ -9,9 +9,9 @@ class AlgorithmMetaFeatures(DatasetMetaFeatures):
 
 if __name__ == '__main__':
     # TODO Make exactly this config into a config file!
-    from mf_gravitas.src.data.preprocessings.table_transfroms import *
+    from src.data.preprocessings.table_transforms import *
 
-    path = '/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/preprocessed/data_2k/configs.csv'
+    path = '/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/LCBench/config.csv'
     metafeatures = AlgorithmMetaFeatures(path, index_col=0)
 
     # check if a single transform works as expected
@@ -32,7 +32,6 @@ if __name__ == '__main__':
     pipe.transform(df)
     print(tensor)
 
-    path = '/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/preprocessed/data_2k/configs.csv'
     metafeatures = AlgorithmMetaFeatures(path, transforms=pipe, index_col=0)
 
     # indexing is rowmajor only on tensors!

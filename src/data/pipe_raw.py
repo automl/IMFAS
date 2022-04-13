@@ -7,15 +7,14 @@ import pandas as pd
 from hydra.utils import call
 from omegaconf import DictConfig
 
-from .lcbench.lcbench_api import LCBench_API
-from .util import subset
+from src.data.lcbench.lcbench_api import LCBench_API
+from src.data.util import subset
 
 # A logger for this file
 log = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="config_raw", config_name="raw")
-def main(cfg: DictConfig):
+def main_raw(cfg: DictConfig):
     """
     Do heavy computation on the raw datasets - and move them to the data/preprocessing
     folder.
@@ -25,7 +24,7 @@ def main(cfg: DictConfig):
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd())
     dir_data = pathlib.Path(cfg.dir_data)
     dir_downloads = dir_data / 'downloads'
-    dir_raw_dataset = dir_data / 'raw' / cfg.dataset
+    dir_raw_dataset = dir_data / 'raw' / cfg.dataset_name
     # todcheck if already downloaded the data
     if cfg.re_download:
         # TODO check me (and change the dir!)
@@ -37,15 +36,14 @@ def main(cfg: DictConfig):
         log.info('Starting to load jsons from file')
         # fixme: move LCBench parsing into separate file (to make parsing dataset specific!
         # (0) get meta features
-        with open(dir_downloads / cfg.dataset / 'meta_features.json', 'r') as file:
+        with open(dir_downloads / cfg.dataset_name / 'meta_features.json', 'r') as file:
             df = pd.read_json(file, orient='index')
 
-        with open(dir_data / 'raw' / cfg.extract / 'meta_features.csv', 'w') as file:
-            df.to_csv(file)
+        df.to_csv(dir_data / 'raw' / cfg.dataset_name / 'meta_features.csv')
 
         log.info('Starting parsing.')
         # (1) parse the huge json into its components
-        with open(dir_downloads / cfg.dataset / f'{cfg.extract}.json', 'r') as file:
+        with open(dir_downloads / cfg.dataset_name / f'{cfg.extract}.json', 'r') as file:
             DB = LCBench_API(json.load(file))
             # delattr(DB, data) # consider cleaning up after yourself to reduce memory burden!
 
@@ -55,11 +53,13 @@ def main(cfg: DictConfig):
         # check if dataset dir exists, else create
         pathlib.Path(dir_raw_dataset).mkdir(parents=True, exist_ok=True)
 
+        log.info('Writing out parsed full sized h5-files')
         logs.to_hdf(dir_raw_dataset / 'logs.h5', key='dataset', mode='w')
         results.to_hdf(dir_raw_dataset / 'results.h5', key='dataset', mode='w')  # fixme
         config.to_csv(dir_raw_dataset / 'config.csv')
 
     else:
+        log.info('Reading raw h5-files for subsetting them. ')
         # load files from raw dir
         logs = pd.read_hdf(dir_raw_dataset / 'logs.h5', key='dataset')
         results = pd.read_hdf(dir_raw_dataset / 'results.h5', key='dataset')

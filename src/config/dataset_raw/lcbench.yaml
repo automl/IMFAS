@@ -1,8 +1,8 @@
-dataset: LCBench
+dataset_name: LCBench
 dir_data: /home/ruhkopf/PycharmProjects/AlgoSelectionMF/data
 extract: data_2k
 re_download: False
-reload_from_downloads: False
+reload_from_downloads: False # will override the '*subset' files
 
 selection:
   metric: final_test_cross_entropy

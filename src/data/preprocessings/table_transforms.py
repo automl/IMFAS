@@ -76,7 +76,8 @@ class Convert(Transform):
         self.dtype = dtype
 
     def fit(self, X):
-        X[self.columns] = X[self.columns].apply(pd.to_numeric)
+        for col in self.columns:
+            X[col] = pd.to_numeric(X[col])
         return X
 
 
@@ -88,5 +89,6 @@ class Replace(Transform):
         self.replacedict = replacedict
 
     def fit(self, X):
-        X[self.columns] = X[self.columns].replace(self.replacedict)
+        for col in self.columns:
+            X[col].replace(self.replacedict, inplace=True)
         return X
