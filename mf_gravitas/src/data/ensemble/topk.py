@@ -35,7 +35,3 @@ def ensemble(df, k, plot_regret_distribution=False):
         plt.show()
 
     return candidates, candidate_performances
-
-
-if __name__ == '__main__':
-    pass

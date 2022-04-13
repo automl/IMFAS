@@ -1,5 +1,6 @@
+#!/bin/bash
 
-cd ~/.local/share
+cd ~/PycharmProjects/AlgoSelectionMF/data/downloads
 mkdir LCBench
 cd LCBench
 
