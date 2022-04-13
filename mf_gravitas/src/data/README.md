@@ -26,7 +26,7 @@ Algo/SelectionMF/data will have the following structure:
 
 ```
 /preprocessed
-    
+    # dir intended for lazy compute storage from src/main
 /raw
     /LCBench
         config.csv          # algo_meta_features
