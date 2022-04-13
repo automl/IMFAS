@@ -1,0 +1,7 @@
+gravity:
+
+  _target_: mf_gravitas.src.dataset.dataset_gravitas.Dataset_Gravity
+  n_competitors: 11
+  deselect: 5
+  topk: 10
+  deselection_metric: 'skew' 

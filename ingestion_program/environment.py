@@ -1,5 +1,6 @@
 import os
 from sys import argv, path
+
 root_dir = os.path.abspath(os.curdir)
 path.append(root_dir)
 import json
@@ -8,8 +9,9 @@ import math
 import csv
 from learning_curve import Learning_Curve
 
-#=== Verbose mode
+# === Verbose mode
 verbose = True
+
 
 def vprint(mode, t):
     """
@@ -29,15 +31,23 @@ def vprint(mode, t):
 
     """
 
-    if(mode):
+    if mode:
         print(str(t))
 
-class Meta_Learning_Environment():
+
+class Meta_Learning_Environment:
     """
     A meta-learning environment which provides access to all meta-data.
     """
 
-    def __init__(self, validation_data_dir, test_data_dir, meta_features_dir, algorithms_meta_features_dir, output_dir):
+    def __init__(
+        self,
+        validation_data_dir,
+        test_data_dir,
+        meta_features_dir,
+        algorithms_meta_features_dir,
+        output_dir,
+    ):
         """
         Initialize the meta-learning environment
 
@@ -62,16 +72,16 @@ class Meta_Learning_Environment():
         self.algorithms_meta_features_dir = algorithms_meta_features_dir
         self.num_dataset = 1
 
-        #=== List of dataset names
+        # === List of dataset names
         self.list_datasets = os.listdir(self.test_data_dir)
-        if '.DS_Store' in self.list_datasets:
-            self.list_datasets.remove('.DS_Store')
+        if ".DS_Store" in self.list_datasets:
+            self.list_datasets.remove(".DS_Store")
         self.list_datasets.sort()
 
-        #=== List of algorithms
+        # === List of algorithms
         self.list_algorithms = os.listdir(os.path.join(self.test_data_dir, self.list_datasets[0]))
-        if '.DS_Store' in self.list_algorithms:
-            self.list_algorithms.remove('.DS_Store')
+        if ".DS_Store" in self.list_algorithms:
+            self.list_algorithms.remove(".DS_Store")
         self.list_algorithms.sort()
         print("self.list_algorithms.sort() = ", self.list_algorithms)
         self.num_algo = len(self.list_algorithms)
@@ -87,49 +97,59 @@ class Meta_Learning_Environment():
         self.meta_features = {}
         self.algorithms_meta_features = {}
 
-        #=== Load META-FEATURES
+        # === Load META-FEATURES
         vprint(verbose, "[+]Start loading META-FEATURES of datasets")
         # Iterate through all datasets
         for d in os.listdir(self.meta_features_dir):
-            if '.DS_Store' not in d:
-                dataset_name = d.split('.')[0].split('_')[0]
+            if ".DS_Store" not in d:
+                dataset_name = d.split(".")[0].split("_")[0]
                 dict_temp = {}
-                with open(os.path.join(self.meta_features_dir, d), 'r') as f:
+                with open(os.path.join(self.meta_features_dir, d), "r") as f:
                     for line in f:
-                        key, value = line.split('=')
-                        key, value = key.replace(' ','').replace('\n', ''), value.replace(' ','').replace('\n', '').replace('\'','') #remove whitespaces and special symbols
+                        key, value = line.split("=")
+                        key, value = key.replace(" ", "").replace("\n", ""), value.replace(
+                            " ", ""
+                        ).replace("\n", "").replace(
+                            "'", ""
+                        )  # remove whitespaces and special symbols
                         dict_temp[key] = value
                 self.meta_features[dataset_name] = dict_temp
         vprint(verbose, "[+]Finished loading META-FEATURES of datasets")
 
-        #=== Load HYPERPARAMETERS
+        # === Load HYPERPARAMETERS
         vprint(verbose, "[+]Start loading HYPERPARAMETERS of algorithms")
         # Iterate through all datasets
         for d in os.listdir(self.algorithms_meta_features_dir):
-            if '.DS_Store' not in d:
-                algorithm_name = d.split('.')[0]
+            if ".DS_Store" not in d:
+                algorithm_name = d.split(".")[0]
                 dict_temp = {}
-                with open(os.path.join(self.algorithms_meta_features_dir, d), 'r') as f:
+                with open(os.path.join(self.algorithms_meta_features_dir, d), "r") as f:
                     for line in f:
-                        key, value = line.split('=')
-                        key, value = key.replace(' ','').replace('\n', ''), value.replace(' ','').replace('\n', '').replace('\'','') #remove whitespaces and special symbols
+                        key, value = line.split("=")
+                        key, value = key.replace(" ", "").replace("\n", ""), value.replace(
+                            " ", ""
+                        ).replace("\n", "").replace(
+                            "'", ""
+                        )  # remove whitespaces and special symbols
                         dict_temp[key] = value
                 self.algorithms_meta_features[algorithm_name] = dict_temp
         vprint(verbose, "[+]Finished loading HYPERPARAMETERS of algorithms")
 
-        #=== Load VALIDATION LEARNING CURVES
-        if self.validation_data_dir!=None:
+        # === Load VALIDATION LEARNING CURVES
+        if self.validation_data_dir != None:
             vprint(verbose, "[+]Start loading VALIDATION learning curves")
             # Iterate through all datasets
             for dataset_name in self.list_datasets:
                 dict_temp = {}
                 for algo_name in self.list_algorithms:
                     path_to_algo = os.path.join(self.validation_data_dir, dataset_name, algo_name)
-                    dict_temp[algo_name] = Learning_Curve(os.path.join(path_to_algo + "/scores.txt"))
+                    dict_temp[algo_name] = Learning_Curve(
+                        os.path.join(path_to_algo + "/scores.txt")
+                    )
                 self.validation_learning_curves[dataset_name] = dict_temp
             vprint(verbose, "[+]Finished loading VALIDATION learning curves")
 
-        #=== Load TEST LEARNING CURVES
+        # === Load TEST LEARNING CURVES
         vprint(verbose, "[+]Start loading TEST learning curves")
         # Iterate through all datasets
         for dataset_name in self.list_datasets:
@@ -196,9 +216,11 @@ class Meta_Learning_Environment():
          }
         """
         self.dataset_name = dataset_name
-        self.counters = {i:0.0 for i in self.list_algorithms} # Counters keeping track of the time has been spent for each algorithm
+        self.counters = {
+            i: 0.0 for i in self.list_algorithms
+        }  # Counters keeping track of the time has been spent for each algorithm
         dataset_meta_features = self.meta_features[dataset_name]
-        self.total_time_budget = float(dataset_meta_features['time_budget'])
+        self.total_time_budget = float(dataset_meta_features["time_budget"])
         self.remaining_time_budget = self.total_time_budget
 
         return dataset_meta_features, self.algorithms_meta_features
@@ -238,35 +260,41 @@ class Meta_Learning_Environment():
         A_star, A, delta_t = action
         done = False
 
-        #=== Limit the delta_t from 0 to remaining_time_budget:
+        # === Limit the delta_t from 0 to remaining_time_budget:
         delta_t = min(max(delta_t, 0), self.remaining_time_budget)
 
-        #=== Check done
+        # === Check done
         if delta_t >= self.remaining_time_budget:
             done = True
 
-        #=== Reveal C_A_star, R_test_C_A_star
-        if A_star==None:
+        # === Reveal C_A_star, R_test_C_A_star
+        if A_star == None:
             C_A_star = 0.0
         else:
-            _, C_A_star = self.test_learning_curves[self.dataset_name][str(A_star)].get_last_point_within_delta_t(0, self.counters[str(A_star)])
+            _, C_A_star = self.test_learning_curves[self.dataset_name][
+                str(A_star)
+            ].get_last_point_within_delta_t(0, self.counters[str(A_star)])
 
-        #=== Reveal C_A, R_validation_C_A
-        R_validation_C_A, C_A = self.validation_learning_curves[self.dataset_name][str(A)].get_last_point_within_delta_t(delta_t, self.counters[str(A)])
+        # === Reveal C_A, R_validation_C_A
+        R_validation_C_A, C_A = self.validation_learning_curves[self.dataset_name][
+            str(A)
+        ].get_last_point_within_delta_t(delta_t, self.counters[str(A)])
 
-        #=== Update algorithm counters and the remaining time budget
+        # === Update algorithm counters and the remaining time budget
         self.counters[str(A)] = C_A
         self.remaining_time_budget = self.remaining_time_budget - delta_t
 
-        #=== Prepare an observation to be sent to the agent
+        # === Prepare an observation to be sent to the agent
         observation = (A, C_A, R_validation_C_A)
 
-        #=== Write hidden_observation to the ouput directory
+        # === Write hidden_observation to the ouput directory
         # if A_star!=None:
-        total_time_spent = np.around(self.total_time_budget-self.remaining_time_budget, decimals=2)
+        total_time_spent = np.around(
+            self.total_time_budget - self.remaining_time_budget, decimals=2
+        )
         hidden_observation = [str(A_star), str(C_A_star), total_time_spent]
-        with open(self.output_dir + '/' + self.dataset_name + '.csv', 'a') as f:
-            writer = csv.writer(f) # create the csv writer
-            writer.writerow(hidden_observation) # write a row to the csv file
+        with open(self.output_dir + "/" + self.dataset_name + ".csv", "a") as f:
+            writer = csv.writer(f)  # create the csv writer
+            writer.writerow(hidden_observation)  # write a row to the csv file
 
         return observation, done

@@ -1,0 +1,9 @@
+AE:
+  _target_: mf_gravitas.src.models.autoencoder.AE
+  input_dim: 10
+  embedding_dim: 2
+  hidden_dims: [8, 4]
+  weights: [1., 1., 1., 1.]
+  repellent_share: 0.33
+  n_algos: 20
+  device: 'cpu'

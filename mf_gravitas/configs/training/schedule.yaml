@@ -1,0 +1,12 @@
+schedule:
+  epochs: 10
+  pretrain_epochs: 50
+  batch_size: 9
+  shuffle: True
+  n_competitors: 11
+  lr: 0.001
+  deselect: 5 
+  topk: 10
+  deselection_metric: 'skew'
+
+ 

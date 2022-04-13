@@ -48,7 +48,7 @@ extras_require = {
         "black",
         "pydocstyle",
         "flake8",
-        ]
+    ]
 }
 
 setuptools.setup(

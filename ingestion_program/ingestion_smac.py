@@ -21,8 +21,7 @@ import numpy as np
 import torch
 from sklearn.metrics import ndcg_score
 from gravitas.dataset_gravitas import Dataset_Gravity
-from ConfigSpace.hyperparameters import \
-    UniformFloatHyperparameter, UniformIntegerHyperparameter
+from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
 
 from smac.configspace import ConfigurationSpace
 from smac.facade.smac_mf_facade import SMAC4MF
@@ -32,35 +31,43 @@ import argparse
 
 parser = argparse.ArgumentParser()
 # Make sure to set up in this files parent directory!
-parser.add_argument("--hours", type=float, default=0.1,
-                    help="hours allocated to smac")
-parser.add_argument("--encoder", type=str, choices=['AE', 'VAE'], default='VAE',
-                    help="hours allocated to smac")
-parser.add_argument("--training", type=str, choices=['schedule', 'gravity'], default='schedule',
-                    help="the Autoencoder training procdure applied in (Agent.meta_training)")
-parser.add_argument("--pretrain", type=int, default=10,
-                    help="number of pretraining steps ")
-parser.add_argument("--min_b", type=int, default=10,
-                    help="minimum budget for hyperband")
-parser.add_argument("--max_b", type=int, default=100,
-                    help="maximum budget for hyperband")
-parser.add_argument('--folds', type=int, default=2,
-                    help="number of validation folds.")
-parser.add_argument('--deselection_metric', type=str, default='skew', choices=['skew', '0threshold'],
-                    help="Metric to use while deselecting")
-parser.add_argument('--verbose', type=bool, default=False)
-parser.add_argument('--seed', type=int, default=208)
+parser.add_argument("--hours", type=float, default=0.1, help="hours allocated to smac")
+parser.add_argument(
+    "--encoder", type=str, choices=["AE", "VAE"], default="VAE", help="hours allocated to smac"
+)
+parser.add_argument(
+    "--training",
+    type=str,
+    choices=["schedule", "gravity"],
+    default="schedule",
+    help="the Autoencoder training procdure applied in (Agent.meta_training)",
+)
+parser.add_argument("--pretrain", type=int, default=10, help="number of pretraining steps ")
+parser.add_argument("--min_b", type=int, default=10, help="minimum budget for hyperband")
+parser.add_argument("--max_b", type=int, default=100, help="maximum budget for hyperband")
+parser.add_argument("--folds", type=int, default=2, help="number of validation folds.")
+parser.add_argument(
+    "--deselection_metric",
+    type=str,
+    default="skew",
+    choices=["skew", "0threshold"],
+    help="Metric to use while deselecting",
+)
+parser.add_argument("--verbose", type=bool, default=False)
+parser.add_argument("--seed", type=int, default=208)
 args = parser.parse_args()
 
 random.seed(args.seed)
 
 # === Setup input/output directories
-root_dir = '/'.join(os.getcwd().split('/')[:-1])  # fixing the root to project root and not ingestion_program
+root_dir = "/".join(
+    os.getcwd().split("/")[:-1]
+)  # fixing the root to project root and not ingestion_program
 default_input_dir = os.path.join(root_dir, "sample_data/")
 default_output_dir = os.path.join(root_dir, "output/")
 default_program_dir = os.path.join(root_dir, "ingestion_program/")
 default_submission_dir = os.path.join(root_dir, "submission/")
-smac_dir = default_output_dir[:-1] + '_smac/'
+smac_dir = default_output_dir[:-1] + "_smac/"
 
 import os
 
@@ -155,7 +162,7 @@ def meta_training(agent, D_tr, env, encoder_config, epochs):
         test_learning_curves,
         epochs=epochs,
         pretrain_epochs=args.pretrain,
-        **encoder_config
+        **encoder_config,
     )
 
     vprint(args.verbose, "[+]Finished META-TRAINING phase")
@@ -183,9 +190,7 @@ def meta_testing(trained_agent, D_te, env):
         meta_features = env.meta_features[dataset_name]
 
         # === Reset both the environment and the trained_agent for a new task
-        dataset_meta_features, algorithms_meta_features = env.reset(
-            dataset_name=dataset_name
-        )
+        dataset_meta_features, algorithms_meta_features = env.reset(dataset_name=dataset_name)
         trained_agent.reset(dataset_meta_features, algorithms_meta_features)
         vprint(
             args.verbose,
@@ -194,9 +199,7 @@ def meta_testing(trained_agent, D_te, env):
             + " =====================#",
         )
         vprint(args.verbose, "\n#---Dataset meta-features = " + str(dataset_meta_features))
-        vprint(
-            args.verbose, "\n#---Algorithms meta-features = " + str(algorithms_meta_features)
-        )
+        vprint(args.verbose, "\n#---Algorithms meta-features = " + str(algorithms_meta_features))
 
         # === Start meta-testing on a dataset step by step until the given total_time_budget is exhausted (done=True)
         done = False
@@ -232,9 +235,7 @@ submission_dir = default_submission_dir
 validation_data_dir = os.path.join(input_dir, "valid")
 test_data_dir = os.path.join(input_dir, "test")
 meta_features_dir = os.path.join(input_dir, "dataset_meta_features")
-algorithms_meta_features_dir = os.path.join(
-    input_dir, "algorithms_meta_features"
-)
+algorithms_meta_features_dir = os.path.join(input_dir, "algorithms_meta_features")
 # else:
 #     input_dir = os.path.abspath(argv[1])
 #     output_dir = os.path.abspath(argv[2])
@@ -293,14 +294,14 @@ def tae(config, budget):
     budget = int(budget)
 
     # parse the config
-    weights = [config['lossweight' + str(w)] for w in range(1, 5)]
+    weights = [config["lossweight" + str(w)] for w in range(1, 5)]
     config = {**config}
-    config['weights'] = weights
+    config["weights"] = weights
     for w in range(1, 5):
-        config.pop('lossweight' + str(w))
+        config.pop("lossweight" + str(w))
 
-    config['lr'] = config.pop('learning_rate_init')
-    config['deselection_metric'] = args.deselection_metric
+    config["lr"] = config.pop("learning_rate_init")
+    config["deselection_metric"] = args.deselection_metric
 
     # === Start iterating, each iteration involves a meta-training step and a meta-testing step
     iteration = 0
@@ -311,14 +312,16 @@ def tae(config, budget):
         vprint(args.verbose, "\n********** Fold " + str(iteration) + " **********")
 
         # Init a new agent instance in each iteration
-        agent = Agent(number_of_algorithms=len(list_algorithms), root_dir=root_dir, encoder=args.encoder)
+        agent = Agent(
+            number_of_algorithms=len(list_algorithms), root_dir=root_dir, encoder=args.encoder
+        )
 
         # META-TRAINING-----------
         trained_agent = meta_training(agent, D_tr, env, encoder_config=config, epochs=budget)
         try:
             diversity = trained_agent.measure_embedding_diversity()
         except Exception as e:
-            print(f'Encountered error during diversity measure:\n{e}\n when using config: {config}')
+            print(f"Encountered error during diversity measure:\n{e}\n when using config: {config}")
             diversity = None
 
         # precompute ground trugh labels:
@@ -326,7 +329,9 @@ def tae(config, budget):
         meta_test_dataset = [list_datasets[d] for d in D_te]
         meta_features = {k: env.meta_features[k] for k in meta_test_dataset}
         learning_curves = {k: env.test_learning_curves[k] for k in meta_test_dataset}
-        meta_test_dataset = Dataset_Gravity(meta_features, learning_curves, env.algorithms_meta_features)
+        meta_test_dataset = Dataset_Gravity(
+            meta_features, learning_curves, env.algorithms_meta_features
+        )
 
         ground_truth_rankings = np.argsort(meta_test_dataset.algo_final_performances, axis=1)
 
@@ -334,7 +339,9 @@ def tae(config, budget):
         # meta_testing(trained_agent, D_te)  # <<<--- intercepting the results on the heldout fold
         holdout_rankings = []
         holdout_rankings_truth = []
-        holdout_embedding_distances = []  # distances of algorithms to the dataset. (base for ranking vector)
+        holdout_embedding_distances = (
+            []
+        )  # distances of algorithms to the dataset. (base for ranking vector)
         for d_te in D_te:
             dataset_name = list_datasets[d_te]
             meta_features = env.meta_features[dataset_name]
@@ -353,7 +360,9 @@ def tae(config, budget):
             agent.model.eval()
             Z_data = agent.model.encode(d_new)
             dist_mat = torch.cdist(Z_data, agent.model.Z_algo)
-            holdout_embedding_distances.append(torch.topk(dist_mat, largest=False, k=agent.nA)[1][0])
+            holdout_embedding_distances.append(
+                torch.topk(dist_mat, largest=False, k=agent.nA)[1][0]
+            )
 
         holdout_rankings_truth = np.array(holdout_rankings)
         holdout_embedding_distances = torch.stack(holdout_embedding_distances)
@@ -364,8 +373,14 @@ def tae(config, budget):
             holdout_embedding_distances = holdout_embedding_distances.cpu()
 
             holdout_losses_ndcg.append(
-                ndcg_score(holdout_rankings_truth, holdout_embedding_distances.numpy(),
-                           k=10, sample_weight=None, ignore_ties=False))
+                ndcg_score(
+                    holdout_rankings_truth,
+                    holdout_embedding_distances.numpy(),
+                    k=10,
+                    sample_weight=None,
+                    ignore_ties=False,
+                )
+            )
 
         # todo ranking loss: requires to collect the learned rankings per dataset_new
         # holdout_losses_ranking.append(
@@ -374,10 +389,12 @@ def tae(config, budget):
         iteration += 1
     print()
     # average across holdout_scores
-    return 1 - (sum(holdout_losses_ndcg) / len(holdout_losses_ndcg)), {'diversity': diversity}  # no_splits=6
+    return 1 - (sum(holdout_losses_ndcg) / len(holdout_losses_ndcg)), {
+        "diversity": diversity
+    }  # no_splits=6
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # SMAC HPO the Agent's meta training Autoencoder --------------------------------------------------------------
 
     # (0) ConfigSpace ----------------------------------------------------------
@@ -385,45 +402,53 @@ if __name__ == '__main__':
 
     # Add all hyperparameters at once:
     cs.add_hyperparameters(
-        [UniformIntegerHyperparameter('n_compettitors', 1, 19, default_value=10),
-         UniformIntegerHyperparameter('topk', 1, 20, default_value=10),
-         UniformIntegerHyperparameter('deselect', 0, 10, default_value=5),
-         # CategoricalHyperparameter('deselection_metric', choices=[''] ),
-         UniformIntegerHyperparameter('embedding_dim', 2, 5, default_value=3),
-         UniformFloatHyperparameter('repellent_share', .2, .8, default_value=0.33),
-         UniformFloatHyperparameter('lossweight1', 0., 10., default_value=1.),
-         UniformFloatHyperparameter('lossweight2', 0., 10., default_value=1.),
-         UniformFloatHyperparameter('lossweight3', 0., 10., default_value=1.),
-         UniformFloatHyperparameter('lossweight4', 0., 10., default_value=1.),
-         UniformFloatHyperparameter(
-             'learning_rate_init', 0.0001, 1.0, default_value=0.001, log=True)])
+        [
+            UniformIntegerHyperparameter("n_compettitors", 1, 19, default_value=10),
+            UniformIntegerHyperparameter("topk", 1, 20, default_value=10),
+            UniformIntegerHyperparameter("deselect", 0, 10, default_value=5),
+            # CategoricalHyperparameter('deselection_metric', choices=[''] ),
+            UniformIntegerHyperparameter("embedding_dim", 2, 5, default_value=3),
+            UniformFloatHyperparameter("repellent_share", 0.2, 0.8, default_value=0.33),
+            UniformFloatHyperparameter("lossweight1", 0.0, 10.0, default_value=1.0),
+            UniformFloatHyperparameter("lossweight2", 0.0, 10.0, default_value=1.0),
+            UniformFloatHyperparameter("lossweight3", 0.0, 10.0, default_value=1.0),
+            UniformFloatHyperparameter("lossweight4", 0.0, 10.0, default_value=1.0),
+            UniformFloatHyperparameter(
+                "learning_rate_init", 0.0001, 1.0, default_value=0.001, log=True
+            ),
+        ]
+    )
 
     # (1) setup TAE
 
     # (2) Set up SMAC-MF with budget schedual ----------------------------------
-    scenario = Scenario({
-        'run_obj': 'quality',  # we optimize quality (alternative to runtime)
-        'wallclock-limit': int(3600 * args.hours),  # max duration to run the optimization (in seconds)
-        'cs': cs,  # configuration space
-        'deterministic': 'true',
-        'limit_resources': False,  # Uses pynisher to limit memory and runtime
-        # Alternatively, you can also disable this.
-        # Then you should handle runtime and memory yourself in the TA
-        # 'cutoff': 3500,  # runtime limit for target algorithm
-        # 'memory_limit': 3072,  # adapt this to reasonable value for your hardware
-        'output_dir': smac_dir + args.encoder + str(time.time()),
-        'save_instantly': True
-    })
+    scenario = Scenario(
+        {
+            "run_obj": "quality",  # we optimize quality (alternative to runtime)
+            "wallclock-limit": int(
+                3600 * args.hours
+            ),  # max duration to run the optimization (in seconds)
+            "cs": cs,  # configuration space
+            "deterministic": "true",
+            "limit_resources": False,  # Uses pynisher to limit memory and runtime
+            # Alternatively, you can also disable this.
+            # Then you should handle runtime and memory yourself in the TA
+            # 'cutoff': 3500,  # runtime limit for target algorithm
+            # 'memory_limit': 3072,  # adapt this to reasonable value for your hardware
+            "output_dir": smac_dir + args.encoder + str(time.time()),
+            "save_instantly": True,
+        }
+    )
 
     # Intensifier parameters
-    intensifier_kwargs = {'initial_budget': args.min_b, 'max_budget': args.max_b, 'eta': 3}
+    intensifier_kwargs = {"initial_budget": args.min_b, "max_budget": args.max_b, "eta": 3}
 
     # To optimize, we pass the function to the SMAC-object
     smac = SMAC4MF(
         scenario=scenario,
         rng=np.random.RandomState(args.seed),  # was 42 originally.
         tae_runner=tae,
-        intensifier_kwargs=intensifier_kwargs
+        intensifier_kwargs=intensifier_kwargs,
     )
 
     # Example call of the function with default values
@@ -432,10 +457,11 @@ if __name__ == '__main__':
         def_value = smac.get_tae_runner().run(
             config=cs.get_default_configuration(),
             budget=3,  # intensifier_kwargs['initial_budget'],
-            seed=0)[1]
-        print('Default config ran successfully.')
+            seed=0,
+        )[1]
+        print("Default config ran successfully.")
     except:
-        raise ValueError('default configuration didn\'t run')
+        raise ValueError("default configuration didn't run")
 
     # print('Value for default configuration: %.4f' % def_value)
 
@@ -446,6 +472,5 @@ if __name__ == '__main__':
         incumbent = smac.solver.incumbent
 
     inc_value = smac.get_tae_runner().run(
-        config=incumbent,
-        budget=intensifier_kwargs['max_budget'],
-        seed=0)[1]
+        config=incumbent, budget=intensifier_kwargs["max_budget"], seed=0
+    )[1]

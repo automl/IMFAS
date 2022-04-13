@@ -5,11 +5,13 @@ from typing import List, Tuple, Any
 
 from abc import abstractmethod
 
+
 class BaseEncoder(nn.Module):
     """
     Base class for encoders thtat are used to get latent representations
-    of the data and the algorithms.    
+    of the data and the algorithms.
     """
+
     def __init__(self) -> None:
         super(BaseEncoder, self).__init__()
 
@@ -51,7 +53,3 @@ class BaseEncoder(nn.Module):
         Predict the algorithms
         """
         pass
-        
-
-
-

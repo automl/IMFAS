@@ -16,12 +16,17 @@ from omegaconf import DictConfig
 import pdb
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--epochs", type=int, default=10,
-                    help="epochs used for every part of the main training")
-parser.add_argument("--pretrain_epochs", type=int, default=10,
-                    help="epochs used for pretraining")
-parser.add_argument("--mode", type=str, choices=['testing', 'submission'], default='testing',
-                    help="whether to use agent_gravitas or patched submission agent script")
+parser.add_argument(
+    "--epochs", type=int, default=10, help="epochs used for every part of the main training"
+)
+parser.add_argument("--pretrain_epochs", type=int, default=10, help="epochs used for pretraining")
+parser.add_argument(
+    "--mode",
+    type=str,
+    choices=["testing", "submission"],
+    default="testing",
+    help="whether to use agent_gravitas or patched submission agent script",
+)
 
 args = parser.parse_args()
 
@@ -32,7 +37,9 @@ verbose = False
 random.seed(208)
 
 # === Setup input/output directories
-root_dir = '/'.join(os.getcwd().split('/')[:-1])  # fixing the root to project root and not ingestion_program
+root_dir = "/".join(
+    os.getcwd().split("/")[:-1]
+)  # fixing the root to project root and not ingestion_program
 default_input_dir = os.path.join(root_dir, "sample_data/")
 default_output_dir = os.path.join(root_dir, "output/")
 default_program_dir = os.path.join(root_dir, "ingestion_program/")
@@ -57,7 +64,7 @@ def vprint(mode, t):
 
     """
 
-    if (mode):
+    if mode:
         print(str(t))
 
 
@@ -119,13 +126,17 @@ def meta_training(agent, D_tr):
     # === Start meta-traning the agent
     vprint(verbose, datasets_meta_features)
     vprint(verbose, algorithms_meta_features)
-    agent.meta_train(datasets_meta_features, algorithms_meta_features, validation_learning_curves,
-                     test_learning_curves,
-                     epochs=args.epochs, pretrain_epochs=args.pretrain_epochs)
+    agent.meta_train(
+        datasets_meta_features,
+        algorithms_meta_features,
+        validation_learning_curves,
+        test_learning_curves,
+    )
 
     vprint(verbose, "[+]Finished META-TRAINING phase")
 
     return agent
+
 
 def meta_testing(trained_agent, D_te):
     """
@@ -149,8 +160,12 @@ def meta_testing(trained_agent, D_te):
         # === Reset both the environment and the trained_agent for a new task
         dataset_meta_features, algorithms_meta_features = env.reset(dataset_name=dataset_name)
         trained_agent.reset(dataset_meta_features, algorithms_meta_features)
-        vprint(verbose,
-               "\n#===================== Start META-TESTING on dataset: " + dataset_name + " =====================#")
+        vprint(
+            verbose,
+            "\n#===================== Start META-TESTING on dataset: "
+            + dataset_name
+            + " =====================#",
+        )
         vprint(verbose, "\n#---Dataset meta-features = " + str(dataset_meta_features))
         vprint(verbose, "\n#---Algorithms meta-features = " + str(algorithms_meta_features))
 
@@ -179,18 +194,17 @@ def meta_testing(trained_agent, D_te):
 #################################################
 
 
-@hydra.main("../configs/", "ingestion")
+@hydra.main("../mf_gravitas/configs", "base")
 def main(cfg: DictConfig) -> None:
     # === Get input and output directories
     input_dir = default_input_dir
     output_dir = default_output_dir
     program_dir = default_program_dir
     submission_dir = default_submission_dir
-    validation_data_dir = os.path.join(input_dir, 'valid')
-    test_data_dir = os.path.join(input_dir, 'test')
-    meta_features_dir = os.path.join(input_dir, 'dataset_meta_features')
-    algorithms_meta_features_dir = os.path.join(input_dir, 'algorithms_meta_features')
-
+    validation_data_dir = os.path.join(input_dir, "valid")
+    test_data_dir = os.path.join(input_dir, "test")
+    meta_features_dir = os.path.join(input_dir, "dataset_meta_features")
+    algorithms_meta_features_dir = os.path.join(input_dir, "algorithms_meta_features")
 
     vprint(verbose, "Using input_dir: " + input_dir)
     vprint(verbose, "Using output_dir: " + output_dir)
@@ -202,20 +216,18 @@ def main(cfg: DictConfig) -> None:
     vprint(verbose, "Using algorithms_meta_features_dir: " + algorithms_meta_features_dir)
 
     # === List of dataset names
-    
-    global list_datasets
-    
-    list_datasets = os.listdir(validation_data_dir)
-    if '.DS_Store' in list_datasets:
-        list_datasets.remove('.DS_Store')
-    list_datasets.sort()
 
-    
+    global list_datasets
+
+    list_datasets = os.listdir(validation_data_dir)
+    if ".DS_Store" in list_datasets:
+        list_datasets.remove(".DS_Store")
+    list_datasets.sort()
 
     # === List of algorithms
     list_algorithms = os.listdir(os.path.join(validation_data_dir, list_datasets[0]))
-    if '.DS_Store' in list_algorithms:
-        list_algorithms.remove('.DS_Store')
+    if ".DS_Store" in list_algorithms:
+        list_algorithms.remove(".DS_Store")
     list_algorithms.sort()
 
     # === Import the agent submitted by the participant
@@ -223,7 +235,6 @@ def main(cfg: DictConfig) -> None:
     # from gravitas.agent_gravitas import Agent
 
     # choosing the agent to run
-     
 
     # === Clear old output
     clear_output_dir(output_dir)
@@ -235,8 +246,13 @@ def main(cfg: DictConfig) -> None:
     # === Init a meta-learning environment
     global env
 
-    env = Meta_Learning_Environment(validation_data_dir, test_data_dir, meta_features_dir, algorithms_meta_features_dir,
-                                    output_dir)
+    env = Meta_Learning_Environment(
+        validation_data_dir,
+        test_data_dir,
+        meta_features_dir,
+        algorithms_meta_features_dir,
+        output_dir,
+    )
 
     # === Start iterating, each iteration involves a meta-training step and a meta-testing step
     iteration = 0
@@ -245,10 +261,9 @@ def main(cfg: DictConfig) -> None:
     for D_tr, D_te in tqdm(kf.split(list_datasets)):
         vprint(verbose, "\n********** ITERATION " + str(iteration) + " **********")
 
-
         cfg.agent.nA = len(list_algorithms)
         # Init a new agent instance in each iteration
-        agent = Agent_Gravitas(cfg.agent)
+        agent = Agent_Gravitas(cfg)
 
         # === META-TRAINING
         trained_agent = meta_training(agent, D_tr)

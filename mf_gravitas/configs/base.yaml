@@ -1,0 +1,17 @@
+defaults:
+  - encoder: ae
+  - training: schedule 
+  - dataset: gravity
+
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+  - _self_
+  
+
+
+agent:
+  nA: 0           # Initially set to 0, changed in ingestion
+  seed: 123546
+  root_dir: ''
+  suggest_topk: 2
+    

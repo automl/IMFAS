@@ -12,14 +12,14 @@ from mf_gravitas.src.models.vae import VAE
 
 from omegaconf import DictConfig
 from hydra.utils import instantiate
+import hydra
 import pdb
 
-class Agent:
-    encoder_class = {'AE': AE, 'VAE': VAE}
 
+class Agent:
     def __init__(
-            self,
-            cfg: DictConfig,
+        self,
+        cfg: DictConfig,
     ):
         """
         Initialize the agent
@@ -30,30 +30,26 @@ class Agent:
             The number of algorithms
 
         encoder : str
-            The encoder to use. 
+            The encoder to use.
             'AE' for the vanilla autoencoder
             'VAE' for the variational autoencoder
-        
+
         seed : int
             The seed for the random number generator
         """
 
-        print(f'Setting Attributes from the Config')
-        for k, v in cfg.items():
-            print(f'{k} : {v}')
+        print(f"Setting Attributes from the Config")
+        for k, v in cfg.agent.items():
+            print(f"{k} : {v}")
             setattr(self, k, v)
-        
-        self.times = [0.] * self.nA
+
+        self.times = [0.0] * self.nA
         self.cfg = cfg
-        
+
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed(self.seed)
 
-    def reset(
-            self,
-            dataset_meta_features,
-            algorithms_meta_features
-    ):
+    def reset(self, dataset_meta_features, algorithms_meta_features):
         """
         Reset the agents' memory for a new dataset
 
@@ -105,14 +101,18 @@ class Agent:
 
         # preprocess the newly arriving dataset/algo features
         self.algorithms_meta_features = algorithms_meta_features
-        dataset_meta_features_df_testing, dataset_meta_feature_tensor_testing = \
-            self.valid_dataset._preprocess_dataset_properties_meta_testing(dataset_meta_features)
+        (
+            dataset_meta_features_df_testing,
+            dataset_meta_feature_tensor_testing,
+        ) = self.valid_dataset._preprocess_dataset_properties_meta_testing(dataset_meta_features)
 
-        dataset_meta_feature_tensor_testing = dataset_meta_feature_tensor_testing.to(self.model.device)
+        dataset_meta_feature_tensor_testing = dataset_meta_feature_tensor_testing.to(
+            self.model.device
+        )
 
         # actual resetting
-        self.times = {k: 0. for k in algorithms_meta_features.keys()}
-        self.obs_performances = {k: 0. for k in algorithms_meta_features.keys()}
+        self.times = {k: 0.0 for k in algorithms_meta_features.keys()}
+        self.obs_performances = {k: 0.0 for k in algorithms_meta_features.keys()}
 
         # NOTE: Is this required in the RL setting?
         # set delta_t's (i.e. budgets for each algo we'd like to inquire)
@@ -120,26 +120,16 @@ class Agent:
 
         # predict the ranking of algorithms for this dataset
         self.learned_rankings = self.model.predict_algorithms(
-            dataset_meta_feature_tensor_testing,
-            topk=self.nA
+            dataset_meta_feature_tensor_testing, topk=self.nA
         )[0].tolist()
 
-    def meta_train(self,
-                   dataset_meta_features,
-                   algorithms_meta_features,
-                   validation_learning_curves,
-                   test_learning_curves,
-                   # set up the encoder architecture
-                   epochs=10,
-                   pretrain_epochs=50,
-                   batch_size=9,
-                   n_compettitors=11,
-                   lr=0.001,
-                   embedding_dim=2,
-                   weights=[1., 1., 1., 1.],
-                   repellent_share=0.33,
-                   deselect=5, topk=10, deselection_metric='skew',
-                   training='schedule'):
+    def meta_train(
+        self,
+        dataset_meta_features,
+        algorithms_meta_features,
+        validation_learning_curves,
+        test_learning_curves,
+    ):
         """
         Start meta-training the agent with the validation and test learning curves
 
@@ -151,16 +141,7 @@ class Agent:
             VALIDATION learning curves of meta-training datasets
         :param test_learning_curves : dict of dict of {int : Learning_Curve}
             TEST learning curves of meta-training datasets
-        :param epochs:
-        :param pretrain_epochs:
-        :param batch_size:
-        :param n_compettitors:
-        :param lr:
-        :param embedding_dim:
-        :param weights:
-        :param repellent_share:
-        :param training: str. 'schedule': uses model.train_schedual
-        'gravity' uses model.train_gravity
+
 
         Examples:
         To access the meta-features of a specific dataset:
@@ -180,68 +161,85 @@ class Agent:
 
         """
 
+        # Get the configs
+        training_type = list(self.cfg.training.keys())[0]
+        dataset_type = list(self.cfg.dataset.keys())[0]
+        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        encoder_type = list(self.cfg.encoder.keys())[0]
+
         # validation dataloader
-        self.valid_dataset = Dataset_Gravity(
-            dataset_meta_features,
-            validation_learning_curves,
-            algorithms_meta_features,
-            n_compettitors,
-            deselect, 
-            topk, 
-            deselection_metric
+        self.valid_dataset = instantiate(
+            self.cfg.dataset[dataset_type],
+            dataset_meta_features=dataset_meta_features,
+            learning_curves=validation_learning_curves,
+            algorithms_meta_features=algorithms_meta_features,
+            seed=123456,
         )
 
         self.valid_dataloader = DataLoader(
             self.valid_dataset,
-            shuffle=True,
-            batch_size=batch_size
+            shuffle=self.cfg.training[training_type]["shuffle"],
+            batch_size=self.cfg.training[training_type]["batch_size"],
         )
 
-        self.test_dataset = Dataset_Gravity(
-            dataset_meta_features,
-            test_learning_curves,
-            algorithms_meta_features,
-            n_compettitors
+        # test dataloader
+        self.test_dataset = instantiate(
+            self.cfg.dataset[dataset_type],
+            dataset_meta_features=dataset_meta_features,
+            learning_curves=test_learning_curves,
+            algorithms_meta_features=algorithms_meta_features,
+            seed=123456,
         )
 
         if len(self.valid_dataset.deselected) > 0:
-            print(f'The algorithms {self.valid_dataset.deselected} have been deselected')
+            print(f"The algorithms {self.valid_dataset.deselected} have been deselected")
             # ensure test_data has exactly the same deselection of algorithms
             self.test_dataset.preprocess_with_known_deselection(
                 self.valid_dataset.deselected,
                 dataset_meta_features,
                 test_learning_curves,
-                algorithms_meta_features)
+                algorithms_meta_features,
+            )
             self.nA = self.valid_dataset.nA
 
         self.test_dataloader = DataLoader(
             self.test_dataset,
-            shuffle=True,
-            batch_size=batch_size)
+            shuffle=self.cfg.training[training_type]["shuffle"],
+            batch_size=self.cfg.training[training_type]["batch_size"],
+        )
 
         # meta_learn convergence speed
         self.meta_train_convergence_speed(confidence=0.9)
 
-        # Training (algo-ranking) procedure
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        # Override necessary parameters dynamically
-        self.model = instantiate(
-                        self.cfg.AE,
-                        input_dim=self.valid_dataset.n_features,
-                        embedding_dim=embedding_dim,
-                        n_algos=self.valid_dataset.nA,
-                        device=device,
-                    )
+        # Training (algo-ranking) procedur
+        self.cfg.encoder[encoder_type]["input_dim"] = self.valid_dataset.n_features
+        self.cfg.encoder[encoder_type]["n_algos"] = self.valid_dataset.nA
 
+        # Instantiate model
+        self.model = instantiate(self.cfg.encoder[encoder_type])
 
-        if training == 'gravity':
+        if training_type == "gravity":
             tracking, losses, test_losses = self.model.train_gravity(
-                self.valid_dataloader, self.test_dataloader, epochs=[pretrain_epochs, epochs], lr=lr)
+                self.valid_dataloader,
+                self.test_dataloader,
+                epochs=[
+                    self.cfg.training[training_type]["pretrain_epochs"],
+                    self.cfg.training[training_type]["epochs"],
+                ],
+                lr=self.cfg.training[training_type]["lr"],
+            )
 
-        elif training == 'schedule':
+        elif training_type == "schedule":
             tracking, losses, test_losses = self.model.train_schedule(
-                self.valid_dataloader, self.test_dataloader, epochs=[pretrain_epochs, epochs, epochs], lr=lr)
+                self.valid_dataloader,
+                self.test_dataloader,
+                epochs=[
+                    self.cfg.training[training_type]["pretrain_epochs"],
+                    self.cfg.training[training_type]["epochs"],
+                    self.cfg.training[training_type]["epochs"],
+                ],
+                lr=self.cfg.training[training_type]["lr"],
+            )
 
     def meta_train_convergence_speed(self, confidence=0.9):
         """
@@ -257,7 +255,7 @@ class Agent:
         """
 
         # TODO: also use test dataset info for convergence speed learning
-        print('Training 90% convergence speed.')
+        print("Training 90% convergence speed.")
         X = self.valid_dataset.datasets_meta_features_df
         Y = self.valid_dataset.algo_convergences90_time
 
@@ -270,8 +268,8 @@ class Agent:
     def predict_convergence_speed(self, df):
         """Predict the 90% convergence time budget we would like to allocate for each algorithm
         requires meta_train_convergence_speed"""
-        if not hasattr(self, 'qr_models'):
-            raise ValueError('meta_train_convergence_speed must be executed beforehand')
+        if not hasattr(self, "qr_models"):
+            raise ValueError("meta_train_convergence_speed must be executed beforehand")
 
         prediction_convergence_speed = {}
         for algo in range(self.nA):
@@ -314,7 +312,7 @@ class Agent:
         >>> action
         (9, 9, 80)
         """
-       
+
         if observation is not None:  # initial observation is None
             A, C_A, R = observation
             self.times[str(A)] += C_A
@@ -330,14 +328,17 @@ class Agent:
 
         return action
 
-    def plot_encoder_training(self, losses, ):
+    def plot_encoder_training(
+        self,
+        losses,
+    ):
         # plot pretrain loss at each epoch.
         plt.figure()
         plt.plot(torch.tensor(losses).numpy(), label="gravity")
         plt.legend()
 
         plt.savefig(
-            f'{self.root_dir}/output/{self.encoder}_training_loss.png',
+            f"{self.root_dir}/output/{self.encoder}_training_loss.png",
         )
 
     def plot_current_embedding(self, normalize=False):
@@ -359,7 +360,9 @@ class Agent:
             if normalize:
                 d_test = (d_test - d_test.mean(axis=0)) / d_test.std(axis=0)
                 # z_algo = (z_algo - z_algo.mean(axis=0)) / z_algo.std(axis=0)
-                z_algo = (z_algo - d_test.mean(axis=0)) / d_test.std(axis=0)  # normalization based on datasets
+                z_algo = (z_algo - d_test.mean(axis=0)) / d_test.std(
+                    axis=0
+                )  # normalization based on datasets
 
             self._plot_embedding2d(d_test, z_algo)
             return None
@@ -378,10 +381,10 @@ class Agent:
         plt.scatter(z_algo[:, 0], z_algo[:, 1], label="algorithms")
         plt.legend()
         plt.savefig(
-            f'{self.root_dir}/output/{self.encoder}_training_embeddings.png',
+            f"{self.root_dir}/output/{self.encoder}_training_embeddings.png",
         )
 
-    def _plot_embedding_projection(self, d_test, z_algo, projection='umap'):
+    def _plot_embedding_projection(self, d_test, z_algo, projection="umap"):
         """
         higher dimensional embeddings must be projected before being plotted.
         To do so, the datasets are used to learn a projection, in which the algorithm
@@ -389,38 +392,38 @@ class Agent:
         the learned embedding is a sensible projection.
         """
 
-        if projection == 'umap':
+        if projection == "umap":
             import umap
 
             trans = umap.UMAP(densmap=True).fit(d_test)
 
             # plot the current embedding
             # TODO add colouring c?
-            plt.scatter(trans.embedding_[:, 0], trans.embedding_[:, 1], s=5, cmap='Spectral')  # c=y_train,
-            plt.title('Embedding of the training set by densMAP')
+            plt.scatter(
+                trans.embedding_[:, 0], trans.embedding_[:, 1], s=5, cmap="Spectral"
+            )  # c=y_train,
+            plt.title("Embedding of the training set by densMAP")
 
             # embedd the z_algos accordingly:
             # Consider: This embedding may not be sensible for z_algo!
             test_embedding = trans.fit_transform(z_algo)
-            plt.scatter(test_embedding[:, 0], test_embedding[:, 1], s=5, cmap='Spectral')
+            plt.scatter(test_embedding[:, 0], test_embedding[:, 1], s=5, cmap="Spectral")
 
             plt.savefig(
-                f'{self.root_dir}/output/{self.encoder}_embedding_umap.png',
+                f"{self.root_dir}/output/{self.encoder}_embedding_umap.png",
             )
 
-        elif projection == 'pca':
+        elif projection == "pca":
             from sklearn.decomposition import PCA
 
             pca = PCA(n_components=2)
             d_test_pca = pca.fit_transform(d_test)
             z_algo_pca = pca.transform(z_algo)
 
-            plt.scatter(d_test_pca[:, 0], d_test_pca[:, 1], s=5, cmap='Spectral')  # c=y_train,
-            plt.scatter(z_algo_pca[:, 0], z_algo_pca[:, 1], s=5, cmap='Spectral')
-            plt.title('Embedding of the training set by densMAP')
+            plt.scatter(d_test_pca[:, 0], d_test_pca[:, 1], s=5, cmap="Spectral")  # c=y_train,
+            plt.scatter(z_algo_pca[:, 0], z_algo_pca[:, 1], s=5, cmap="Spectral")
+            plt.title("Embedding of the training set by densMAP")
 
             plt.savefig(
-                f'{self.root_dir}/output/{self.encoder}_embedding_pca.png',
+                f"{self.root_dir}/output/{self.encoder}_embedding_pca.png",
             )
-
-

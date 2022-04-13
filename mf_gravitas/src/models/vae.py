@@ -62,7 +62,6 @@ class VAE(AE):
             modules.append(nn.ReLU())
             input_dim = h_dim
 
-        
         self.encoder = torch.nn.Sequential(*modules)
 
         # Mean and std_dev for the latent distribution
@@ -73,8 +72,6 @@ class VAE(AE):
         # modules.append(nn.BatchNorm1d(self.latent_dim))
         # modules.append(nn.Dropout(p=0.5))
         # modules.append(nn.ReLU())
-
-        
 
         # Make the decoder
         modules = []
@@ -90,41 +87,34 @@ class VAE(AE):
             input_dim = h_dim
 
         modules.append(nn.Linear(input_dim, self.input_dim))
-        modules.append(nn.Sigmoid()) 
-
+        modules.append(nn.Sigmoid())
 
         self.decoder = nn.Sequential(*modules)
 
-    
-    def reparameterize(
-                    self, 
-                    mu: torch.Tensor, 
-                    logvar: torch.Tensor) -> torch.Tensor:
+    def reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
         """
         Reparameterization trick to sample from N(mu, var)
         """
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
-        
+
         return eps * std + mu
-    
+
     def encode(self, x):
-        
+
         # Forward pass the input through the network
         result = self.encoder(x)
 
-        # Get the mean and standard deviation from the output 
+        # Get the mean and standard deviation from the output
         mu = self.fc_mu(result)
         log_var = self.fc_var(result)
 
         # TODO: Plot latent distributions
 
-
-
         # Sample a latent vector using the reparameterization trick
         z = self.reparameterize(mu, log_var)
 
-        return z        
+        return z
 
     def decode(self, x):
         return self.decoder(x)
