@@ -7,6 +7,8 @@ import pandas as pd
 from hydra.utils import call
 from omegaconf import DictConfig
 
+from .util import subset
+
 # A logger for this file
 log = logging.getLogger(__name__)
 
@@ -128,6 +130,7 @@ def main(cfg: DictConfig):
             '~/PycharmProjects/AlgoSelectionMF/mf_gravitas/src/data/lcbench/download.sh')
 
     if cfg.reload_from_downloads:
+        log.info('Starting to load jsons from file')
         # fixme: move LCBench parsing into separate file (to make parsing dataset specific!
         # (0) get meta features
         with open(dir_downloads / cfg.dataset / 'meta_features.json', 'r') as file:
@@ -136,6 +139,7 @@ def main(cfg: DictConfig):
         with open(dir_data / 'raw' / cfg.extract / 'meta_features.csv', 'w') as file:
             df.to_csv(file)
 
+        log.info('Starting parsing.')
         # (1) parse the huge json into its components
         with open(dir_downloads / cfg.dataset / f'{cfg.extract}.json', 'r') as file:
             DB = LCBench_API(json.load(file))
@@ -166,10 +170,6 @@ def main(cfg: DictConfig):
     candidates, candidate_performances = call(cfg.selection.algo, df)
 
     # selecting the subset of algorithms!
-    subset = lambda df, level, index: \
-        pd.concat([d for algo, d in df.groupby(level=level)
-                   if algo in index], axis=0)
-
     logs = subset(logs, 'algorithm', list(candidates))
     results = subset(results, 'algorithm', list(candidates))
 
@@ -178,8 +178,4 @@ def main(cfg: DictConfig):
     logs.to_hdf(dir_raw_dataset / 'logs_subset.h5', key='dataset', mode='w')
     results.to_hdf(dir_raw_dataset / 'results_subset.h5', key='dataset', mode='w')  # fixme
 
-    print()
-
-
-if __name__ == '__main__':
-    main()
+    log.debug('Written out all files to raw dir.')
