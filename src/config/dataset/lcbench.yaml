@@ -5,8 +5,8 @@ preprocessed_path: /some/path
 dataset_meta_features:
   _target_: src.data.preprocessings.transformpipeline.TransformPipeline
   # path: some/path - we might want to automate and structure it
-  transforms: None
-  # just like above
+  modulelist:
+    - _target_: src.data.preprocessings.table_transforms.ToTensor
 
 algo_meta_features:
   _target_: src.data.preprocessings.transformpipeline.TransformPipeline
@@ -32,12 +32,11 @@ algo_meta_features:
       dtype: 'numeric'
     - _target_: src.data.preprocessings.table_transforms.ToTensor
 
-
-
-
 learning_curves:
   _target_: src.data.preprocessings.transformpipeline.TransformPipeline
-  transforms:
+  modulelist:
+    - _target_: src.data.preprocessings.table_transforms.ToTensor
+
   # just like above
 
 

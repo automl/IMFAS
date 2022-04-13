@@ -28,7 +28,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # optionally download /resubset the dataset
     main_raw(cfg.dataset_raw)
 
-    dataset_meta_features = AlgorithmMetaFeatures(
+    algorithm_meta_features = AlgorithmMetaFeatures(
         path=dir_dataset_raw / 'config.csv',
         transforms=instantiate(cfg.dataset.algo_meta_features),
         index_col=0
