@@ -1,2 +1,0 @@
-train_fnc:
-  _target_: some.method.path.freeze
