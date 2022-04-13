@@ -1,0 +1,4 @@
+# cross validation
+evaluation:
+  name: cv
+  folds: 6
