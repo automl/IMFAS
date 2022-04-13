@@ -8,8 +8,8 @@ from omegaconf import DictConfig
 # A logger for this file
 log = logging.getLogger(__name__)
 
-from src.data.pipe_raw import main_raw
-from src.data import DatasetMetaFeatures, AlgorithmMetaFeatures
+from mf_gravitas.data.pipe_raw import main_raw
+from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures
 
 
 # TODO debug flag to disable w&b & checkpointing.

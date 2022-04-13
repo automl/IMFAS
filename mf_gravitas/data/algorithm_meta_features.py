@@ -1,5 +1,5 @@
-from src.data.dataset_meta_features import DatasetMetaFeatures
-from src.data.preprocessings.transformpipeline import TransformPipeline
+from mf_gravitas.data.dataset_meta_features import DatasetMetaFeatures
+from mf_gravitas.data.preprocessings.transformpipeline import TransformPipeline
 
 
 class AlgorithmMetaFeatures(DatasetMetaFeatures):
@@ -9,7 +9,7 @@ class AlgorithmMetaFeatures(DatasetMetaFeatures):
 
 if __name__ == '__main__':
     # TODO Make exactly this config into a config file!
-    from src.data.preprocessings.table_transforms import *
+    from mf_gravitas.data.preprocessings.table_transforms import *
 
     path = '/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/LCBench/config.csv'
     metafeatures = AlgorithmMetaFeatures(path, index_col=0)

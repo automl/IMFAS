@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-from src.data.preprocessings.transformpipeline import TransformPipeline
+from mf_gravitas.data.preprocessings.transformpipeline import TransformPipeline
 
 
 class DatasetMetaFeatures(Dataset):

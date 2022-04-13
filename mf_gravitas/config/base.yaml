@@ -5,4 +5,4 @@ defaults:
   - _self_ # at the end means overriding values of lower yaml here!
 #  - training: freeze # move default behaviour here?
 
-seed: 1
+seed: 123456

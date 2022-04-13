@@ -3,16 +3,16 @@
 preprocessed_path: /some/path
 
 dataset_meta_features:
-  _target_: src.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
   # path: some/path - we might want to automate and structure it
   modulelist:
-    - _target_: src.data.preprocessings.table_transforms.ToTensor
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
 
 algo_meta_features:
-  _target_: src.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
   # path: some/path - we might want to automate and structure it
   modulelist:
-    - _target_: src.data.preprocessings.table_transforms.Drop
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.Drop
       columns:
         - 'imputation_strategy'
         - 'learning_rate_scheduler'
@@ -22,20 +22,20 @@ algo_meta_features:
         - 'optimizer'
         - 'activation'
         - 'mlp_shape'
-    - _target_: src.data.preprocessings.table_transforms.Replace
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.Replace
       columns:
         - 'num_layers'
       replacedict: { 'True': 1 }
-    - _target_: src.data.preprocessings.table_transforms.Convert
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.Convert
       columns:
         - 'num_layers'
       dtype: 'numeric'
-    - _target_: src.data.preprocessings.table_transforms.ToTensor
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
 
 learning_curves:
-  _target_: src.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
   modulelist:
-    - _target_: src.data.preprocessings.table_transforms.ToTensor
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
 
   # just like above
 
