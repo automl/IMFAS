@@ -63,21 +63,27 @@ def main_raw(cfg: DictConfig):
         # load files from raw dir
         logs = pd.read_hdf(dir_raw_dataset / 'logs.h5', key='dataset')
         results = pd.read_hdf(dir_raw_dataset / 'results.h5', key='dataset')
-        configs = pd.read_csv(dir_raw_dataset / 'config.csv')
-        meta_features = pd.read_csv(dir_raw_dataset / 'meta_features.csv')
+        configs = pd.read_csv(dir_raw_dataset / 'config.csv', index_col=0)
+        meta_features = pd.read_csv(dir_raw_dataset / 'meta_features.csv', index_col=0)
 
     # (0.1) final_performances
     # notice, that we could also get them as slices from logs!
+
     df = results[cfg.selection.metric].unstack().T
 
     # (0.1.1) select based on final performance
     candidates, candidate_performances = call(cfg.selection.algo, df)
 
+    # select the index rows # fixme: this is inefficient
+    configs = pd.DataFrame([configs.loc[int(element)] for element in candidates])
+    df.index = df.index.astype(str)
+    configs.to_csv(dir_raw_dataset / 'config_subset.csv')
+
     # selecting the subset of algorithms!
     logs = subset(logs, 'algorithm', list(candidates))
     results = subset(results, 'algorithm', list(candidates))
 
-    subset(logs, 'logged', cfg.learning_curves.metrics)
+    # subset(logs, 'logged', cfg.learning_curves.metrics)
 
     logs.to_hdf(dir_raw_dataset / 'logs_subset.h5', key='dataset', mode='w')
     results.to_hdf(dir_raw_dataset / 'results_subset.h5', key='dataset', mode='w')  # fixme

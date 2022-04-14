@@ -1,7 +1,6 @@
 import logging
 import pathlib
 
-import pdb 
 import hydra
 import torch
 from hydra.utils import instantiate
@@ -23,6 +22,12 @@ from mf_gravitas.util import train_test_split
 def pipe_train(cfg: DictConfig) -> None:
     orig_cwd = hydra.utils.get_original_cwd()
 
+    # logging TODO add logging to each step of the way.
+    log.info("Hydra initialized a new config_raw")
+    log.debug(str(cfg))
+
+    # todo seeding
+
     # fixme: move data_dir to cfg!
     dir_data = pathlib.Path(cfg.dataset_raw.dir_data)
     dir_raw = dir_data / 'raw'
@@ -36,12 +41,10 @@ def pipe_train(cfg: DictConfig) -> None:
     # read in the data
     # fixme: move instantiation & join to lcbench.yaml
     algorithm_meta_features = AlgorithmMetaFeatures(
-        path=dir_dataset_raw / 'config.csv',
+        path=dir_dataset_raw / 'config_subset.csv',
         transforms=instantiate(cfg.dataset.algo_meta_features),
         index_col=0
     )
-
-    
 
     dataset_meta_features = DatasetMetaFeatures(
         path=dir_dataset_raw / 'meta_features.csv',
@@ -50,7 +53,7 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
     lc_dataset = Dataset_LC(
-        path=dir_dataset_raw / 'logs.h5',
+        path=dir_dataset_raw / 'logs_subset.h5',
         transforms=instantiate(cfg.dataset.learning_curves),
         metric=cfg.dataset.lc_metric
     )
@@ -84,56 +87,33 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # Dataloaders
     train_loader = torch.utils.data.DataLoader(
-        train_set, 
+        train_set,
         batch_size=cfg.batch_size,
-        shuffle=True, 
+        shuffle=True,
         num_workers=2
     )
 
     test_loader = torch.utils.data.DataLoader(
-        test_set, 
+        test_set,
         batch_size=cfg.batch_size,
-        shuffle=True, 
+        shuffle=True,
         num_workers=2
     )
-
-    next(iter(train_loader))
-    # logging TODO add logging to each step of the way.
-    log.info("Hydra initialized a new config_raw")
-    log.debug(str(cfg))
-
-    # seeding
-
-    # instantiate & preprocess meta
-
-    # meta train
-
-    # train test split
-
-    # load dataset
-
-    # create dataloader from it
-
-    # instantiate model
-    
-    # get the number of algorithms
 
     # set hte number of algoritms and datasets
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.n_algos = len(algorithm_meta_features)
     print(cfg.model.model)
-  
 
     model = instantiate(cfg.model.model)
 
     model.train_gravity(
-            train_loader, 
-            test_loader,
-            epochs=[100,100], 
-            lr=0.001
+        train_loader,
+        test_loader,
+        epochs=[100, 100],
+        lr=0.001
     )
 
-    pdb.set_trace()
     # select device
 
     # train model call
