@@ -1,17 +1,18 @@
-from api import Benchmark  # fixme LCBench.api
 import glob
+
 import pandas as pd
+
+from api import Benchmark  # fixme LCBench.api
 
 root = '/home/ruhkopf/.local/share/LCBench'
 print(glob.glob(f"{root}/*.json"))
-
 
 bench = Benchmark('/home/ruhkopf/.local/share/LCBench/fashion_mnist.json')
 names = bench.dataset_names
 tags = bench.get_queriable_tags()  # has probably the same as below
 
-configs0 = {i: bench.query(dataset_name='Fashion-MNIST', tag="config", config_id=i)
-           for i in range(2000)}
+configs0 = {i: bench.query(dataset_name='Fashion-MNIST', tag="config_raw", config_id=i)
+            for i in range(2000)}
 
 configs_df0 = pd.DataFrame.from_dict(configs0, orient='index')
 
@@ -42,7 +43,7 @@ configs_df0 = pd.DataFrame.from_dict(configs0, orient='index')
 # 'instances', 'classes', 'features', 'batch_size', 'imputation_strategy',
 # 'learning_rate_scheduler', 'loss', 'network', 'max_dropout', 'normalization_strategy',
 # 'optimizer', 'cosine_annealing_T_max', 'cosine_annealing_eta_min', 'activation',
-# 'max_units', 'mlp_shape', 'num_layers', 'learning_rate', 'momentum', 'weight_decay', 'config']
+# 'max_units', 'mlp_shape', 'num_layers', 'learning_rate', 'momentum', 'weight_decay', 'config_raw']
 bench = Benchmark(data_dir='/home/ruhkopf/.local/share/LCBench/data_2k.json')
 
 # the shorter version without all the gradient information
@@ -57,24 +58,24 @@ bench = Benchmark(data_dir='/home/ruhkopf/.local/share/LCBench/data_2k.json')
 # 'imputation_strategy', 'learning_rate_scheduler', 'loss', 'network', 'max_dropout',
 # 'normalization_strategy', 'optimizer', 'cosine_annealing_T_max', 'cosine_annealing_eta_min',
 # 'activation', 'max_units', 'mlp_shape', 'num_layers', 'learning_rate', 'momentum',
-# 'weight_decay', 'config'])
+# 'weight_decay', 'config_raw'])
 bench = Benchmark(data_dir='/home/ruhkopf/.local/share/LCBench/data_2k_lw.json')
 names = bench.dataset_names  # len: 35
 tags = bench.get_queriable_tags()
 
 # config_ids refers to the 2000 possible evaluated hp-configurations (0-1999)
-bench.query(dataset_name='APSFailure', tag="config", config_id=20)
+bench.query(dataset_name='APSFailure', tag="config_raw", config_id=20)
 
 # ! configs across datasets seem to be consistent!
 dataset_name = 'APSFailure'
 
-configs = {i: bench.query(dataset_name=dataset_name, tag="config", config_id=i)
+configs = {i: bench.query(dataset_name=dataset_name, tag="config_raw", config_id=i)
            for i in range(2000)}
 
 configs_df = pd.DataFrame.from_dict(configs, orient='index')
 
 dataset_name = 'Amazon_employee_access'
-configs1 = {i: bench.query(dataset_name=dataset_name, tag="config", config_id=i)
+configs1 = {i: bench.query(dataset_name=dataset_name, tag="config_raw", config_id=i)
             for i in range(2000)}
 
 configs_df1 = pd.DataFrame.from_dict(configs1, orient='index')

@@ -14,7 +14,6 @@ from mf_gravitas.data.util import subset
 log = logging.getLogger(__name__)
 
 
-import pdb
 def main_raw(cfg: DictConfig):
     """
     Do heavy computation on the raw datasets - and move them to the data/preprocessing
@@ -40,12 +39,7 @@ def main_raw(cfg: DictConfig):
         with open(dir_downloads / cfg.dataset_name / 'meta_features.json', 'r') as file:
             df = pd.read_json(file, orient='index')
 
-
-        
-        
         df.to_csv(dir_data / 'raw' / cfg.dataset_name / 'meta_features.csv')
-        
-
 
         log.info('Starting parsing.')
         # (1) parse the huge json into its components

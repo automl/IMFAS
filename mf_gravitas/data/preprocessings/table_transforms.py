@@ -13,6 +13,7 @@ class Transform(nn.Module):
     """
 
     def __init__(self, columns: tuple[str] = None):
+        super().__init__()
         self.columns = columns
 
     def fit(self, X):
