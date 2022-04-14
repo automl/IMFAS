@@ -8,6 +8,7 @@ from tqdm import tqdm
 from mf_gravitas.models.base_encoder import BaseEncoder
 
 
+
 class ParticleGravityAutoencoder(BaseEncoder):
     # TODO allow for algo meta features
     def __init__(

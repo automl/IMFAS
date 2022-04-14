@@ -11,13 +11,35 @@ log = logging.getLogger(__name__)
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures
 
+import os
 import pdb
+
+from omegaconf import DictConfig, OmegaConf
+from hydra.core.hydra_config import HydraConfig
+
+import wandb
+
+base_dir = os.getcwd()
+
 
 # TODO debug flag to disable w&b & checkpointing.
 
 
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
+    
+    dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
+    print(dict_cfg.keys())
+    pdb.set_trace()
+    
+    wandb.init(
+        mode="offline" if cfg.debug else None,
+        project="gravitas",
+        entity="tnt",
+        group=cfg.group,
+        dir=os.getcwd(),
+        config=dict_cfg,
+    )
     orig_cwd = hydra.utils.get_original_cwd()
 
     # fixme: move data_dir to cfg!
