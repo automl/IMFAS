@@ -1,6 +1,7 @@
 # FIXME: make this dependent on the output from the raw transformation
 
 preprocessed_path: /some/path
+split: 0.8
 
 dataset_meta_features:
   _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
@@ -14,6 +15,7 @@ algo_meta_features:
   modulelist:
     - _target_: mf_gravitas.data.preprocessings.table_transforms.Drop
       columns:
+        # Irrelevant features (they are constant all across)
         - 'imputation_strategy'
         - 'learning_rate_scheduler'
         - 'loss'
