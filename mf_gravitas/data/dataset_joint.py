@@ -36,7 +36,7 @@ class Dataset_Join(Dataset):
 
             return (D_m, A_m, a_p), competitors
         else:
-            return D_m, A_m, a_p, []
+            return D_m, A_m, a_p, tuple()
 
     def __get_single__(self, item):
         # parse the index & allow it to fetch multiple vectors at once

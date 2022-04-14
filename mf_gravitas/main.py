@@ -2,6 +2,7 @@ import logging
 import pathlib
 
 import hydra
+import torch
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
@@ -54,10 +55,10 @@ def pipe_train(cfg: DictConfig) -> None:
         lc_dataset,
         competitors=2)
 
-    step = joint[0]
-    [t.shape for t in step[1]]
+    trainloader = torch.utils.data.DataLoader(
+        joint, batch_size=cfg.batch_size,
+        shuffle=False, num_workers=2)
 
-    print()
     # logging TODO add logging to each step of the way.
     log.info("Hydra initialized a new config_raw")
     log.debug(str(cfg))

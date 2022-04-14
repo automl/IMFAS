@@ -6,3 +6,4 @@ defaults:
 #  - training: freeze # move default behaviour here?
 
 seed: 123456
+batch_size: 4
