@@ -9,7 +9,7 @@ from omegaconf import DictConfig
 log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
-from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC
+from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, Dataset_Join
 
 
 # TODO debug flag to disable w&b & checkpointing.
@@ -48,6 +48,16 @@ def pipe_train(cfg: DictConfig) -> None:
         metric=cfg.dataset.lc_metric
     )
 
+    joint = Dataset_Join(
+        dataset_meta_features,
+        algorithm_meta_features,
+        lc_dataset,
+        competitors=2)
+
+    step = joint[0]
+    [t.shape for t in step[1]]
+
+    print()
     # logging TODO add logging to each step of the way.
     log.info("Hydra initialized a new config_raw")
     log.debug(str(cfg))
@@ -55,9 +65,6 @@ def pipe_train(cfg: DictConfig) -> None:
     # seeding
 
     # instantiate & preprocess meta
-
-    # Fixme: write a joint Dataset class interface that allows batching, that makes each and every
-    #  of these optional!
 
     # meta train
 

@@ -10,6 +10,7 @@ class Dataset_LC(Dataset):
         self.df = self.df.xs(key=metric)
         # consider: is this possible by read in? - to reduce memory overhead
 
+        self.multidex = self.df.index
         self.transforms = transforms
 
         if transforms is not None:
