@@ -1,8 +1,14 @@
 #!/bin/bash
 
-cd ~/PycharmProjects/AlgoSelectionMF/data/downloads
-mkdir LCBench
-cd LCBench
+mkdir $1/data
+mkdir $1/data/downloads
+mkdir $1/data/downloads/LCBench
+mkdir $1/data/raw
+mkdir $1/data/raw/LCBench
+mkdir $1/data/preprocessing
+mkdir $1/data/preprocessing/LCBench
+
+cd $1/data/downloads/LCBench
 
 wget https://figshare.com/ndownloader/files/21188673 -O meta_features.json
 wget https://figshare.com/ndownloader/files/22859435 -O bench_full.zip
