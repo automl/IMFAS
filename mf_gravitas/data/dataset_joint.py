@@ -63,11 +63,11 @@ class Dataset_Join(Dataset):
         competitors = [c for c in competitors if c != item]
 
         # ensure, we will never hit the same item as competitor
-        if not competitors:
+        if len(competitors) != self.competitors:
             while competitors:
                 val = randint(0, self.__len__())
                 if val != item:
-                    competitors = [randint(0, self.__len__())]
+                    competitors.append(randint(0, self.__len__()))
 
         return self.__get_multiple__(competitors)
 
