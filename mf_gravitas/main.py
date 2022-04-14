@@ -25,8 +25,9 @@ def pipe_train(cfg: DictConfig) -> None:
     dir_dataset_raw = dir_data / 'raw' / cfg.dataset_raw.dataset_name
     # init w&b and convert config_raw for w&b
 
-    # optionally download /resubset the dataset
-    main_raw(cfg.dataset_raw)
+    # optionally download / resubset the dataset
+    if cfg.dataset_raw.enable:
+        main_raw(cfg.dataset_raw)
 
     # fixme: move instantiation & join to lcbench.yaml
     algorithm_meta_features = AlgorithmMetaFeatures(
