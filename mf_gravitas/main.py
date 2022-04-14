@@ -1,6 +1,7 @@
 import logging
 import pathlib
 
+import pdb 
 import hydra
 import torch
 from hydra.utils import instantiate
@@ -39,6 +40,8 @@ def pipe_train(cfg: DictConfig) -> None:
         transforms=instantiate(cfg.dataset.algo_meta_features),
         index_col=0
     )
+
+    
 
     dataset_meta_features = DatasetMetaFeatures(
         path=dir_dataset_raw / 'meta_features.csv',
@@ -81,12 +84,18 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # Dataloaders
     train_loader = torch.utils.data.DataLoader(
-        train_set, batch_size=cfg.batch_size,
-        shuffle=True, num_workers=2)
+        train_set, 
+        batch_size=cfg.batch_size,
+        shuffle=True, 
+        num_workers=2
+    )
 
     test_loader = torch.utils.data.DataLoader(
-        test_set, batch_size=cfg.batch_size,
-        shuffle=True, num_workers=2)
+        test_set, 
+        batch_size=cfg.batch_size,
+        shuffle=True, 
+        num_workers=2
+    )
 
     next(iter(train_loader))
     # logging TODO add logging to each step of the way.
@@ -106,9 +115,25 @@ def pipe_train(cfg: DictConfig) -> None:
     # create dataloader from it
 
     # instantiate model
-    model = instantiate(cfg.model)
-    print(model.model)
+    
+    # get the number of algorithms
 
+    # set hte number of algoritms and datasets
+    cfg.model.model.input_dim = dataset_meta_features.df.columns.size
+    cfg.model.model.n_algos = len(algorithm_meta_features)
+    print(cfg.model.model)
+  
+
+    model = instantiate(cfg.model.model)
+
+    model.train_gravity(
+            train_loader, 
+            test_loader,
+            epochs=[100,100], 
+            lr=0.001
+    )
+
+    pdb.set_trace()
     # select device
 
     # train model call

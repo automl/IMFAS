@@ -4,7 +4,7 @@ import torch
 import torch.distributions as td
 import torch.nn as nn
 from tqdm import tqdm
-
+import pdb
 
 
 class ParticleGravityAutoencoder(nn.Module):
@@ -233,7 +233,11 @@ class ParticleGravityAutoencoder(nn.Module):
         optimizer = torch.optim.Adam(self.parameters(), lr)
         for e in tqdm(range(epochs)):
             for i, data in enumerate(train_dataloader):
-                D0, D1, A0, A1 = data
+                
+                # print(len(data[0]))
+                # print(len(data[1]))
+                # pdb.set_trace()
+                (D0, A0), (D1, A1) = data
 
                 D0 = D0.to(self.device)
                 D1 = D1.to(self.device)
