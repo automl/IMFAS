@@ -1,3 +1,2 @@
 model:
-  name: Autoencoder
   _target_: mf_gravitas.models.autoencoder.ParticleGravityAutoencoder
