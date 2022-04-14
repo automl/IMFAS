@@ -10,7 +10,9 @@ from omegaconf import DictConfig
 log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
-from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, Dataset_Join
+from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, \
+    Dataset_Join, Dataset_Join_Split
+from mf_gravitas.util import train_test_split
 
 
 # TODO debug flag to disable w&b & checkpointing.
@@ -53,12 +55,36 @@ def pipe_train(cfg: DictConfig) -> None:
         dataset_meta_features,
         algorithm_meta_features,
         lc_dataset,
-        competitors=2)
+        competitors=2
+    )
 
-    trainloader = torch.utils.data.DataLoader(
-        joint, batch_size=cfg.batch_size,
-        shuffle=False, num_workers=2)
+    train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
 
+    train_set = Dataset_Join_Split(
+        meta_dataset=dataset_meta_features,
+        meta_algo=algorithm_meta_features,
+        lc=lc_dataset,
+        splitindex=train_split,
+        competitors=2,
+    )
+
+    test_set = Dataset_Join_Split(
+        meta_dataset=dataset_meta_features,
+        meta_algo=algorithm_meta_features,
+        lc=lc_dataset,
+        splitindex=test_split,
+        competitors=2,
+    )
+
+    train_loader = torch.utils.data.DataLoader(
+        train_set, batch_size=cfg.batch_size,
+        shuffle=True, num_workers=2)
+
+    test_loader = torch.utils.data.DataLoader(
+        test_set, batch_size=cfg.batch_size,
+        shuffle=True, num_workers=2)
+
+    next(iter(train_loader))
     # logging TODO add logging to each step of the way.
     log.info("Hydra initialized a new config_raw")
     log.debug(str(cfg))
@@ -78,8 +104,6 @@ def pipe_train(cfg: DictConfig) -> None:
     # instantiate model
     model = instantiate(cfg.model)
     print(model.model)
-
-    
 
     # select device
 

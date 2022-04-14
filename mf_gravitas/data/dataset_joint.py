@@ -1,6 +1,7 @@
 from copy import deepcopy
 from random import randint
 
+import pandas as pd
 from torch.utils.data import Dataset
 
 
@@ -72,3 +73,18 @@ class Dataset_Join(Dataset):
 
     def __len__(self):
         return len(self.multidex)
+
+
+class Dataset_Join_Split(Dataset_Join):
+    def __init__(self, splitindex: list[int], *args, **kwargs):
+        """
+        Convenience wrapper around Dataset_Join to
+        Deterministically split it into train and test sets based on splitindex.
+        :param splitindex: index of the datasets that are to be kept
+        """
+        super(Dataset_Join_Split, self).__init__(*args, **kwargs)
+        self.splitindex = splitindex
+
+        self.multidex = pd.MultiIndex.from_tuples(
+            [(d, a) for d, a in self.multidex if d in splitindex],
+            names=['dataset', 'algorithm'])
