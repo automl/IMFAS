@@ -4,7 +4,7 @@ dataset_name: LCBench
 dir_data: "../../../data"
 extract: data_2k
 re_download: False
-reload_from_downloads: True # will override the '*subset' files
+reload_from_downloads: False  # will override the '*subset' files
 
 selection:
   metric: final_test_cross_entropy

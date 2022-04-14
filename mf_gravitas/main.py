@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures
 
+import pdb
 
 # TODO debug flag to disable w&b & checkpointing.
 
@@ -61,7 +62,9 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # instantiate model
     # model = instantiate(cfg.model)
+    # print(model.model)
 
+    # pdb.set_trace()
     # select device
 
     # train model call
