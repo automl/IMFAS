@@ -32,9 +32,12 @@ algo_meta_features:
       dtype: 'numeric'
     - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
 
+lc_metric: Train/val_accuracy
 learning_curves:
   _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
   modulelist:
+    - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlice
+      slice: 51
     - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
 
   # just like above

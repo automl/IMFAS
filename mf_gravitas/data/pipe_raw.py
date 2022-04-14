@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 from mf_gravitas.data.lcbench.lcbench_api import LCBench_API
 from mf_gravitas.data.util import subset
 
-# A logger for this file
+# A logger for this path
 log = logging.getLogger(__name__)
 
 
@@ -33,8 +33,8 @@ def main_raw(cfg: DictConfig):
             '~/PycharmProjects/AlgoSelectionMF/mf_gravitas/mf_gravitas/data/lcbench/download.sh')
 
     if cfg.reload_from_downloads:
-        log.info('Starting to load jsons from file')
-        # fixme: move LCBench parsing into separate file (to make parsing dataset specific!
+        log.info('Starting to load jsons from path')
+        # fixme: move LCBench parsing into separate path (to make parsing dataset specific!
         # (0) get meta features
         with open(dir_downloads / cfg.dataset_name / 'meta_features.json', 'r') as file:
             df = pd.read_json(file, orient='index')

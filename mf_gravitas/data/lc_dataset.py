@@ -5,9 +5,10 @@ from mf_gravitas.data.preprocessings.lc_slice import LC_TimeSlice
 
 
 class Dataset_LC(Dataset):
-    def __init__(self, file, metric, transforms):
-        self.df = pd.read_hdf(file, mode='r')
+    def __init__(self, path, metric, transforms):
+        self.df = pd.read_hdf(path, mode='r')
         self.df = self.df.xs(key=metric)
+        # consider: is this possible by read in? - to reduce memory overhead
 
         self.transforms = transforms
 

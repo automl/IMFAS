@@ -9,7 +9,7 @@ from omegaconf import DictConfig
 log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
-from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures
+from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC
 
 
 # TODO debug flag to disable w&b & checkpointing.
@@ -28,6 +28,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # optionally download /resubset the dataset
     main_raw(cfg.dataset_raw)
 
+    # fixme: move instantiation & join to lcbench.yaml
     algorithm_meta_features = AlgorithmMetaFeatures(
         path=dir_dataset_raw / 'config.csv',
         transforms=instantiate(cfg.dataset.algo_meta_features),
@@ -38,6 +39,12 @@ def pipe_train(cfg: DictConfig) -> None:
         path=dir_dataset_raw / 'meta_features.csv',
         transforms=instantiate(cfg.dataset.dataset_meta_features),
         index_col=0
+    )
+
+    lc_dataset = Dataset_LC(
+        path=dir_dataset_raw / 'logs.h5',
+        transforms=instantiate(cfg.dataset.learning_curves),
+        metric=cfg.dataset.lc_metric
     )
 
     # logging TODO add logging to each step of the way.
