@@ -32,6 +32,7 @@ def pipe_train(cfg: DictConfig) -> None:
     if cfg.dataset_raw.enable:
         main_raw(cfg.dataset_raw)
 
+    # read in the data
     # fixme: move instantiation & join to lcbench.yaml
     algorithm_meta_features = AlgorithmMetaFeatures(
         path=dir_dataset_raw / 'config.csv',
@@ -51,6 +52,7 @@ def pipe_train(cfg: DictConfig) -> None:
         metric=cfg.dataset.lc_metric
     )
 
+    # sync the datasets
     joint = Dataset_Join(
         dataset_meta_features,
         algorithm_meta_features,
@@ -58,6 +60,7 @@ def pipe_train(cfg: DictConfig) -> None:
         competitors=2
     )
 
+    # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
 
     train_set = Dataset_Join_Split(
@@ -76,6 +79,7 @@ def pipe_train(cfg: DictConfig) -> None:
         competitors=2,
     )
 
+    # Dataloaders
     train_loader = torch.utils.data.DataLoader(
         train_set, batch_size=cfg.batch_size,
         shuffle=True, num_workers=2)

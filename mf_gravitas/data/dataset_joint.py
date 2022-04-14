@@ -55,7 +55,7 @@ class Dataset_Join(Dataset):
         d, a = list(d), list(a)
         # fixme: indexing depends on the transformations applied
         #  in particularly troubeling is lc, ince it is a time slice!
-        return self.meta_dataset[d], self.meta_algo[a], self.lc[a]
+        return self.meta_dataset[d], self.lc[a]  # self.meta_algo[a], # fixme add in algo meta
 
     def __get_competitors__(self, item):
         # Consider: Creating the competitor set might be the bottleneck
