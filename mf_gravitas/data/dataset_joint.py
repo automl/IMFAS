@@ -34,9 +34,9 @@ class Dataset_Join(Dataset):
         if self.competitors > 0:
             competitors = self.__get_competitors__(item)
 
-            return (D_m, A_m, a_p), competitors
+            return (D_m, a_p), competitors  # fixme: algo meta features are diabled
         else:
-            return D_m, A_m, a_p, tuple()
+            return D_m, a_p, tuple()
 
     def __get_single__(self, item):
         # parse the index & allow it to fetch multiple vectors at once

@@ -1,11 +1,11 @@
 dataset_name: LCBench
 
 #TODO Change to relative
-dir_data: "../../../data"
+dir_data: ../../../data/
 extract: data_2k
 re_download: False
 reload_from_downloads: False # will override the '*subset' files
-enable: False # will skip
+enable: False
 
 selection:
   metric: final_test_cross_entropy
