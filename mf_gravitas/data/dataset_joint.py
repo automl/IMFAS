@@ -1,7 +1,5 @@
-from copy import deepcopy
 from random import randint
 
-import pandas as pd
 from torch.utils.data import Dataset
 
 
@@ -18,11 +16,17 @@ class Dataset_Join(Dataset):
         # fixme: this is brittle and depends on the lc.transformed_df format after the pipe!
         # it also assumes that meta_dataset & meta_algo have the exact same ordering
         self.dataset_names, self.algo_names = self.lc.columns, self.lc.index
-        self.multidex = deepcopy(lc.multidex)
-        self.multidex = self.multidex.set_levels([
-            list(range(len(self.dataset_names))),
-            list(range(len(self.algo_names)))
-        ])
+        # self.multidex = deepcopy(lc.multidex)
+        # self.multidex = self.multidex.set_levels([
+        #     list(range(len(self.dataset_names))),
+        #     list(range(len(self.algo_names)))
+        # ])
+        #
+
+        self.multidex = list(
+            (d, a)
+            for d in range(len(self.meta_dataset.transformed_df))
+            for a in range(len(self.meta_algo.transformed_df)))
 
         # be aware of row columns in:
         # self.lc.df[51].unstack().T
@@ -41,6 +45,7 @@ class Dataset_Join(Dataset):
 
     def __get_single__(self, item):
         # parse the index & allow it to fetch multiple vectors at once
+        print(item, 'there')
         d, a = self.multidex[item]
         # fixme: indexing depends on the transformations applied
         #  in particularly troubeling is lc, ince it is a time slice!
@@ -51,7 +56,14 @@ class Dataset_Join(Dataset):
         Fetch multiple items at once (output is like single, but with
         stacked tensors)
         """
-        d, a = zip(*self.multidex[items])
+        # d, a = zip(*self.multidex[items])
+
+        l = []
+        for i in items:
+            print(i, 'here', len(self.multidex))
+            l.append(self.multidex[i])
+        # l = [self.multidex[i] for i in items]
+        d, a = zip(*l)
         d, a = list(d), list(a)
         # fixme: indexing depends on the transformations applied
         #  in particularly troubeling is lc, ince it is a time slice!
@@ -64,7 +76,7 @@ class Dataset_Join(Dataset):
 
         # ensure, we will never hit the same item as competitor
         if len(competitors) != self.competitors:
-            while competitors:
+            while len(competitors) != self.competitors:
                 val = randint(0, self.__len__())
                 if val != item:
                     competitors.append(randint(0, self.__len__()))
@@ -72,7 +84,8 @@ class Dataset_Join(Dataset):
         return self.__get_multiple__(competitors)
 
     def __len__(self):
-        return len(self.multidex)
+        return len(self.meta_dataset.transformed_df) * len(self.meta_algo.transformed_df)
+        # len( self.multidex)
 
 
 class Dataset_Join_Split(Dataset_Join):
@@ -85,6 +98,15 @@ class Dataset_Join_Split(Dataset_Join):
         super(Dataset_Join_Split, self).__init__(*args, **kwargs)
         self.splitindex = splitindex
 
-        self.multidex = pd.MultiIndex.from_tuples(
-            [(d, a) for d, a in self.multidex if d in splitindex],
-            names=['dataset', 'algorithm'])
+        # self.multidex = pd.MultiIndex.from_tuples(
+        #     [(d, a) for d, a in self.multidex if d in splitindex],
+        #     names=['dataset', 'algorithm'])
+
+        self.multidex = list(
+            (d, a)
+            for d in self.splitindex
+            for a in range(len(self.meta_algo.transformed_df)))
+
+    def __len__(self):
+        return len(self.splitindex) * len(self.meta_algo.transformed_df)
+        # len( self.multidex)

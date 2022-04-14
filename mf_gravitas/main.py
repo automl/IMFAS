@@ -11,8 +11,8 @@ log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, \
-    Dataset_Join, Dataset_Join_Split
-from mf_gravitas.util import train_test_split
+    Dataset_Join
+from mf_gravitas.util import seed_everything
 
 
 # TODO debug flag to disable w&b & checkpointing.
@@ -27,6 +27,7 @@ def pipe_train(cfg: DictConfig) -> None:
     log.debug(str(cfg))
 
     # todo seeding
+    seed_everything(cfg.seed)
 
     # fixme: move data_dir to cfg!
     dir_data = pathlib.Path(cfg.dataset_raw.dir_data)
@@ -66,39 +67,50 @@ def pipe_train(cfg: DictConfig) -> None:
         competitors=2
     )
 
-    # train test split by dataset major
-    train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
-
-    train_set = Dataset_Join_Split(
-        meta_dataset=dataset_meta_features,
-        meta_algo=algorithm_meta_features,
-        lc=lc_dataset,
-        splitindex=train_split,
-        competitors=2,
-    )
-
-    test_set = Dataset_Join_Split(
-        meta_dataset=dataset_meta_features,
-        meta_algo=algorithm_meta_features,
-        lc=lc_dataset,
-        splitindex=test_split,
-        competitors=2,
-    )
-
-    # Dataloaders
-    train_loader = torch.utils.data.DataLoader(
-        train_set,
+    # fixme: remove this loader: only for debugging purposes!
+    joint_loader = torch.utils.data.DataLoader(
+        joint,
         batch_size=cfg.batch_size,
-        shuffle=True,
-        num_workers=2
+        shuffle=False,
+        num_workers=1
     )
 
-    test_loader = torch.utils.data.DataLoader(
-        test_set,
-        batch_size=cfg.batch_size,
-        shuffle=True,
-        num_workers=2
-    )
+    # for i, d in enumerate(joint_loader):
+    #     print(i)
+    #
+    # # train test split by dataset major
+    # train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
+    #
+    # train_set = Dataset_Join_Split(
+    #     meta_dataset=dataset_meta_features,
+    #     meta_algo=algorithm_meta_features,
+    #     lc=lc_dataset,
+    #     splitindex=train_split,
+    #     competitors=2,
+    # )
+    #
+    # test_set = Dataset_Join_Split(
+    #     meta_dataset=dataset_meta_features,
+    #     meta_algo=algorithm_meta_features,
+    #     lc=lc_dataset,
+    #     splitindex=test_split,
+    #     competitors=2,
+    # )
+    #
+    # # Dataloaders
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_set,
+    #     batch_size=cfg.batch_size,
+    #     shuffle=True,
+    #     num_workers=2
+    # )
+    #
+    # test_loader = torch.utils.data.DataLoader(
+    #     test_set,
+    #     batch_size=cfg.batch_size,
+    #     shuffle=True,
+    #     num_workers=2
+    # )
 
     # set hte number of algoritms and datasets
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
@@ -108,8 +120,8 @@ def pipe_train(cfg: DictConfig) -> None:
     model = instantiate(cfg.model.model)
 
     model.train_gravity(
-        train_loader,
-        test_loader,
+        joint_loader,
+        joint_loader,
         epochs=[100, 100],
         lr=0.001
     )
