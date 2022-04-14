@@ -1,7 +1,7 @@
 dataset_name: LCBench
 
 #TODO Change to relative
-dir_data: /home/ruhkopf/PycharmProjects/AlgoSelectionMF/data
+dir_data: "../../../data"
 extract: data_2k
 re_download: False
 reload_from_downloads: False # will override the '*subset' files
