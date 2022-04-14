@@ -76,7 +76,10 @@ def pipe_train(cfg: DictConfig) -> None:
     # create dataloader from it
 
     # instantiate model
-    # model = instantiate(cfg.model)
+    model = instantiate(cfg.model)
+    print(model.model)
+
+    
 
     # select device
 

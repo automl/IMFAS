@@ -6,20 +6,20 @@ import torch.nn as nn
 from tqdm import tqdm
 
 
-class ParticleGravityAutoencoder:
+
+class ParticleGravityAutoencoder(nn.Module):
     # TODO allow for algo meta features
     def __init__(
-            self,
-            input_dim: int = 10,
-            hidden_dims: List[int] = [8, 4],
-            embedding_dim: int = 2,
-            weights=[1.0, 1.0, 1.0, 1.0],
-            repellent_share=0.33,
-            n_algos=20,
-            device=None,
+        self,
+        input_dim: int = 10,
+        hidden_dims: List[int] = [8, 4],
+        embedding_dim: int = 2,
+        weights=[1.0, 1.0, 1.0, 1.0],
+        repellent_share=0.33,
+        n_algos=20,
+        device=None,
     ):
         """
-
         :param nodes: list of number of nodes from input to output
         :param weights: list of floats indicating the weights in the loss:
         reconstruction, algorithm pull towards datasets, data-similarity-attraction,
@@ -42,9 +42,7 @@ class ParticleGravityAutoencoder:
         # initialize the algorithms in embedding space
         self.n_algos = n_algos
         self.embedding_dim = self.latent_dim
-        self.Z_algo = nn.Parameter(
-            td.Uniform(-10, 10).sample([self.n_algos, self.embedding_dim])
-        )
+        self.Z_algo = nn.Parameter(td.Uniform(-10, 10).sample([self.n_algos, self.embedding_dim]))
 
         self._build_network()
         self.to(self.device)
@@ -117,29 +115,33 @@ class ParticleGravityAutoencoder:
         # batch similarity order + no_repellents
         no_comparisons = A1.shape[1]
         similarity_order_ind = torch.stack(
-            [torch.argsort(self.cossim(a0, a1)) for a0, a1 in zip(A0, A1)])
+            [torch.argsort(self.cossim(a0, a1)) for a0, a1 in zip(A0, A1)]
+        )
         no_repellent = int(no_comparisons * self.repellent_share)
 
         # find the repellent forces
         repellents = similarity_order_ind[:, :no_repellent]
         Z1_repellents = torch.stack([z1[r] for z1, r in zip(Z1_data, repellents)])
         A1_repellents = torch.stack([a1[r] for a1, r in zip(A1, repellents)])
-        mutual_weighted_dist = [(1 - self.cossim(a0, a1)) @ torch.linalg.norm((z0 - z1), dim=1)
-                                for z0, z1, a0, a1 in
-                                zip(Z0_data, Z1_repellents, A0, A1_repellents)]
+        mutual_weighted_dist = [
+            (1 - self.cossim(a0, a1)) @ torch.linalg.norm((z0 - z1), dim=1)
+            for z0, z1, a0, a1 in zip(Z0_data, Z1_repellents, A0, A1_repellents)
+        ]
         data_repellent = (len(Z1_data) * len(Z1_repellents[0])) ** -1 * sum(mutual_weighted_dist)
 
         # find the attracting forces
         attractors = similarity_order_ind[:, no_repellent:]
         Z1_attractors = torch.stack([z1[att] for z1, att in zip(Z1_data, attractors)])
         A1_attractors = torch.stack([a1[att] for a1, att in zip(A1, attractors)])
-        mutual_weighted_dist = [self.cossim(a0, a1) @ torch.linalg.norm((z0 - z1), dim=1)
-                                for z0, z1, a0, a1 in
-                                zip(Z0_data, Z1_attractors, A0, A1_attractors)]
+        mutual_weighted_dist = [
+            self.cossim(a0, a1) @ torch.linalg.norm((z0 - z1), dim=1)
+            for z0, z1, a0, a1 in zip(Z0_data, Z1_attractors, A0, A1_attractors)
+        ]
         data_attractor = (len(Z1_data) * len(Z1_attractors[0])) ** -1 * sum(mutual_weighted_dist)
 
-        return torch.stack([data_attractor, (-1) * data_repellent, reconstruction]) @ self.weights[
-                                                                                      :3]
+        return (
+            torch.stack([data_attractor, (-1) * data_repellent, reconstruction]) @ self.weights[:3]
+        )
 
     def _loss_algorithms(self, D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo):
         # Algorithm performance "gravity" towards dataset (D0: calcualted batchwise)
@@ -149,8 +151,9 @@ class ParticleGravityAutoencoder:
         # --> pull is normalized by batch size & number of algorithms
         # Fixme: make list comprehension more pytorch style by apropriate broadcasting
         # TODO use torch.cdist for distance matrix calculation!
-        dataset_algo_distance = [a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in
-                                 zip(Z0_data, A0)]
+        dataset_algo_distance = [
+            a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in zip(Z0_data, A0)
+        ]
         return (len(Z_algo) * len(Z0_data)) ** -1 * sum(dataset_algo_distance)
 
     def loss_gravity(self, D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo):
@@ -161,13 +164,11 @@ class ParticleGravityAutoencoder:
         b) ensure, that algorithms that perform good on datasets are drawn towards
         those datasets in embedding space.
         c) pull together datasets, if similar algorithms performed well on them.
-
         # Consider: use of squared/linear/learned exponential (based on full
         # prediction: top_k selection) algo performance for weighing?
         # Consider: that the 90% performance should also be part of the loss
         # this might allow to get a ranking immediately from the distances in
         # embedding space!
-
         :param D0: Dataset 0 meta features
         :param D0_fwd: autoencoder reconstruction of Dataset 0 meta features
         :param Z0_data: embedding of dataset 0 meta features
@@ -175,19 +176,20 @@ class ParticleGravityAutoencoder:
         :param A0: vector of algorithm performances on dataset 0
         :param A1: vector of algorithm performances on dataset 1
         :param Z_algo: algorithm embedding vector of same dim as Z_data
-
-
         :return: scalar.
         """
 
         algo_pull = self._loss_algorithms(D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo)
 
-        gravity = self._loss_datasets(
-            D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo)
+        gravity = self._loss_datasets(D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo)
 
-        return torch.stack([gravity, self.weights[-1] * algo_pull, ])
+        return torch.stack(
+            [
+                gravity,
+                self.weights[-1] * algo_pull,
+            ]
+        )
 
-    # TODO move the train schedules into separate class?
     def train_gravity(self, train_dataloader, test_dataloader, epochs, lr=0.001):
         """
         Two step training:
@@ -200,10 +202,10 @@ class ParticleGravityAutoencoder:
         :return:
         """
         name = self.__class__.__name__
-        print(f'\nPretraining {name} with reconstruction loss: ')
+        print(f"\nPretraining {name} with reconstruction loss: ")
         self._train(self._loss_reconstruction, train_dataloader, test_dataloader, epochs[0])
 
-        print(f'\nTraining {name} with gravity loss:')
+        print(f"\nTraining {name} with gravity loss:")
         return self._train(self.loss_gravity, train_dataloader, test_dataloader, epochs[1], lr=lr)
 
     def train_schedule(self, train_dataloader, test_dataloader, epochs=[100, 100, 100], lr=0.001):
@@ -212,20 +214,17 @@ class ParticleGravityAutoencoder:
 
         # pretrain
         name = self.__class__.__name__
-        print(f'\nPretraining {name} with reconstruction loss:')
+        print(f"\nPretraining {name} with reconstruction loss:")
         self._train(self._loss_reconstruction, train_dataloader, test_dataloader, epochs[0], lr)
 
         # train datasets
-        print(f'\nTraining {name} with dataset loss:')
+        print(f"\nTraining {name} with dataset loss:")
         self._train(self._loss_datasets, train_dataloader, test_dataloader, epochs[1], lr)
 
         # train algorithms
-        print(f'\nTraining {name} with algorithm:')
+        print(f"\nTraining {name} with algorithm:")
         return self._train(self._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
 
-    # TODO make class agnostic to the inputs - because dependending on the train schedule,
-    #  e.g. a sequential training procedure, the loss may not need all elements that the dataset
-    #  iter provides.
     def _train(self, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
         losses = []
         test_losses = []
@@ -279,7 +278,6 @@ class ParticleGravityAutoencoder:
     def predict_algorithms(self, D, topk):
         """
         Find the topk performing algorithm candidates.
-
         :param D: meta features of dataset D
         :param topk: number of candidate algorithms to return.
         :return: set of indicies representing likely good performing algorithms based on their
