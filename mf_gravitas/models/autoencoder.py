@@ -4,20 +4,19 @@ import torch
 import torch.distributions as td
 import torch.nn as nn
 from tqdm import tqdm
-import pdb
 
 
 class ParticleGravityAutoencoder(nn.Module):
     # TODO allow for algo meta features
     def __init__(
-        self,
-        input_dim: int = 10,
-        hidden_dims: List[int] = [8, 4],
-        embedding_dim: int = 2,
-        weights=[1.0, 1.0, 1.0, 1.0],
-        repellent_share=0.33,
-        n_algos=20,
-        device=None,
+            self,
+            input_dim: int = 10,
+            hidden_dims: List[int] = [8, 4],
+            embedding_dim: int = 2,
+            weights=[1.0, 1.0, 1.0, 1.0],
+            repellent_share=0.33,
+            n_algos=20,
+            device=None,
     ):
         """
         :param nodes: list of number of nodes from input to output
@@ -122,11 +121,16 @@ class ParticleGravityAutoencoder(nn.Module):
         # find the repellent forces
         repellents = similarity_order_ind[:, :no_repellent]
         Z1_repellents = torch.stack([z1[r] for z1, r in zip(Z1_data, repellents)])
+        print(Z1_repellents)
+        print(Z1_data)
+        print(A1.shape)
         A1_repellents = torch.stack([a1[r] for a1, r in zip(A1, repellents)])
         mutual_weighted_dist = [
             (1 - self.cossim(a0, a1)) @ torch.linalg.norm((z0 - z1), dim=1)
             for z0, z1, a0, a1 in zip(Z0_data, Z1_repellents, A0, A1_repellents)
         ]
+        # fixme: remove me:print
+        print('dimensions in loss_datasets', len(Z1_data), print(Z1_repellents[0]))
         data_repellent = (len(Z1_data) * len(Z1_repellents[0])) ** -1 * sum(mutual_weighted_dist)
 
         # find the attracting forces
@@ -139,9 +143,8 @@ class ParticleGravityAutoencoder(nn.Module):
         ]
         data_attractor = (len(Z1_data) * len(Z1_attractors[0])) ** -1 * sum(mutual_weighted_dist)
 
-        return (
-            torch.stack([data_attractor, (-1) * data_repellent, reconstruction]) @ self.weights[:3]
-        )
+        return (torch.stack([data_attractor, (-1) * data_repellent, reconstruction]) @
+                self.weights[:3])
 
     def _loss_algorithms(self, D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo):
         # Algorithm performance "gravity" towards dataset (D0: calcualted batchwise)
@@ -149,8 +152,9 @@ class ParticleGravityAutoencoder(nn.Module):
         # compute the distance between algos and D0 (batch) dataset in embedding space
         # and weigh the distances by the algorithm's performances
         # --> pull is normalized by batch size & number of algorithms
-        # Fixme: make list comprehension more pytorch style by apropriate broadcasting
+        # Fixme: make list comprehension more pytorch style by appropriate broadcasting
         # TODO use torch.cdist for distance matrix calculation!
+        print(A0[0].shape, Z0_data[0].shape)
         dataset_algo_distance = [
             a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in zip(Z0_data, A0)
         ]
@@ -233,7 +237,6 @@ class ParticleGravityAutoencoder(nn.Module):
         optimizer = torch.optim.Adam(self.parameters(), lr)
         for e in tqdm(range(epochs)):
             for i, data in enumerate(train_dataloader):
-                
                 # print(len(data[0]))
                 # print(len(data[1]))
                 # pdb.set_trace()

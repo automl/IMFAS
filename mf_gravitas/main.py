@@ -13,6 +13,7 @@ from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, \
     Dataset_Join, Dataset_Join_Split
 from mf_gravitas.util import seed_everything, train_test_split
+from torch.utils.data.dataloader import DataLoader
 
 
 # TODO debug flag to disable w&b & checkpointing.
@@ -26,7 +27,6 @@ def pipe_train(cfg: DictConfig) -> None:
     log.info("Hydra initialized a new config_raw")
     log.debug(str(cfg))
 
-    # todo seeding
     seed_everything(cfg.seed)
 
     # fixme: move data_dir to cfg!
@@ -110,24 +110,31 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
     # set hte number of algoritms and datasets
+    # fixme: move me to config!
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.n_algos = len(algorithm_meta_features)
     print(cfg.model.model)
 
     model = instantiate(cfg.model.model)
 
-    model.train_gravity(
+    # select device
+    model.train_schedule(
         train_loader,
         test_loader,
-        epochs=[100, 100],
+        epochs=[1, 1, 1],
         lr=0.001
     )
 
-    # select device
+    # model.train_gravity(
+    #     train_loader,
+    #     test_loader,
+    #     epochs=[1, 100],
+    #     lr=0.001
+    # )
 
-    # train model call
+    print()
 
-    # checkpoint model into output/date/time/ folder
+    # TODO checkpoint model into output/date/time/ folder
 
     # evaluation model
     # test loader must be queried by the model.

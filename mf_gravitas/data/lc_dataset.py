@@ -8,6 +8,7 @@ class Dataset_LC(Dataset):
     def __init__(self, path, metric, transforms):
         self.df = pd.read_hdf(path, mode='r')
         self.df = self.df.xs(key=metric)
+
         # consider: is this possible by read in? - to reduce memory overhead
 
         self.multidex = self.df.index
@@ -15,9 +16,11 @@ class Dataset_LC(Dataset):
 
         if transforms is not None:
             if transforms.fitted:
-                self.transformed_df = self.transforms.transform(self.df)
+                self.transformed_df = self.transforms.transform(self.df).T
             else:
-                self.transformed_df = self.transforms.fit(self.df)
+                self.transformed_df = self.transforms.fit(self.df).T
+            self.df = self.df[51].unstack().T  # transform the df appropriately
+            # self.transformed_df = self.transformed_df
 
             # for getitem;
             last_time_slice = [trans for trans in self.transforms

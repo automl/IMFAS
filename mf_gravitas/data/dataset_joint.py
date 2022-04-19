@@ -70,7 +70,7 @@ class Dataset_Join(Dataset):
         d, a = list(d), list(a)
         # fixme: indexing depends on the transformations applied
         #  in particularly troubling is lc, since it is a time slice!
-        return self.meta_dataset[d], self.lc[a]  # self.meta_algo[a], # fixme add in algo meta
+        return self.meta_dataset[d], self.lc[d]  # self.meta_algo[a], # fixme add in algo meta
 
     def __get_competitors__(self, item):
         # Consider: Creating the competitor set might be the bottleneck
@@ -109,7 +109,7 @@ class Dataset_Join_Split(Dataset_Join):
         self.multidex = list(
             (d, a)
             for d in self.splitindex
-            for a in range(len(self.meta_algo.transformed_df)))
+            for a in range(len(self.meta_dataset)))  # range(len(self.meta_algo.transformed_df)))
 
     def __len__(self):
-        return len(self.splitindex) * len(self.meta_algo.transformed_df)
+        return len(self.splitindex) * len(self.meta_dataset)
