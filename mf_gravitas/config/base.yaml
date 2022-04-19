@@ -2,6 +2,7 @@ defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
   - model: autoencoder
+  - evaluation: optimal_rankings
   - _self_ # at the end means overriding values of lower yaml here!
 #  - training: freeze # move default behaviour here?
 

@@ -5,7 +5,6 @@ import torch.distributions as td
 import torch.nn as nn
 from tqdm import tqdm
 
-import pdb
 
 class ParticleGravityAutoencoder(nn.Module):
     # TODO allow for algo meta features
@@ -121,15 +120,15 @@ class ParticleGravityAutoencoder(nn.Module):
 
         # find the repellent forces
         repellents = similarity_order_ind[:, :no_repellent]
+
         Z1_repellents = torch.stack([z1[r] for z1, r in zip(Z1_data, repellents)])
-        
+
         # NOTE Producing Nans
         A1_repellents = torch.stack([a1[r] for a1, r in zip(A1, repellents)])
         mutual_weighted_dist = [
             (1 - self.cossim(a0, a1)) @ torch.linalg.norm((z0 - z1), dim=1)
             for z0, z1, a0, a1 in zip(Z0_data, Z1_repellents, A0, A1_repellents)
         ]
- 
 
         data_repellent = (len(Z1_data) * len(Z1_repellents[0])) ** -1 * sum(mutual_weighted_dist)
 
@@ -154,17 +153,16 @@ class ParticleGravityAutoencoder(nn.Module):
         # --> pull is normalized by batch size & number of algorithms
         # Fixme: make list comprehension more pytorch style by appropriate broadcasting
         # TODO use torch.cdist for distance matrix calculation!
-        
-        
+
         '''
             Intended Psuedocode
             ----------------------------------------------------
-            
+
             Z0_data -> dataset embeddings in a batch ( batch_size x latent_dim)
             Z_algo -> all the algorithm embeddings ( n_algos x latent_dim)
             A0 -> algorithm performances in a batch ( batch_size x n_algos)
 
-            
+
             norms = []
             for z in Z0_data:
                 temp = []
@@ -178,7 +176,7 @@ class ParticleGravityAutoencoder(nn.Module):
             norms.shape == (batch_size, n_algos)
 
 
-            # We want to weigh the distances 
+            # We want to weigh the distances
             cross = []
 
             for a, norm in zip(A0, norms):
@@ -193,7 +191,7 @@ class ParticleGravityAutoencoder(nn.Module):
         # print(f'A0.shape -> {A0.shape}')
 
         # print(A0[0].shape, Z0_data[0].shape)
-        
+
         dataset_algo_distance = [
             a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in zip(Z0_data, A0)
         ]

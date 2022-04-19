@@ -11,11 +11,11 @@ log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, \
-    Dataset_Join, Dataset_Join_Split
+    Dataset_Join_Split
 from mf_gravitas.util import seed_everything, train_test_split
+from mf_gravitas.evaluation.optimal_rankings import ZeroShotOptimalDistance
 from torch.utils.data.dataloader import DataLoader
 
-import pdb
 
 # TODO debug flag to disable w&b & checkpointing.
 
@@ -60,7 +60,6 @@ def pipe_train(cfg: DictConfig) -> None:
         metric=cfg.dataset.lc_metric
     )
 
-
     # # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
 
@@ -104,26 +103,32 @@ def pipe_train(cfg: DictConfig) -> None:
     model = instantiate(cfg.model.model)
 
     # select device
-    # model.train_schedule(
-    #     train_loader,
-    #     test_loader,
-    #     epochs=[1, 1, 1],
-    #     lr=0.001
-    # )
-
-    model.train_gravity(
+    model.train_schedule(
         train_loader,
         test_loader,
-        epochs=[1, 100],
+        epochs=[1, 1, 1],
         lr=0.001
     )
+
+    # model.train_gravity(
+    #     train_loader,
+    #     test_loader,
+    #     epochs=[1, 100],
+    #     lr=0.001
+    # )
 
     print()
 
     # TODO checkpoint model into output/date/time/ folder
 
     # evaluation model
-    # test loader must be queried by the model.
+    # fixme: move this to config and instantiate
+    evaluator = ZeroShotOptimalDistance(
+        model,
+        ranking_loss=cfg.evaluation.ranking_loss
+    )
+
+    return evaluator.forward(train_set, steps=cfg.evaluation.steps)
 
 
 if __name__ == '__main__':
