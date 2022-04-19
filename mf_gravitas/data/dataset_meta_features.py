@@ -11,6 +11,9 @@ class DatasetMetaFeatures(Dataset):
         self.transform = transforms
 
         self.df = pd.read_csv(path, *args, **kwargs)
+
+        self.df.fillna(0, inplace=True)
+
         self.names = list(self.df.index)
 
         if transforms is not None:

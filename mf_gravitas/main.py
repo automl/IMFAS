@@ -15,6 +15,7 @@ from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset
 from mf_gravitas.util import seed_everything, train_test_split
 from torch.utils.data.dataloader import DataLoader
 
+import pdb
 
 # TODO debug flag to disable w&b & checkpointing.
 
@@ -58,6 +59,14 @@ def pipe_train(cfg: DictConfig) -> None:
         transforms=instantiate(cfg.dataset.learning_curves),
         metric=cfg.dataset.lc_metric
     )
+
+
+    #TODO: add transforms to the dataset to sift outt he NaN values
+
+    # print(dataset_meta_features.df.fillna(0, inplace=True))
+    # print(dataset_meta_features.df.isnull().values.any())
+
+    # pdb.set_trace()
 
     # sync the datasets
     joint = Dataset_Join(
@@ -109,8 +118,8 @@ def pipe_train(cfg: DictConfig) -> None:
         num_workers=2
     )
 
-    # set hte number of algoritms and datasets
-    # fixme: move me to config!
+    # set the number of algoritms and datasets
+    # FIXME: move me to config!
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.n_algos = len(algorithm_meta_features)
     print(cfg.model.model)

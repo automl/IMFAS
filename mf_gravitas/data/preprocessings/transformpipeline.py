@@ -1,6 +1,5 @@
 import torch.nn as nn
 
-
 class TransformPipeline(nn.Sequential):
     def __init__(self, modulelist: list):
         super(TransformPipeline, self).__init__(*modulelist)
