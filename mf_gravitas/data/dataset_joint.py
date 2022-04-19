@@ -23,11 +23,13 @@ class Dataset_Join(Dataset):
         # ])
         #
 
+        # This index is useful with
         self.multidex = list(
             (d, a)
             for d in range(len(self.meta_dataset.transformed_df))
             for a in range(len(self.meta_algo.transformed_df)))
 
+        print('len multidex: ', len(self.multidex))
         # be aware of row columns in:
         # self.lc.df[51].unstack().T
 
@@ -45,7 +47,6 @@ class Dataset_Join(Dataset):
 
     def __get_single__(self, item):
         # parse the index & allow it to fetch multiple vectors at once
-        print(item, 'there')
         d, a = self.multidex[item]
         # fixme: indexing depends on the transformations applied
         #  in particularly troubeling is lc, ince it is a time slice!
@@ -56,13 +57,11 @@ class Dataset_Join(Dataset):
         Fetch multiple items at once (output is like single, but with
         stacked tensors)
         """
+        # Consider using this when moving from LC Slice to LC
         # d, a = zip(*self.multidex[items])
 
-        l = []
-        for i in items:
-            print(i, 'here', len(self.multidex))
-            l.append(self.multidex[i])
-        # l = [self.multidex[i] for i in items]
+        # LC Slice style
+        l = [self.multidex[i - 1] for i in items]
         d, a = zip(*l)
         d, a = list(d), list(a)
         # fixme: indexing depends on the transformations applied
@@ -98,10 +97,12 @@ class Dataset_Join_Split(Dataset_Join):
         super(Dataset_Join_Split, self).__init__(*args, **kwargs)
         self.splitindex = splitindex
 
+        # Consider using this, when switching LC slice or LC!
         # self.multidex = pd.MultiIndex.from_tuples(
         #     [(d, a) for d, a in self.multidex if d in splitindex],
         #     names=['dataset', 'algorithm'])
 
+        # This index is useful with
         self.multidex = list(
             (d, a)
             for d in self.splitindex
