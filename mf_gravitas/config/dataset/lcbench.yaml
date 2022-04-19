@@ -7,12 +7,14 @@ dataset_meta_features:
   _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
   # path: some/path - we might want to automate and structure it
   modulelist:
+    - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
     - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
 
 algo_meta_features:
   _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
   # path: some/path - we might want to automate and structure it
   modulelist:
+    - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
     - _target_: mf_gravitas.data.preprocessings.table_transforms.Drop
       columns:
         # Irrelevant features (they are constant all across)

@@ -296,7 +296,7 @@ class ParticleGravityAutoencoder(nn.Module):
                 loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, self.Z_algo)
 
                 # gradient step
-                loss.backward()
+                loss.sum().backward()
                 optimizer.step()
                 # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
