@@ -16,6 +16,8 @@ class Dataset_Join(Dataset):
         # fixme: this is brittle and depends on the lc.transformed_df format after the pipe!
         # it also assumes that meta_dataset & meta_algo have the exact same ordering
         self.dataset_names, self.algo_names = self.lc.columns, self.lc.index
+
+        # LC Style
         # self.multidex = deepcopy(lc.multidex)
         # self.multidex = self.multidex.set_levels([
         #     list(range(len(self.dataset_names))),
@@ -23,6 +25,7 @@ class Dataset_Join(Dataset):
         # ])
         #
 
+        # LC Slice Style
         # This index is useful with
         self.multidex = list(
             (d, a)
@@ -45,7 +48,6 @@ class Dataset_Join(Dataset):
             return (D_m, a_p), (None, None)
 
     def __get_single__(self, item):
-        # parse the index & allow it to fetch multiple vectors at once
         d, a = self.multidex[item]
         # fixme: indexing depends on the transformations applied
         #  in particularly troubling is lc, since it is a time slice!
@@ -56,18 +58,18 @@ class Dataset_Join(Dataset):
         Fetch multiple items at once (output is like single, but with
         stacked tensors)
         """
-        # Consider using this when moving from LC Slice to LC
-
+        # parse the index & allow it to fetch multiple vectors at once
         # LC Slice style
         l = [self.multidex[i - 1] for i in items]
         d, a = zip(*l)
 
+        # Consider using this when moving from LC Slice to LC
         # LC Style
         # d, a = zip(*self.multidex[items])
 
         d, a = list(d), list(a)
         # fixme: indexing depends on the transformations applied
-        #  in particularly troubeling is lc, ince it is a time slice!
+        #  in particularly troubling is lc, since it is a time slice!
         return self.meta_dataset[d], self.lc[a]  # self.meta_algo[a], # fixme add in algo meta
 
     def __get_competitors__(self, item):
@@ -111,4 +113,3 @@ class Dataset_Join_Split(Dataset_Join):
 
     def __len__(self):
         return len(self.splitindex) * len(self.meta_algo.transformed_df)
-        # len( self.multidex)
