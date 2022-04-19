@@ -61,29 +61,6 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
 
-    #TODO: add transforms to the dataset to sift outt he NaN values
-
-    # print(dataset_meta_features.df.fillna(0, inplace=True))
-    # print(dataset_meta_features.df.isnull().values.any())
-
-    # pdb.set_trace()
-
-    # sync the datasets
-    joint = Dataset_Join(
-        dataset_meta_features,
-        algorithm_meta_features,
-        lc_dataset,
-        competitors=2
-    )
-
-    # fixme: remove this loader: only for debugging purposes!
-    # joint_loader = torch.utils.data.DataLoader(
-    #     joint,
-    #     batch_size=cfg.batch_size,
-    #     shuffle=False,
-    #     num_workers=1
-    # )
-
     # # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
 
@@ -127,19 +104,19 @@ def pipe_train(cfg: DictConfig) -> None:
     model = instantiate(cfg.model.model)
 
     # select device
-    model.train_schedule(
-        train_loader,
-        test_loader,
-        epochs=[1, 1, 1],
-        lr=0.001
-    )
-
-    # model.train_gravity(
+    # model.train_schedule(
     #     train_loader,
     #     test_loader,
-    #     epochs=[1, 100],
+    #     epochs=[1, 1, 1],
     #     lr=0.001
     # )
+
+    model.train_gravity(
+        train_loader,
+        test_loader,
+        epochs=[1, 100],
+        lr=0.001
+    )
 
     print()
 
