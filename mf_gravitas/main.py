@@ -103,19 +103,19 @@ def pipe_train(cfg: DictConfig) -> None:
     model = instantiate(cfg.model.model)
 
     # select device
-    # model.train_schedule(
-    #     train_loader,
-    #     test_loader,
-    #     epochs=[1, 1, 1],
-    #     lr=0.001
-    # )
-
-    model.train_gravity(
+    model.train_schedule(
         train_loader,
         test_loader,
-        epochs=[1, 1],
+        epochs=[1, 1, 1],
         lr=0.001
     )
+
+    # model.train_gravity(
+    #     train_loader,
+    #     test_loader,
+    #     epochs=[1, 1],
+    #     lr=0.001
+    # )
 
     print()
 

@@ -36,7 +36,10 @@ class ZeroShotOptimalDistance:
         self._compare_rankings(cuboid_rankings, modelrankings, A0_full)
 
     def encode_loader(self):
-        # preallocate & gather all the embeddings for the dataset at hand
+        """
+        Pre-allocate & gather all the embeddings for the dataset at hand
+        """
+
         # TODO Use this process to calculate the E-MSE as separate class!
         n = len(self.dataset_meta_features)
 
@@ -64,7 +67,7 @@ class ZeroShotOptimalDistance:
         To calculate the distances exhaustively, we need to find the cuboid
         bounds we would like to sample in
         """
-        # Consider: could we use the algo vectors as bounds?
+        # NOTE: could we use the algo vectors as bounds?
 
         # find the bounds of the cuboid
         # (columnwise min & max)
