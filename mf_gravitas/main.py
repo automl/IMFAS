@@ -128,7 +128,9 @@ def pipe_train(cfg: DictConfig) -> None:
         ranking_loss=cfg.evaluation.ranking_loss
     )
 
-    return evaluator.forward(train_set, steps=cfg.evaluation.steps)
+    # dataset_meta_features
+    # fixme: make sure to have a train test split here
+    return evaluator.forward(dataset_meta_features, lc_dataset, steps=cfg.evaluation.steps)
 
 
 if __name__ == '__main__':
