@@ -4,7 +4,8 @@ import pathlib
 import hydra
 import torch
 from hydra.utils import instantiate
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
+from hydra.core.hydra_config import HydraConfig
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -15,12 +16,35 @@ from mf_gravitas.util import seed_everything, train_test_split
 from mf_gravitas.evaluation.optimal_rankings import ZeroShotOptimalDistance
 from torch.utils.data.dataloader import DataLoader
 
+import wandb
+import os 
 
-# TODO debug flag to disable w&b & checkpointing.
+import pdb
 
+base_dir = os.getcwd()
 
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
+    dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
+    hydra_cfg = HydraConfig.get()
+    # print(hydra_cfg)
+    
+
+    wandb.init(
+        mode="offline" if cfg.debug else None,
+        project="gravitas",
+        entity="tnt",
+        group=cfg.group,
+        dir=os.getcwd(),
+        config=dict_cfg,
+    )
+
+    pdb.set_trace()
+
+
+
+   
+    
     orig_cwd = hydra.utils.get_original_cwd()
 
     # logging TODO add logging to each step of the way.
