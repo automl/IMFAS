@@ -224,12 +224,14 @@ class ParticleGravityAutoencoder(nn.Module):
 
         gravity = self._loss_datasets(D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo)
 
+
+
         return torch.stack(
             [
                 gravity,
                 self.weights[-1] * algo_pull,
             ]
-        )
+        ).sum()
 
     def train_gravity(self, train_dataloader, test_dataloader, epochs, lr=0.001):
         """
@@ -296,7 +298,7 @@ class ParticleGravityAutoencoder(nn.Module):
                 loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, self.Z_algo)
 
                 # gradient step
-                loss.sum().backward()
+                loss.backward()
                 optimizer.step()
                 # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
