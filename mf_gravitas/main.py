@@ -92,7 +92,7 @@ def pipe_train(cfg: DictConfig) -> None:
     model.train_schedule(
         train_loader,
         test_loader,
-        epochs=[1, 1, 1],
+        epochs=[5, 5, 5],
         lr=0.001
     )
 
@@ -111,11 +111,13 @@ def pipe_train(cfg: DictConfig) -> None:
         model,
         ranking_loss=cfg.evaluation.ranking_loss
     )
-    return evaluator.forward(
+    counts =  evaluator.forward(
         dataset_meta_features[test_split],
         final_performances=lc_dataset[test_split],
         steps=cfg.evaluation.steps)
 
+    print(counts)
+
 
 if __name__ == '__main__':
-    pipe_train()
+   pipe_train()
