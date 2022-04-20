@@ -32,7 +32,8 @@ class ZeroShotOptimalDistance:
 
         model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
-        self._compare_rankings(cuboid_scores, model_scores, self.final_performances)
+        return self._compare_rankings(cuboid_scores, model_scores, self.final_performances)
+
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
