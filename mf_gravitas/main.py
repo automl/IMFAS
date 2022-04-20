@@ -131,7 +131,8 @@ def pipe_train(cfg: DictConfig) -> None:
     # dataset_meta_features
     # fixme: make sure to have a train test split here
     test_split
-    return evaluator.forward(dataset_meta_features, lc_dataset, steps=cfg.evaluation.steps)
+    counts = evaluator.forward(dataset_meta_features, lc_dataset, steps=cfg.evaluation.steps)
+    print(counts)
 
 
 if __name__ == '__main__':
