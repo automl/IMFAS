@@ -117,8 +117,6 @@ def pipe_train(cfg: DictConfig) -> None:
     #     lr=0.001
     # )
 
-    print()
-
     # TODO checkpoint model into output/date/time/ folder
 
     # evaluation model
@@ -127,11 +125,10 @@ def pipe_train(cfg: DictConfig) -> None:
         model,
         ranking_loss=cfg.evaluation.ranking_loss
     )
-
-    # dataset_meta_features
-    # fixme: make sure to have a train test split here
-    test_split
-    return evaluator.forward(dataset_meta_features, lc_dataset, steps=cfg.evaluation.steps)
+    return evaluator.forward(
+        dataset_meta_features[test_split],
+        final_performances=lc_dataset[test_split],
+        steps=cfg.evaluation.steps)
 
 
 if __name__ == '__main__':

@@ -19,25 +19,26 @@ class ZeroShotOptimalDistance:
         self.batch = 20  # TODO unfix here!
         self.scaler = MinMaxScaler()
 
-    def forward(self, dataset_meta_features: DatasetMetaFeatures, lc_dataset, steps):
+    def forward(self, dataset_meta_features: DatasetMetaFeatures, final_performances, steps):
         """
         Defining the evaluation protocol. Since ZeroShotOptimalDistance
         is a static method, forward does not depend on some running meth
         """
         self.dataset_meta_features = dataset_meta_features
-        self.lc_dataset = lc_dataset
+        self.final_performances = final_performances
 
-        A0_full = self.lc_dataset.transformed_df
-        self.n_algos = len(self.lc_dataset)
+        self.n_algos = len(self.final_performances[0])
+        self.n_datas = len(self.dataset_meta_features)
+
         model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
-        self._compare_rankings(cuboid_scores, model_scores, A0_full)
+        self._compare_rankings(cuboid_scores, model_scores, self.final_performances)
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
         self.model.eval()
         with torch.no_grad():
-            model_embedding = self.model.encode(self.dataset_meta_features.transformed_df)
+            model_embedding = self.model.encode(self.dataset_meta_features)
             self.cuboid_dims = self._get_bounds(model_embedding)
             dist_mat = torch.cdist(model_embedding, self.model.Z_algo)
 
