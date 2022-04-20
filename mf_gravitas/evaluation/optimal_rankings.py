@@ -26,12 +26,6 @@ class ZeroShotOptimalDistance:
 
         self.dataset_meta_features = dataset_meta_features
         self.lc_dataset = lc_dataset
-        self.loader = torch.utils.data.DataLoader(
-            self.dataset_meta_features,
-            batch_size=self.batch,  # Since we are only encode on the model we can crank this up
-            shuffle=False,  # important to see where it is going wrong
-            num_workers=2
-        )
 
         A0_full = self.lc_dataset.transformed_df
         self.dataset_meta_features
@@ -42,26 +36,7 @@ class ZeroShotOptimalDistance:
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
-
-        n = len(self.dataset_meta_features)
-
-        model_embedding = torch.zeros((n, self.model.latent_dim))
-        # scores = torch.zeros((n, self.n_algos))
-        A0_full = torch.zeros((n, self.n_algos))
-        for i, data in enumerate(self.loader):
-            (D0, A0), _ = data
-
-            # D0 = D0.to(self.device) , .....
-            D0.to(self.model.device)
-            A0_full[i:(i + self.batch)] = A0
-
-            # predict the rankings of that point
-            model_embedding[i:(i + self.batch)] = self.model.encode(D0)
-
-            # calculate the model's rankings
-            # consider reusing computation here!
-            # scores[i:(i + self.batch)] = self.model.predict_algorithms(D0, topk=self.n_algos)
-
+        model_embedding = self.model.encode(self.dataset_meta_features.transformed_df)
         self.cuboid_dims = self._get_bounds(model_embedding)
         dist_mat = torch.cdist(model_embedding, self.model.Z_algo)
 
