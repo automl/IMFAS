@@ -124,10 +124,10 @@ class ZeroShotOptimalDistance:
         :param scores: tensor for all score vectors for all dataset points (from loader)
         :param A0: tensor: algorithm performances.
 
-        :return:
+        :return:torch.Tensor: count of how many better solutions are there for
+        each dataset.
         """
         from hydra.utils import call
-        from joblib import Parallel
 
         _, true_rankings = torch.topk(A0, largest=True, k=self.n_algos)
 
@@ -145,27 +145,25 @@ class ZeroShotOptimalDistance:
         for i, (truth, predicted) in enumerate(zip(
                 true_rankings.reshape(newshape).detach().numpy(),
                 model_scores.reshape(newshape_predicted))):
-            # fixme: move reshape into zip
             model_ndcg[i] = call(
                 self.ranking_loss, truth, predicted)
 
         # get the ranking ndcg against ground truth for each value
         cuboid_ndcg = torch.zeros((len(true_rankings), len(cuboid_scores)))
         newshape_cuboid = cuboid_scores.shape[0], -1, cuboid_scores.shape[1]
+        # from joblib import Parallel
         # Parallel(n_jobs=2)(delayed(sqrt)(i ** 2) for i in range(10))
-        Parallel  # TODO: optimize this loop, because it is very slow
-
+        # Parallel  # TODO: optimize this loop, because it is very slow
         for t, truth in enumerate(true_rankings.reshape(newshape).detach().numpy()):
             for g, grid_point in enumerate(cuboid_scores.reshape(newshape_cuboid)):
-                # fixme: move reshape into zip
                 cuboid_ndcg[t, g] = call(
                     self.ranking_loss, truth, grid_point)
 
-        # find if there is any better ndcg score for that dataset
-        for i, datapoint in enumerate(model_ndcg):
-            print()
+        # find if there is any better ndcg score for that dataset and how many
+        counts = torch.zeros(len(model_ndcg))
+        for i, datapoint_ndcg in enumerate(model_ndcg):
+            counts[i] = sum(cuboid_ndcg[i] > datapoint_ndcg)
 
-        # afterwards compute for the cuboid-groundtruth loss for each datasetpoint
+            # Consider: based on this we can actually select the targets for our m-shot
 
-        # check if there is at lest one dataset point in the cuboid which is closer to the truth
-        return self.ranking_loss(truth, predicted)
+        return counts
