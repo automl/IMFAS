@@ -25,6 +25,7 @@ class ZeroShotOptimalDistance:
         """
 
         self.dataset_meta_features = dataset_meta_features
+        self.lc_dataset = lc_dataset
         self.loader = torch.utils.data.DataLoader(
             self.dataset_meta_features,
             batch_size=self.batch,  # Since we are only encode on the model we can crank this up
@@ -32,10 +33,10 @@ class ZeroShotOptimalDistance:
             num_workers=2
         )
 
-        self.lc_dataset
+        A0_full = self.lc_dataset.transformed_df
         self.dataset_meta_features
-        self.n_algos = len(self.loader.dataset.algo_names)
-        A0_full, model_dist = self.encode_loader()
+        self.n_algos = len(self.lc_dataset)
+        model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
         self._compare_rankings(cuboid_scores, model_scores, A0_full)
 
@@ -64,7 +65,7 @@ class ZeroShotOptimalDistance:
         self.cuboid_dims = self._get_bounds(model_embedding)
         dist_mat = torch.cdist(model_embedding, self.model.Z_algo)
 
-        return A0_full, dist_mat
+        return dist_mat
 
     def _get_bounds(self, model_embedding):
         """
@@ -126,7 +127,7 @@ class ZeroShotOptimalDistance:
         :return:
         """
         from hydra.utils import call
-        from joblib import Parallel, delayed
+        from joblib import Parallel
 
         _, true_rankings = torch.topk(A0, largest=True, k=self.n_algos)
 
@@ -154,27 +155,14 @@ class ZeroShotOptimalDistance:
         # Parallel(n_jobs=2)(delayed(sqrt)(i ** 2) for i in range(10))
         Parallel  # TODO: optimize this loop, because it is very slow
 
-        # for t, truth in enumerate(true_rankings.reshape(newshape).detach().numpy()):
-        #     for g, grid_point in enumerate(cuboid_scores.reshape(newshape_cuboid)):
-        #         # fixme: move reshape into zip
-        #         cuboid_ndcg[t, g] = call(
-        #             self.ranking_loss, truth, grid_point)
-
-        def eval_grid_points(truth, cuboid_scores):
-            tmp = torch.zeros(len(cuboid_scores))
-            for g, grid_point in enumerate(cuboid_scores):
+        for t, truth in enumerate(true_rankings.reshape(newshape).detach().numpy()):
+            for g, grid_point in enumerate(cuboid_scores.reshape(newshape_cuboid)):
                 # fixme: move reshape into zip
-                tmp[g] = call(self.ranking_loss, truth, grid_point)
-            return tmp
-
-        cuboid_scores.reshape(newshape_cuboid)
-        cuboid_ndcg = Parallel(n_jobs=-1)(
-            delayed(eval_grid_points)(node, cuboid_scores[i])
-            for i, node in enumerate(true_rankings.reshape(newshape).detach().numpy())
-        )
+                cuboid_ndcg[t, g] = call(
+                    self.ranking_loss, truth, grid_point)
 
         # find if there is any better ndcg score for that dataset
-        for datapoint in model_ndcg:
+        for i, datapoint in enumerate(model_ndcg):
             print()
 
         # afterwards compute for the cuboid-groundtruth loss for each datasetpoint
