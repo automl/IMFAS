@@ -7,6 +7,7 @@ each of these points (using the model's rank prediction module)
 
 import torch
 from sklearn.preprocessing import MinMaxScaler
+from tqdm import tqdm
 
 from mf_gravitas.data import DatasetMetaFeatures
 
@@ -23,12 +24,10 @@ class ZeroShotOptimalDistance:
         Defining the evaluation protocol. Since ZeroShotOptimalDistance
         is a static method, forward does not depend on some running meth
         """
-
         self.dataset_meta_features = dataset_meta_features
         self.lc_dataset = lc_dataset
 
         A0_full = self.lc_dataset.transformed_df
-        self.dataset_meta_features
         self.n_algos = len(self.lc_dataset)
         model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
@@ -36,9 +35,11 @@ class ZeroShotOptimalDistance:
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
-        model_embedding = self.model.encode(self.dataset_meta_features.transformed_df)
-        self.cuboid_dims = self._get_bounds(model_embedding)
-        dist_mat = torch.cdist(model_embedding, self.model.Z_algo)
+        self.model.eval()
+        with torch.no_grad():
+            model_embedding = self.model.encode(self.dataset_meta_features.transformed_df)
+            self.cuboid_dims = self._get_bounds(model_embedding)
+            dist_mat = torch.cdist(model_embedding, self.model.Z_algo)
 
         return dist_mat
 
@@ -71,8 +72,6 @@ class ZeroShotOptimalDistance:
             # TODO check carefully if stacking is done as expected
             cuboid = torch.stack(latent_coords, dim=-1).reshape((-1, 2))
 
-            # TODO to device?
-
             #  calc the rankings for each grid point (relative to the model's algorithm vector
             #  instantiations
             dist_mat = torch.cdist(cuboid, self.model.Z_algo)
@@ -86,7 +85,6 @@ class ZeroShotOptimalDistance:
 
             # scores for ndcg@k loss
             cuboid_scores = self.scaler.fit_transform(dist_mat)
-
             model_scores = self.scaler.transform(model_dist)
 
         return cuboid_scores, model_scores
@@ -129,7 +127,7 @@ class ZeroShotOptimalDistance:
         # from joblib import Parallel
         # Parallel(n_jobs=2)(delayed(sqrt)(i ** 2) for i in range(10))
         # Parallel  # TODO: optimize this loop, because it is very slow
-        for t, truth in enumerate(true_rankings.reshape(newshape).detach().numpy()):
+        for t, truth in tqdm(enumerate(true_rankings.reshape(newshape).detach().numpy())):
             for g, grid_point in enumerate(cuboid_scores.reshape(newshape_cuboid)):
                 cuboid_ndcg[t, g] = call(
                     self.ranking_loss, truth, grid_point)
