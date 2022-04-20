@@ -10,8 +10,7 @@ from omegaconf import DictConfig
 log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
-from mf_gravitas.data import DatasetMetaFeatures, AlgorithmMetaFeatures, Dataset_LC, \
-    Dataset_Join_Split
+from mf_gravitas.data import Dataset_Join_Split
 from mf_gravitas.util import seed_everything, train_test_split
 from mf_gravitas.evaluation.optimal_rankings import ZeroShotOptimalDistance
 from torch.utils.data.dataloader import DataLoader
@@ -41,24 +40,9 @@ def pipe_train(cfg: DictConfig) -> None:
         main_raw(cfg.dataset_raw)
 
     # read in the data
-    # fixme: move instantiation & join to lcbench.yaml
-    algorithm_meta_features = AlgorithmMetaFeatures(
-        path=dir_dataset_raw / 'config_subset.csv',
-        transforms=instantiate(cfg.dataset.algo_meta_features),
-        index_col=0
-    )
-
-    dataset_meta_features = DatasetMetaFeatures(
-        path=dir_dataset_raw / 'meta_features.csv',
-        transforms=instantiate(cfg.dataset.dataset_meta_features),
-        index_col=0
-    )
-
-    lc_dataset = Dataset_LC(
-        path=dir_dataset_raw / 'logs_subset.h5',
-        transforms=instantiate(cfg.dataset.learning_curves),
-        metric=cfg.dataset.lc_metric
-    )
+    algorithm_meta_features = instantiate(cfg.dataset.algo_meta_features)
+    dataset_meta_features = instantiate(cfg.dataset.dataset_meta_features)
+    lc_dataset = instantiate(cfg.dataset.learning_curves)
 
     # # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
@@ -95,14 +79,16 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
     # set the number of algoritms and datasets
-    # FIXME: move me to config!
+    # to make the number of datasets_meta features & n_algos dependent on the
+    # used preprocessing, we need to update the config
+    # FIXME: make this available to w&b after the update!
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.n_algos = len(algorithm_meta_features)
     print(cfg.model.model)
 
     model = instantiate(cfg.model.model)
 
-    # select device
+    # todo select device
     model.train_schedule(
         train_loader,
         test_loader,
