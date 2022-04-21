@@ -9,6 +9,6 @@ defaults:
 
 seed: 0
 group: null
-debug: True
+debug: False
 
 batch_size: 4

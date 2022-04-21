@@ -39,11 +39,6 @@ def pipe_train(cfg: DictConfig) -> None:
         config=dict_cfg,
     )
 
-    pdb.set_trace()
-
-
-
-   
     
     orig_cwd = hydra.utils.get_original_cwd()
 
@@ -112,6 +107,8 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model = instantiate(cfg.model.model)
 
+    wandb.watch(model)
+    
     # todo select device
     model.train_schedule(
         train_loader,
@@ -120,6 +117,7 @@ def pipe_train(cfg: DictConfig) -> None:
         lr=0.001
     )
 
+    
     # model.train_gravity(
     #     train_loader,
     #     test_loader,
