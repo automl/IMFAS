@@ -121,4 +121,4 @@ def pipe_train(cfg: DictConfig) -> None:
 
 
 if __name__ == '__main__':
-    pipe_train()
+   pipe_train()
