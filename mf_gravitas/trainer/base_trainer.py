@@ -13,14 +13,22 @@ import torch.nn as nn
 class Trainer_Autoencoder:
     def __init__(self):
         self.step = 0
+        self.losses = {
+            '_loss_reconstruction': 0, 
+            '_loss_datasets': 0,
+            '_loss_algorithms': 0,
+            'loss_gravity': 0
+        }
         
 
     def train(self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
-        losses = []
+
 
         # fixme: make optimizer a choice!
         optimizer = torch.optim.Adam(model.parameters(), lr)
         for e in tqdm(range(int(epochs))):
+
+            losses = []
             for i, data in enumerate(train_dataloader):
                 (D0, A0), (D1, A1) = data
 
@@ -38,7 +46,7 @@ class Trainer_Autoencoder:
                 Z0_data = model.encode(D0)
                 Z1_data = torch.stack([model.encode(d) for d in D1])
 
-                # look if there is representation collapse:
+                # TODO Check for representation collapse
 
                 # calculate "attracting" forces.
                 loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, model.Z_algo)
@@ -46,14 +54,25 @@ class Trainer_Autoencoder:
                 # gradient step
                 loss.backward()
                 optimizer.step()
-                
+                losses.append(loss)
                 # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
+            # log losses
+            self.losses[loss_fn.__name__] = losses[-1]
+            wandb.log(
+                self.losses,
+                commit=False,
+                step=self.step
+            )
+
+
             self.step += 1
-            losses.append(loss)
 
             # TODO wandb logging
 
+            
+            
+            
             # validation every e epochs
             test_timer = 10
             test_losses = []
