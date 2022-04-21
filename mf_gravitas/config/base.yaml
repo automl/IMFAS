@@ -2,13 +2,37 @@ defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
   - model: autoencoder
-  - evaluation: optimal_rankings
-  - _self_ # at the end means overriding values of lower yaml here!
+  - evaluation: ZeroShotOptimalDistance
+  - _self_ 
+  
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+  # at the end means overriding values of lower yaml here!
 #  - training: freeze # move default behaviour here?
 
 
 seed: 0
-group: null
-debug: False
+output_dir: ./tmp
 
-batch_size: 4
+
+wandb:
+  id: null
+  entity: tnt
+  project: gravitas
+  debug: False
+  job_type: train
+  tags: []
+  notes: null
+  group: null
+  sync_tensorboard: True
+  save_code: True
+  resume: 'allow'
+  
+training: 
+  type: 'schedule'
+  lr: 0.001
+  pretrain_epochs: 1
+  train_epochs: 1
+  batch_size: 4
+  shuffle: True
+  num_workers: 2

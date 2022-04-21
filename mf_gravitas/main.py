@@ -7,6 +7,8 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from hydra.core.hydra_config import HydraConfig
 
+#from wandb.integration.torch import WandbCallback
+
 # A logger for this file
 log = logging.getLogger(__name__)
 
@@ -14,7 +16,7 @@ from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Split
 from mf_gravitas.util import seed_everything, train_test_split
 from mf_gravitas.evaluation.optimal_rankings import ZeroShotOptimalDistance
-from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import DataLoader
 
 import wandb
 import os 
@@ -31,12 +33,19 @@ def pipe_train(cfg: DictConfig) -> None:
     
 
     wandb.init(
-        mode="offline" if cfg.debug else None,
-        project="gravitas",
-        entity="tnt",
-        group=cfg.group,
+        id=cfg.wandb.id,
+        resume=cfg.wandb.resume,
+        mode="offline" if cfg.wandb.debug else None,
+        project=cfg.wandb.project,
+        job_type=cfg.wandb.job_type,
+        entity=cfg.wandb.entity,
+        group=cfg.wandb.group,
         dir=os.getcwd(),
         config=dict_cfg,
+        sync_tensorboard=cfg.wandb.sync_tensorboard,
+        save_code=cfg.wandb.save_code,
+        tags=cfg.wandb.tags,
+        notes=cfg.wandb.notes,
     )
 
     
@@ -52,7 +61,7 @@ def pipe_train(cfg: DictConfig) -> None:
     dir_data = pathlib.Path(cfg.dataset_raw.dir_data)
     dir_raw = dir_data / 'raw'
     dir_dataset_raw = dir_data / 'raw' / cfg.dataset_raw.dataset_name
-    # init w&b and convert config_raw for w&b
+    # TODO convert config_raw for w&b
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
@@ -83,18 +92,18 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
     # Dataloaders
-    train_loader = torch.utils.data.DataLoader(
+    train_loader = DataLoader(
         train_set,
-        batch_size=cfg.batch_size,
-        shuffle=True,
-        num_workers=2
+        batch_size=cfg.training.batch_size,
+        shuffle=cfg.training.shuffle,
+        num_workers=cfg.training.num_workers
     )
 
-    test_loader = torch.utils.data.DataLoader(
+    test_loader = DataLoader(
         test_set,
-        batch_size=cfg.batch_size,
-        shuffle=True,
-        num_workers=2
+        batch_size=cfg.training.batch_size,
+        shuffle=cfg.training.shuffle,
+        num_workers=cfg.training.num_workers
     )
 
     # set the number of algoritms and datasets
@@ -110,33 +119,45 @@ def pipe_train(cfg: DictConfig) -> None:
     wandb.watch(model)
     
     # todo select device
-    model.train_schedule(
-        train_loader,
-        test_loader,
-        epochs=[5, 5, 5],
-        lr=0.001
-    )
 
-    
-    # model.train_gravity(
-    #     train_loader,
-    #     test_loader,
-    #     epochs=[1, 1],
-    #     lr=0.001
-    # )
+    if cfg.training.type == 'schedule':
+        model.train_schedule(
+            train_loader,
+            test_loader,
+            epochs= [
+                cfg.training.pretrain_epochs,
+                cfg.training.train_epochs,
+                cfg.training.train_epochs,
+            ],
+            lr=cfg.training.lr,
+        )
+    elif cfg.training.type == 'gravity':    
+        model.train_gravity(
+            train_loader,
+            test_loader,
+            epochs= [
+                cfg.training.pretrain_epochs,
+                cfg.training.train_epochs,
+            ],
+            lr=cfg.training.lr,
+        )
+    else:
+        raise ValueError(f"Training type {cfg.training.type} not supported")
 
     # TODO checkpoint model into output/date/time/ folder
 
     # evaluation model
-    # fixme: move this to config and instantiate
-    evaluator = ZeroShotOptimalDistance(
-        model,
-        ranking_loss=cfg.evaluation.ranking_loss
+    evaluator = instantiate(
+        cfg.evaluation.evaluator, 
+        model=model,
+        _recursive_=False 
     )
+    
     counts =  evaluator.forward(
-        dataset_meta_features[test_split],
-        final_performances=lc_dataset[test_split],
-        steps=cfg.evaluation.steps)
+                dataset_meta_features=dataset_meta_features[test_split],
+                final_performances=lc_dataset[test_split],
+                steps=cfg.evaluation.steps
+            )
 
     print(counts)
 

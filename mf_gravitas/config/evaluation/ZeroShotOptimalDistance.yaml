@@ -1,0 +1,10 @@
+steps: 10  # granularity
+
+
+evaluator:
+  _target_: mf_gravitas.evaluation.optimal_rankings.ZeroShotOptimalDistance
+  ranking_loss:
+    _target_: sklearn.metrics.ndcg_score
+  batch: 20
+  scaler: 
+    _target_: sklearn.preprocessing.MinMaxScaler

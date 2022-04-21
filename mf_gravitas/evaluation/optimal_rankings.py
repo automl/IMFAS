@@ -7,17 +7,27 @@ each of these points (using the model's rank prediction module)
 
 import torch
 from sklearn.preprocessing import MinMaxScaler
+import sklearn
 from tqdm import tqdm
 
 from mf_gravitas.data import DatasetMetaFeatures
+from hydra.utils import call
+
+import pdb
 
 
 class ZeroShotOptimalDistance:
-    def __init__(self, model, ranking_loss):
+    def __init__(self, 
+                    model, 
+                    ranking_loss, 
+                    scaler = MinMaxScaler(),
+                    batch: int = 20,
+                    ):
         self.model = model
         self.ranking_loss = ranking_loss
-        self.batch = 20  # TODO unfix here!
-        self.scaler = MinMaxScaler()
+
+        self.batch = batch  # TODO unfix here!
+        self.scaler = call(scaler)
 
     def forward(self, dataset_meta_features: DatasetMetaFeatures, final_performances, steps):
         """
@@ -102,7 +112,7 @@ class ZeroShotOptimalDistance:
         :return:torch.Tensor: count of how many better solutions are there for
         each dataset.
         """
-        from hydra.utils import call
+        
 
         _, true_rankings = torch.topk(A0, largest=True, k=self.n_algos)
 

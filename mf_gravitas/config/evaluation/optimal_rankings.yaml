@@ -1,4 +1,0 @@
-steps: 10  # granularity
-
-ranking_loss:
-  _target_: sklearn.metrics.ndcg_score
