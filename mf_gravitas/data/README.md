@@ -1,7 +1,8 @@
 # Data Preprocessing
 
-To make the preprocessing end to end reproducible & configurable, pipe_raw.py is a hydra file, that
-creates the subsets
+To make the preprocessing end to end reproducible & configurable, pipe_raw.py is an optional part of
+the main pipeline, that can download, can preselect (in a synced manner) the algorithm
+configurations to choose.
 
 Ensembling is used to subselect suitable candidate algorithms (for instance in the HP-Space, if only
 a single algo is selected from), that are sufficiently diverse. Since autosklearn's backbone

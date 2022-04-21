@@ -92,21 +92,8 @@ def pipe_train(cfg: DictConfig) -> None:
          train_dataloader=train_loader,
          test_dataloader=test_loader, epochs=cfg.training.schedule.epochs)
     # todo select device
-    # model.train_schedule(
-    #     train_loader,
-    #     test_loader,
-    #     epochs=[1, 1, 1],
-    #     lr=0.001
-    # )
 
-    # model.train_gravity(
-    #     train_loader,
-    #     test_loader,
-    #     epochs=[1, 1],
-    #     lr=0.001
-    # )
-
-    # TODO checkpoint model into output/date/time/ folder
+    # TODO checkpoint model into output/date/time/folder
 
     # evaluation model
     # fixme: move this to config and instantiate

@@ -4,9 +4,6 @@ from tqdm import tqdm
 
 def train(model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
     losses = []
-    test_losses = []
-
-    tracking = []
 
     # fixme: make optimizer a choice!
     optimizer = torch.optim.Adam(model.parameters(), lr)
@@ -38,8 +35,6 @@ def train(model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
             optimizer.step()
             # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
-        losses.append(loss)
-
         # validation every e epochs
         test_timer = 10
         test_losses = []
@@ -52,5 +47,3 @@ def train(model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
         #     tracking.append((model.Z_algo.data.clone(), Z_data))
 
         # TODO validation procedure
-
-    return tracking, losses, test_losses

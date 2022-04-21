@@ -26,7 +26,7 @@ def train_schedule(model, train_dataloader, test_dataloader, epochs=[100, 100, 1
 
     # train algorithms
     log.info(f"\nTraining {name} with algorithm:")
-    return train(model, model._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
+    train(model, model._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
 
 
 def train_gravity(model, train_dataloader, test_dataloader, epochs, lr=0.001):
@@ -46,7 +46,7 @@ def train_gravity(model, train_dataloader, test_dataloader, epochs, lr=0.001):
     train(model, model._loss_reconstruction, train_dataloader, test_dataloader, epochs[0], lr)
 
     log.info(f"\nTraining {name} with gravity loss:")
-    return train(model, model.loss_gravity, train_dataloader, test_dataloader, epochs[1], lr=lr)
+    train(model, model.loss_gravity, train_dataloader, test_dataloader, epochs[1], lr=lr)
 
 
 def train_freeze_schedule(model, train_dataloader, test_dataloader, epochs=[100, 100, 100],
@@ -58,7 +58,9 @@ def train_freeze_schedule(model, train_dataloader, test_dataloader, epochs=[100,
     name = model.__class__.__name__
     log.info(f'\nPretraining {name} with reconstruction loss:')
     train(
-        model=model, loss_fn=model._loss_reconstruction, train_dataloader=train_dataloader,
+        model=model,
+        loss_fn=model._loss_reconstruction,
+        train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
         lr=lr,
         epochs=epochs[0])
@@ -67,7 +69,9 @@ def train_freeze_schedule(model, train_dataloader, test_dataloader, epochs=[100,
     log.info(f'\nTraining {name} with dataset loss:')
     # model._train(model._loss_datasets, train_dataloader, test_dataloader, epochs=epochs[1], lr=lr)
     freeze_train(
-        model=model, loss_fn=model._loss_datasets, train_dataloader=train_dataloader,
+        model=model,
+        loss_fn=model._loss_datasets,
+        train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
         lr=lr,
         epochs=epochs[1])
@@ -75,7 +79,9 @@ def train_freeze_schedule(model, train_dataloader, test_dataloader, epochs=[100,
     # train algorithms
     log.info(f'\nTraining {name} with algorithm:')
     return train(
-        model=model, loss_fn=model._loss_algorithms, train_dataloader=train_dataloader,
+        model=model,
+        loss_fn=model._loss_algorithms,
+        train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
         lr=lr,
         epochs=epochs[2])
