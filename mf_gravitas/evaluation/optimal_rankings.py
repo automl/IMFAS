@@ -10,14 +10,20 @@ from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from mf_gravitas.data import DatasetMetaFeatures
+from hydra.utils import call
 
 
 class ZeroShotOptimalDistance:
-    def __init__(self, model, ranking_loss):
+    def __init__(   self, 
+                    model, 
+                    ranking_loss,
+                    scaler = MinMaxScaler(),
+                    batch: int = 20,
+                ):
         self.model = model
         self.ranking_loss = ranking_loss
-        self.batch = 20  # TODO unfix here!
-        self.scaler = MinMaxScaler()
+        self.batch = batch  # TODO unfix here!
+        self.scaler = call(scaler)
 
     def forward(self, dataset_meta_features: DatasetMetaFeatures, final_performances, steps):
         """

@@ -5,8 +5,27 @@ defaults:
   - evaluation: optimal_rankings
   - training: joint
   - _self_ # at the end means overriding values of lower yaml here!
-#  - training: freeze # move default behaviour here?
 
-seed: 123456
+
+seed: 0
+output_dir: ./tmp
+
+
+num_competitors: 2
+num_workers: 2
 batch_size: 4
-lr: 0.002 # learning rate of the train's optimizer
+lr: 0.002   # learning rate of the train's optimizer
+shuffle: True
+
+wandb:
+  id: null
+  entity: tnt
+  project: gravitas
+  mode: 'online'
+  job_type: train
+  tags: []
+  notes: null
+  group: null
+  sync_tensorboard: False
+  save_code: False
+  resume: 'allow'
