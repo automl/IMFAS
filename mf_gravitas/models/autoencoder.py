@@ -3,7 +3,6 @@ from typing import List
 import torch
 import torch.distributions as td
 import torch.nn as nn
-from tqdm import tqdm
 
 
 class ParticleGravityAutoencoder(nn.Module):
@@ -185,13 +184,6 @@ class ParticleGravityAutoencoder(nn.Module):
                 cross.append(a @ norm)
         '''
 
-        # [print(a.shape, z.shape, torch.linalg.norm((z - Z_algo), dim=1).shape) for z, a in zip(Z0_data, A0)]
-        # print(Z_algo.shape)
-        # print(Z0_data.shape)
-        # print(f'A0.shape -> {A0.shape}')
-
-        # print(A0[0].shape, Z0_data[0].shape)
-
         dataset_algo_distance = [
             a @ torch.linalg.norm((z - Z_algo), dim=1) for z, a in zip(Z0_data, A0)
         ]
@@ -224,100 +216,12 @@ class ParticleGravityAutoencoder(nn.Module):
 
         gravity = self._loss_datasets(D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo)
 
-
-
         return torch.stack(
             [
                 gravity,
                 self.weights[-1] * algo_pull,
             ]
         ).sum()
-
-    def train_gravity(self, train_dataloader, test_dataloader, epochs, lr=0.001):
-        """
-        Two step training:
-        1) Pretraining using reconstruction loss
-        2) Training using gravity loss (reconstruction + attraction + repellent +
-        :param train_dataloader:
-        :param test_dataloader:
-        :param epochs: list of int (len 2): epochs for step 1) and 2) respectively
-        :param lr:
-        :return:
-        """
-        name = self.__class__.__name__
-        print(f"\nPretraining {name} with reconstruction loss: ")
-        self._train(self._loss_reconstruction, train_dataloader, test_dataloader, epochs[0])
-
-        print(f"\nTraining {name} with gravity loss:")
-        return self._train(self.loss_gravity, train_dataloader, test_dataloader, epochs[1], lr=lr)
-
-    def train_schedule(self, train_dataloader, test_dataloader, epochs=[100, 100, 100], lr=0.001):
-        # Consider Marius idea to first find a reasonable data representation
-        #  and only than train with the algorithms
-
-        # pretrain
-        name = self.__class__.__name__
-        print(f"\nPretraining {name} with reconstruction loss:")
-        self._train(self._loss_reconstruction, train_dataloader, test_dataloader, epochs[0], lr)
-
-        # train datasets
-        print(f"\nTraining {name} with dataset loss:")
-        self._train(self._loss_datasets, train_dataloader, test_dataloader, epochs[1], lr)
-
-        # train algorithms
-        print(f"\nTraining {name} with algorithm:")
-        return self._train(self._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
-
-    def _train(self, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
-        losses = []
-        test_losses = []
-
-        tracking = []
-        optimizer = torch.optim.Adam(self.parameters(), lr)
-        for e in tqdm(range(epochs)):
-            for i, data in enumerate(train_dataloader):
-                (D0, A0), (D1, A1) = data
-
-                D0 = D0.to(self.device)
-                D1 = D1.to(self.device)
-
-                A0 = A0.to(self.device)
-                A1 = A1.to(self.device)
-                optimizer.zero_grad()
-
-                # calculate embedding
-                D0_fwd = self.forward(D0)
-
-                # todo not recalculate the encoding
-                Z0_data = self.encode(D0)
-                Z1_data = torch.stack([self.encode(d) for d in D1])
-
-                # look if there is representation collapse:
-
-                # calculate "attracting" forces.
-                loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, self.Z_algo)
-
-                # gradient step
-                loss.backward()
-                optimizer.step()
-                # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
-
-            losses.append(loss)
-
-            # validation every e epochs
-            test_timer = 10
-            test_losses = []
-            # if e % test_timer == 0:
-            #     # look at the gradient step's effects on validation data
-            #     D_test = train_dataloader.dataset.datasets_meta_features
-            #     D_test = D_test.to(self.device)
-            #     Z_data = self.encode(D_test)
-            #
-            #     tracking.append((self.Z_algo.data.clone(), Z_data))
-
-            # TODO validation procedure
-
-        return tracking, losses, test_losses
 
     def predict_algorithms(self, D, topk):
         """

@@ -1,0 +1,4 @@
+schedule:
+  _target_: mf_gravitas.trainer.schedules.train_schedule
+  epochs: [ 1, 1, 1 ]
+  lr: ${lr}

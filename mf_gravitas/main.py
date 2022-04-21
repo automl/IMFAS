@@ -3,7 +3,7 @@ import pathlib
 
 import hydra
 import torch
-from hydra.utils import instantiate
+from hydra.utils import instantiate, call
 from omegaconf import DictConfig
 
 # A logger for this file
@@ -88,13 +88,16 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model = instantiate(cfg.model.model)
 
+    call(cfg.training.schedule, model,
+         train_dataloader=train_loader,
+         test_dataloader=test_loader, epochs=cfg.training.schedule.epochs)
     # todo select device
-    model.train_schedule(
-        train_loader,
-        test_loader,
-        epochs=[1, 1, 1],
-        lr=0.001
-    )
+    # model.train_schedule(
+    #     train_loader,
+    #     test_loader,
+    #     epochs=[1, 1, 1],
+    #     lr=0.001
+    # )
 
     # model.train_gravity(
     #     train_loader,

@@ -1,2 +1,4 @@
-train_fnc:
-  _target_: some.method.path.freeze
+schedule:
+  _target_: mf_gravitas.trainer.schedules.train_freeze_schedule
+  epochs: [ 1, 1, 1 ]
+  lr: ${lr}

@@ -3,8 +3,10 @@ defaults:
   - dataset: lcbench
   - model: autoencoder
   - evaluation: optimal_rankings
+  - training: joint
   - _self_ # at the end means overriding values of lower yaml here!
 #  - training: freeze # move default behaviour here?
 
 seed: 123456
 batch_size: 4
+lr: 0.002 # learning rate of the train's optimizer
