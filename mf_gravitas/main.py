@@ -29,6 +29,8 @@ def pipe_train(cfg: DictConfig) -> None:
 
     seed_everything(cfg.seed)
 
+    # TODO wandb logging
+    
     # fixme: move data_dir to cfg!
     dir_data = pathlib.Path(cfg.dataset_raw.dir_data)
     dir_raw = dir_data / 'raw'
@@ -88,9 +90,14 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model = instantiate(cfg.model.model)
 
+    
+    
+    
     call(cfg.training.schedule, model,
-         train_dataloader=train_loader,
-         test_dataloader=test_loader, epochs=cfg.training.schedule.epochs)
+        train_dataloader=train_loader,
+        test_dataloader=test_loader,
+        epochs=cfg.training.schedule.epochs
+    )
     # todo select device
 
     # TODO checkpoint model into output/date/time/folder

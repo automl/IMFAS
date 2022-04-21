@@ -1,7 +1,14 @@
 import torch
 from tqdm import tqdm
 
+# NOTE Potentially make trainer fully
+# abstract and have different kinds of trainers for different modules
 
+# class Trainer_Autoencoder:
+#     def __init__(self):
+#         self.step = 0
+
+    
 def train(model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
     losses = []
 
@@ -33,7 +40,13 @@ def train(model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
             # gradient step
             loss.backward()
             optimizer.step()
+            
             # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
+
+        #self.step += 1
+        losses.append(loss)
+
+        # TODO wandb logging
 
         # validation every e epochs
         test_timer = 10
