@@ -24,15 +24,15 @@ wandb:
   tags: []
   notes: null
   group: null
-  sync_tensorboard: True
-  save_code: True
+  sync_tensorboard: False
+  save_code: False
   resume: 'allow'
   
 training: 
   type: 'schedule'
   lr: 0.001
-  pretrain_epochs: 1
-  train_epochs: 1
+  pretrain_epochs: 10
+  train_epochs: 10
   batch_size: 4
   shuffle: True
   num_workers: 2

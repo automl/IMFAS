@@ -4,7 +4,12 @@ import torch
 import torch.distributions as td
 import torch.nn as nn
 from tqdm import tqdm
+import numpy as np
 
+import wandb
+from ..util import log_wandb
+
+import pdb
 
 class ParticleGravityAutoencoder(nn.Module):
     # TODO allow for algo meta features
@@ -45,6 +50,12 @@ class ParticleGravityAutoencoder(nn.Module):
 
         self._build_network()
         self.to(self.device)
+
+        self.loss_log = {
+            'gravity_loss': 0, 
+            'reconstruction_loss': 0,
+            'algo_pull_loss': 0
+        }
 
     def _build_network(self) -> None:
         """
@@ -244,37 +255,77 @@ class ParticleGravityAutoencoder(nn.Module):
         :param lr:
         :return:
         """
-        name = self.__class__.__name__
-        print(f"\nPretraining {name} with reconstruction loss: ")
-        self._train(self._loss_reconstruction, train_dataloader, test_dataloader, epochs[0])
+        train_args = {
+            'loss_fn': None, 
+            'train_dataloader': train_dataloader, 
+            'test_dataloader': test_dataloader, 
+            'epochs': None,
+            'lr':lr
+        } 
 
-        print(f"\nTraining {name} with gravity loss:")
-        return self._train(self.loss_gravity, train_dataloader, test_dataloader, epochs[1], lr=lr)
+        # reconstruction
+        print(f"\nPretraining {self.__class__.__name__} with reconstruction loss: ")
+        train_args['loss_fn'] = self._loss_reconstruction
+        train_args['epochs'] = epochs[0]
+        self._train(**train_args)
+
+
+        # gravity
+        print(f"\nTraining {self.__class__.__name__} with gravity loss:")
+        train_args['loss_fn'] = self.loss_gravity
+        train_args['epochs'] = epochs[1]
+        return self._train(**train_args)
+
 
     def train_schedule(self, train_dataloader, test_dataloader, epochs=[100, 100, 100], lr=0.001):
         # Consider Marius idea to first find a reasonable data representation
         #  and only than train with the algorithms
 
         # pretrain
-        name = self.__class__.__name__
-        print(f"\nPretraining {name} with reconstruction loss:")
-        self._train(self._loss_reconstruction, train_dataloader, test_dataloader, epochs[0], lr)
+
+        train_args = {
+            'loss_fn': None, 
+            'train_dataloader': train_dataloader, 
+            'test_dataloader': test_dataloader, 
+            'epochs': None,
+            'lr':lr
+        } 
+
+        # reconstruction
+        print(f"\nPretraining {self.__class__.__name__} with reconstruction loss:")
+        train_args['loss_fn'] = self._loss_reconstruction
+        train_args['epochs'] = epochs[0]
+        self._train(**train_args)
 
         # train datasets
-        print(f"\nTraining {name} with dataset loss:")
-        self._train(self._loss_datasets, train_dataloader, test_dataloader, epochs[1], lr)
+        print(f"\nTraining {self.__class__.__name__} with dataset loss:")
+        train_args['loss_fn'] = self._loss_datasets
+        train_args['epochs'] = epochs[1]
+        self._train(**train_args)
 
         # train algorithms
-        print(f"\nTraining {name} with algorithm:")
-        return self._train(self._loss_algorithms, train_dataloader, test_dataloader, epochs[2], lr)
+        print(f"\nTraining {self.__class__.__name__} with algorithm:")
+        train_args['loss_fn'] = self._loss_algorithms
+        train_args['epochs'] = epochs[2]
+        return self._train(**train_args)
 
-    def _train(self, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
-        losses = []
+    def _train( self, 
+                loss_fn, 
+                train_dataloader, 
+                test_dataloader, 
+                epochs, 
+                lr=0.001, 
+                
+        ):
+
+        
         test_losses = []
 
         tracking = []
         optimizer = torch.optim.Adam(self.parameters(), lr)
         for e in tqdm(range(epochs)):
+            
+            losses = []
             for i, data in enumerate(train_dataloader):
                 (D0, A0), (D1, A1) = data
 
@@ -302,7 +353,18 @@ class ParticleGravityAutoencoder(nn.Module):
                 optimizer.step()
                 # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
-            losses.append(loss)
+                losses.append(loss)
+            
+            wandb.log(
+                {
+                    f"{loss_fn.__name__}/training_loss": losses[-1],
+                },
+                commit=False,
+                step=e
+            )
+
+
+            
 
             # validation every e epochs
             test_timer = 10

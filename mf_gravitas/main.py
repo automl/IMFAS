@@ -116,7 +116,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model = instantiate(cfg.model.model)
 
-    wandb.watch(model)
+    wandb.watch(model, log_freq=1)
     
     # todo select device
 
