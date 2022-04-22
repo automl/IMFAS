@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - override /training: sequential
+  
+wandb:
+  group: sequential_test
+  notes: 'This is a test for sequential pocedure'
+  mode: 'offline'
+
+# Nested argument override of the defualt
+training:
+  schedule:
+    epochs: [100,100,100]

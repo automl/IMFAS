@@ -1,0 +1,23 @@
+{
+    "os": "Linux-5.4.0-105-generic-x86_64-with-glibc2.31",
+    "python": "3.9.7",
+    "heartbeatAt": "2022-04-22T10:21:41.664584",
+    "startedAt": "2022-04-22T10:21:33.483933",
+    "docker": null,
+    "cpu_count": 48,
+    "cuda": null,
+    "args": [
+        "/home/mohan/git/current_projects/gravitas/AlgoSelectionMF/tmp/2022-04-22/12-21-14/.submitit/%j"
+    ],
+    "state": "running",
+    "program": "-m submitit.core._submit",
+    "git": {
+        "remote": "https://github.com/automl-private/AlgoSelectionMF.git",
+        "commit": "380db364ccdb6bfe36008ba9b49c6ed4d2e38cd5"
+    },
+    "email": "adityak735@gmail.com",
+    "root": "/home/mohan/git/current_projects/gravitas/AlgoSelectionMF",
+    "host": "cc1l01",
+    "username": "mohan",
+    "executable": "/home/mohan/miniconda3/envs/gravitas/bin/python"
+}

@@ -1,11 +1,16 @@
+# @package _global_
+
 defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
   - model: autoencoder
   - evaluation: optimal_rankings
-  - training: sequential
+  - training: gravity
+  - slurm
   - _self_ # at the end means overriding values of lower yaml here!
 
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
 
 seed: 0
 output_dir: ./tmp
@@ -31,3 +36,9 @@ wandb:
   sync_tensorboard: False
   save_code: False
   resume: 'allow'
+
+hydra:
+  run:
+    dir: ${output_dir}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${output_dir}/${now:%Y-%m-%d}/${now:%H-%M-%S}

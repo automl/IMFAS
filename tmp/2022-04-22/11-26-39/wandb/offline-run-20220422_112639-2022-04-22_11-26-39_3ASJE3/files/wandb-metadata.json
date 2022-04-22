@@ -1,0 +1,26 @@
+{
+    "os": "Linux-5.3.18-150300.59.43-default-x86_64-with-glibc2.31",
+    "python": "3.9.7",
+    "heartbeatAt": "2022-04-22T09:26:40.153728",
+    "startedAt": "2022-04-22T09:26:39.136743",
+    "docker": null,
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [
+        "wandb.mode=offline"
+    ],
+    "state": "running",
+    "program": "/home/mohan/git/current_projects/gravitas/AlgoSelectionMF/mf_gravitas/main.py",
+    "codePath": "mf_gravitas/main.py",
+    "git": {
+        "remote": "https://github.com/automl-private/AlgoSelectionMF.git",
+        "commit": "380db364ccdb6bfe36008ba9b49c6ed4d2e38cd5"
+    },
+    "email": "adityak735@gmail.com",
+    "root": "/home/mohan/git/current_projects/gravitas/AlgoSelectionMF",
+    "host": "mclovin",
+    "username": "mohan",
+    "executable": "/home/mohan/miniconda3/envs/gravitas/bin/python"
+}

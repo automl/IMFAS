@@ -1,3 +1,8 @@
+
+from pathlib import Path
+import random
+from typing import Any, Dict, List
+
 import os
 import random
 import warnings
@@ -6,6 +11,10 @@ import numpy as np
 import torch
 from networkx import Graph, minimum_spanning_edges
 import pandas as pd
+
+
+import wandb
+
 
 
 def seed_everything(seed: int):
@@ -87,3 +96,41 @@ def measure_embedding_diversity(model, data):
 
         # sum of weighted edges
         return d_diversity, z_diversity
+
+
+def check_wandb_exists(cfg, unique_fields: List[str]):
+
+    flat_cfg = list(pd.json_normalize(cfg).T.to_dict().values())[0]
+    query_config = {}
+    for key, value in flat_cfg.items():
+        if key not in unique_fields:
+            continue
+        query_config[key] = value
+
+    query_config_wandb = {"config.{}".format(
+        key): value for key, value in query_config.items()}
+
+    query_wandb = {
+        'state': 'finished',
+        **query_config_wandb
+    }
+    print(query_wandb)
+
+    api = wandb.Api()
+    runs = api.runs("tnt/carl", query_wandb)
+
+    found_run = False
+    for run in runs:
+        if cfg["env"] == "CARLPendulumEnv":
+            episode = run.summary['train/episode'] if 'train/episode' in run.summary else -1
+            if episode != 2488:
+                # run not completed
+                continue
+        elif cfg["env"] == "CARLAnt":
+            episode = run.summary['train/episode'] if 'train/episode' in run.summary else -1
+            if episode < 500:
+                # run not completed
+                continue
+        found_run = True
+
+    return found_run

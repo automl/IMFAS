@@ -19,26 +19,52 @@ from torch.utils.data import DataLoader
 import wandb
 import os 
 import pdb
-# TODO debug flag to disable w&b & checkpointing.
+import sys
+
+import string
+import random
 
 
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 base_dir = os.getcwd()
 
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
     
+    sys.path.append(os.getcwd())
+    sys.path.append("..")
+
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
+
+    hydra_job = (
+        os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
+        + "_"
+        + os.path.basename(HydraConfig.get().run.dir)
+    )
+
+    cfg.wandb.id = hydra_job + "_" + id_generator()
+
+
+    run = wandb.init(
+        **cfg.wandb, 
+        config=dict_cfg
+    )
+
     hydra_cfg = HydraConfig.get()
-    
-    
-    # print(hydra_cfg)
-    # print(dict_cfg)
+    command = f"{hydra_cfg.job.name}.py " + " ".join(hydra_cfg.overrides.task)
+    if not OmegaConf.is_missing(hydra_cfg.job, "id"):
+        slurm_id = hydra_cfg.job.id
+    else:
+        slurm_id = None
 
-    # pdb.set_trace()
+    wandb.config.update({
+        "command": command, 
+        "slurm_id": slurm_id
+    })
 
-
-    wandb.init(**cfg.wandb, config=dict_cfg)
 
     orig_cwd = hydra.utils.get_original_cwd()
 
@@ -46,17 +72,11 @@ def pipe_train(cfg: DictConfig) -> None:
     log.info("Hydra initialized a new config_raw")
     log.debug(str(cfg))
 
-    
     seed_everything(cfg.seed)
 
-    # TODO wandb logging
-
-    
-    # FIXME move data_dir to cfg!
     dir_data = pathlib.Path(cfg.dataset_raw.dir_data)
     dir_raw = dir_data / 'raw'
     dir_dataset_raw = dir_data / 'raw' / cfg.dataset_raw.dataset_name
-    # init w&b and convert config_raw for w&b
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
@@ -67,7 +87,7 @@ def pipe_train(cfg: DictConfig) -> None:
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta_features)
     lc_dataset = instantiate(cfg.dataset.learning_curves)
 
-    # # train test split by dataset major
+    # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
 
     train_set = Dataset_Join_Split(
@@ -86,7 +106,7 @@ def pipe_train(cfg: DictConfig) -> None:
         competitors=cfg.num_competitors,
     )
 
-    # Dataloaders
+    # wrap with Dataloaders
     train_loader = DataLoader(
         train_set,
         batch_size=cfg.train_batch_size,
@@ -101,19 +121,16 @@ def pipe_train(cfg: DictConfig) -> None:
         num_workers=cfg.num_workers
     )
 
+
+    # update the input dims adn number of algos based on the sampled stuff
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.n_algos = len(algorithm_meta_features)
-    print(cfg.model.model)
 
     wandb.config.update({
         'n_algos': len(algorithm_meta_features),
         'input_dim': dataset_meta_features.df.columns.size
     })
 
-
-    # print(dataset_meta_features)
-
-    # pdb.set_trace()
 
     model = instantiate(cfg.model.model)
 
