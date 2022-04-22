@@ -5,21 +5,26 @@ instantiations and densely sample the latent space and compute the ranking for
 each of these points (using the model's rank prediction module)
 """
 
+import logging
+
 import torch
+from hydra.utils import call
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from mf_gravitas.data import DatasetMetaFeatures
-from hydra.utils import call
+
+# A logger for this file
+log = logging.getLogger(__name__)
 
 
 class ZeroShotOptimalDistance:
-    def __init__(   self, 
-                    model, 
-                    ranking_loss,
-                    scaler = MinMaxScaler(),
-                    batch: int = 20,
-                ):
+    def __init__(self,
+                 model,
+                 ranking_loss,
+                 scaler=MinMaxScaler(),
+                 batch: int = 20,
+                 ):
         self.model = model
         self.ranking_loss = ranking_loss
         self.batch = batch  # TODO unfix here!
@@ -39,7 +44,6 @@ class ZeroShotOptimalDistance:
         model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
         return self._compare_rankings(cuboid_scores, model_scores, self.final_performances)
-
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
@@ -146,5 +150,10 @@ class ZeroShotOptimalDistance:
             counts[i] = sum(cuboid_ndcg[i] > datapoint_ndcg)
 
             # Consider: based on this we can actually select the targets for our m-shot
+
+        log.info(f'For the respective holdout (test-data), there exist {counts} of positions'
+                 f'in the latentspace cuboid, that produce a better ranking, than '
+                 f'the one proposed by the model. We might be able to improve towards them '
+                 f'in an m-shot setting.')
 
         return counts
