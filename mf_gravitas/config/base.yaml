@@ -3,7 +3,7 @@ defaults:
   - dataset: lcbench
   - model: autoencoder
   - evaluation: optimal_rankings
-  - training: joint
+  - training: sequential
   - _self_ # at the end means overriding values of lower yaml here!
 
 
@@ -13,7 +13,9 @@ output_dir: ./tmp
 
 num_competitors: 2
 num_workers: 2
-batch_size: 4
+train_batch_size: 4
+test_batch_size: 20
+
 lr: 0.002   # learning rate of the train's optimizer
 shuffle: True
 
@@ -21,7 +23,7 @@ wandb:
   id: null
   entity: tnt
   project: gravitas
-  mode: 'online'
+  mode: 'online'    # Change to offline or debug mode
   job_type: train
   tags: []
   notes: null

@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Split
-from mf_gravitas.util import seed_everything, train_test_split
+from mf_gravitas.util import seed_everything, train_test_split, measure_embedding_diversity
 from mf_gravitas.evaluation.optimal_rankings import ZeroShotOptimalDistance
 from torch.utils.data import DataLoader
 
@@ -21,6 +21,8 @@ import os
 import pdb
 # TODO debug flag to disable w&b & checkpointing.
 
+
+
 base_dir = os.getcwd()
 
 @hydra.main(config_path='config', config_name='base')
@@ -28,9 +30,15 @@ def pipe_train(cfg: DictConfig) -> None:
     
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
     hydra_cfg = HydraConfig.get()
+    
+    
     # print(hydra_cfg)
+    # print(dict_cfg)
 
-    wandb.init(**cfg.wandb)
+    # pdb.set_trace()
+
+
+    wandb.init(**cfg.wandb, config=dict_cfg)
 
     orig_cwd = hydra.utils.get_original_cwd()
 
@@ -81,22 +89,31 @@ def pipe_train(cfg: DictConfig) -> None:
     # Dataloaders
     train_loader = DataLoader(
         train_set,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.train_batch_size,
         shuffle=cfg.shuffle,
         num_workers=cfg.num_workers
     )
 
     test_loader = DataLoader(
         test_set,
-        batch_size=cfg.batch_size,
+        batch_size=cfg.test_batch_size,
         shuffle=cfg.shuffle,
         num_workers=cfg.num_workers
     )
 
-    # FIXME: make this available to w&b after the update!
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.n_algos = len(algorithm_meta_features)
     print(cfg.model.model)
+
+    wandb.config.update({
+        'n_algos': len(algorithm_meta_features),
+        'input_dim': dataset_meta_features.df.columns.size
+    })
+
+
+    # print(dataset_meta_features)
+
+    # pdb.set_trace()
 
     model = instantiate(cfg.model.model)
 
@@ -109,6 +126,8 @@ def pipe_train(cfg: DictConfig) -> None:
         test_dataloader=test_loader,
         epochs=cfg.training.schedule.epochs
     )
+
+
 
     # TODO checkpoint model into output/date/time/folder
 

@@ -5,8 +5,9 @@ import numpy as np
 import wandb
 
 import torch.nn as nn
+from ..util import measure_embedding_diversity
 
-
+import pdb
 
 # NOTE Potentially make trainer fully abstract and have different kinds of trainers for different modules
 
@@ -27,6 +28,7 @@ class Trainer_Autoencoder:
         # fixme: make optimizer a choice!
         optimizer = torch.optim.Adam(model.parameters(), lr)
         for e in tqdm(range(int(epochs))):
+            
 
             losses = []
             for i, data in enumerate(train_dataloader):
@@ -46,7 +48,10 @@ class Trainer_Autoencoder:
                 Z0_data = model.encode(D0)
                 Z1_data = torch.stack([model.encode(d) for d in D1])
 
-                # TODO Check for representation collapse
+                # # TODO Check for representation collapse
+               
+                # pdb.set_trace()
+
 
                 # calculate "attracting" forces.
                 loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, model.Z_algo)
@@ -57,22 +62,57 @@ class Trainer_Autoencoder:
                 losses.append(loss)
                 # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
+            d_div, z_div = measure_embedding_diversity(
+                                        model = model, 
+                                        data = train_dataloader.dataset.meta_dataset.transformed_df[train_dataloader.dataset.splitindex]
+                                    )
+
+            
+            wandb.log(
+                {
+                    'data_div': d_div,
+                    'algo_div': z_div,
+                },
+                commit=False,
+                step=self.step
+            )
+            
+            test_losses = []
+            for i, data in enumerate(test_dataloader):
+                (D0, A0), (D1, A1) = data
+
+                D0 = D0.to(model.device)
+                D1 = D1.to(model.device)
+
+                A0 = A0.to(model.device)
+                A1 = A1.to(model.device)
+                optimizer.zero_grad()
+
+                # calculate embedding
+                D0_fwd = model.forward(D0)
+
+                # todo not recalculate the encoding
+                Z0_data = model.encode(D0)
+                Z1_data = torch.stack([model.encode(d) for d in D1])
+
+                # calculate "attracting" forces.
+                loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, model.Z_algo)
+                test_losses.append(loss)
+
+            
+
             # log losses
-            self.losses[loss_fn.__name__] = losses[-1]
+            self.losses[loss_fn.__name__] = torch.stack(losses).mean()
             wandb.log(
                 self.losses,
                 commit=False,
                 step=self.step
             )
-
+                
 
             self.step += 1
 
-            # TODO wandb logging
 
-            
-            
-            
             # validation every e epochs
             test_timer = 10
             test_losses = []

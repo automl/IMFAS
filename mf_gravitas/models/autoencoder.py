@@ -4,6 +4,7 @@ import torch
 import torch.distributions as td
 import torch.nn as nn
 
+from ..util import check_diversity
 
 class ParticleGravityAutoencoder(nn.Module):
     # TODO allow for algo meta features
