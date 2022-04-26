@@ -1,9 +1,6 @@
 model:
   _target_: mf_gravitas.models.rank_mlp.ActionRankMLP
   input_dim: 107
-  hidden_dims: [ 8, 4 ]
-  embedding_dim: 2
-  weights: [ 1.0, 1.0, 1.0, 1.0 ]
-  repellent_share: 0.33
-  n_algos: 35  # todo make this relative to the dataset!
+  action_dim: 58
+  hidden_dims: [300, 150] 
   device: 'cpu'

@@ -157,7 +157,7 @@ class Trainer_Autoencoder:
         self.train(model, epochs=epochs // no_freeze_steps, *args, **kwargs)
 
 
-class Trainer_MLP:
+class Trainer_Rank:
     def __init__(self):
         self.step = 0
         self.losses = {
@@ -165,34 +165,43 @@ class Trainer_MLP:
         }
         
 
-    def train(self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
+    def train(self, model, loss_fn, train_dataloader, train_labels, test_dataloader, test_labels, epochs, lr=0.001):
 
+        
         optimizer = torch.optim.Adam(model.parameters(), lr)
         for e in tqdm(range(int(epochs))):
-            
 
             losses = []
-            for i, data in enumerate(train_dataloader):
+            for targets, data in zip(train_labels, test_dataloader):
                 (D0, _), (_, _) = data
-
+                
                 # calculate embedding
                 D0_fwd = model.forward(D0)
+  
+                # _, true_rankings = torch.topk(targets, largest=False, k=model.action_dim)
 
-                # TODO need the optimal ranks
-                
+                true_rankings = targets
+                true_rankings = true_rankings.reshape(1, -1)
+                true_rankings = true_rankings.to(model.device)
 
                 # Calculate the loss
-                loss = loss_fn(D0, D0_fwd, model.Z_algo)
+                loss = loss_fn(
+                    pred = D0_fwd,
+                    target = true_rankings,
+                    regularization="l2"
+                )
+
 
                 # gradient step
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 losses.append(loss.detach().item())
-            
 
+            
             test_losses = []
-            for i, data in enumerate(test_dataloader):
+            for targets, data in zip(test_labels, test_dataloader):
+                
                 (D0, _), (_, _) = data
 
                 D0 = D0.to(model.device)
@@ -200,13 +209,24 @@ class Trainer_MLP:
                 # calculate embedding
                 D0_fwd = model.forward(D0)
 
+                true_rankings = targets
+                true_rankings = true_rankings.reshape(1, -1)
+                true_rankings = true_rankings.to(model.device)
+
+
+                # _, true_rankings = torch.argsort(targets, largest=False, k=model.action_dim)
 
                 # calculate "attracting" forces.
-                loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, model.Z_algo)
+                loss = loss_fn(
+                    pred = D0_fwd,
+                    target = test_labels,
+                    regularization="l2"
+                )
                 test_losses.append(loss.detach().item())
 
             # log losses
-            self.losses[loss_fn.__name__] = np.mean(test_losses)
+            self.losses['ranking_loss'] = np.mean(test_losses)
+
             wandb.log(
                 self.losses,
                 commit=False,

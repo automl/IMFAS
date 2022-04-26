@@ -3,9 +3,9 @@
 defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
-  - model: autoencoder
+  - model: rank_mlp
   - evaluation: optimal_rankings
-  - training: gravity
+  - training: rank 
   - slurm
   - _self_ # at the end means overriding values of lower yaml here!
 
@@ -16,10 +16,10 @@ seed: 0
 output_dir: ./tmp
 
 
-num_competitors: 11
+num_competitors: 1
 num_workers: 2
-train_batch_size: 10
-test_batch_size: 10
+train_batch_size: 1
+test_batch_size: 1
 
 lr: 0.001  # learning rate of the train's optimizer
 shuffle: True

@@ -106,6 +106,7 @@ def pipe_train(cfg: DictConfig) -> None:
         competitors=cfg.num_competitors,
     )
 
+
     # wrap with Dataloaders
     train_loader = DataLoader(
         train_set,
@@ -124,7 +125,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # update the input dims adn number of algos based on the sampled stuff
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
-    cfg.model.model.n_algos = len(algorithm_meta_features)
+    cfg.model.model.action_dim = len(algorithm_meta_features)
 
     wandb.config.update({
         'n_algos': len(algorithm_meta_features),
@@ -140,28 +141,27 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.training.schedule, 
         model,
         train_dataloader=train_loader,
+        train_labels = lc_dataset[train_split],
         test_dataloader=test_loader,
-        epochs=cfg.training.schedule.epochs
+        test_labels = lc_dataset[test_split],
     )
 
+    # pdb.set_trace()
 
-
-    # TODO checkpoint model into output/date/time/folder
-
-    # evaluation model
-    # # fixme: move this to config and instantiate
-    evaluator = instantiate(
-        cfg.evaluation.evaluator, 
-        model=model,
-        _recursive_=False 
-    )
+    # # evaluation model
+    # # # fixme: move this to config and instantiate
+    # evaluator = instantiate(
+    #     cfg.evaluation.evaluator, 
+    #     model=model,
+    #     _recursive_=False 
+    # )
    
-    counts = evaluator.forward(
-        dataset_meta_features[test_split],
-        final_performances=lc_dataset[test_split],
-        steps=cfg.evaluation.steps)
+    # counts = evaluator.forward(
+    #     dataset_meta_features[test_split],
+    #     final_performances=lc_dataset[test_split],
+    #     steps=cfg.evaluation.steps)
     
-    print(counts)
+    # print(counts)
 
 
 if __name__ == '__main__':

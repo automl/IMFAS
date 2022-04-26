@@ -6,19 +6,22 @@ import torch.nn as nn
 
 import torchsort
 
+import pdb
+
 class ActionRankMLP(nn.Module):
     def __init__(
         self,
-        meta_features_dim: int = 107,
+        input_dim: int = 107,
         action_dim: int = 58,
-        hidden_dims: List[int] = [300, 200, 100] 
+        hidden_dims: List[int] = [300, 200, 100],
+        device: torch.device = torch.device("cpu"),
     ):
         
         super(ActionRankMLP, self).__init__()
-        self.meta_features_dim = meta_features_dim
+        self.meta_features_dim = input_dim
         self.action_dim = action_dim
         self.hidden_dims = hidden_dims
-
+        self.device = device
         
         self._build_network()
 
@@ -36,6 +39,9 @@ class ActionRankMLP(nn.Module):
             modules.append(nn.ReLU())
             input_dim = h_dim
 
+        modules.append(nn.Linear(input_dim, self.action_dim))
+        modules.append(nn.ReLU())
+        
         self.network = torch.nn.Sequential(*modules)
     
     def forward(self, D):
@@ -79,4 +85,4 @@ class ActionRankMLP(nn.Module):
         # compute the loss
         spear_loss =  (pred * target).sum()
 
-        return spear_loss
+        return spear_loss.abs()
