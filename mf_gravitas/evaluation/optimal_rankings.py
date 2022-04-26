@@ -33,6 +33,8 @@ class ZeroShotOptimalDistance:
         self.dataset_meta_features = dataset_meta_features
         self.final_performances = final_performances
 
+        
+
         self.n_algos = len(self.final_performances[0])
         self.n_datas = len(self.dataset_meta_features)
 

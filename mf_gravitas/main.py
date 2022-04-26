@@ -134,7 +134,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model = instantiate(cfg.model.model)
 
-    wandb.watch(model, log_freq=1)
+    #wandb.watch(model, log_freq=)
     
     call(
         cfg.training.schedule, 
@@ -149,7 +149,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # TODO checkpoint model into output/date/time/folder
 
     # evaluation model
-    # fixme: move this to config and instantiate
+    # # fixme: move this to config and instantiate
     evaluator = instantiate(
         cfg.evaluation.evaluator, 
         model=model,

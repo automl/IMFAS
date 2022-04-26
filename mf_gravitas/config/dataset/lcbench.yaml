@@ -14,7 +14,9 @@ dataset_meta_features:
     _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
     modulelist:
       - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+      #- _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
       - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+      - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd
 
 algo_meta_features:
   _target_: mf_gravitas.data.AlgorithmMetaFeatures
@@ -27,6 +29,7 @@ algo_meta_features:
     # path: some/path - we might want to automate and structure it
     modulelist:
       - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+      #- _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
       - _target_: mf_gravitas.data.preprocessings.table_transforms.Drop
         columns:
           # Irrelevant features (they are constant all across)
@@ -47,6 +50,8 @@ algo_meta_features:
           - 'num_layers'
         dtype: 'numeric'
       - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+      - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd
+      
 
 
 learning_curves:
@@ -58,6 +63,7 @@ learning_curves:
     _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
     modulelist:
       - _target_: mf_gravitas.data.preprocessings.nan_transforms.Column_Mean
+      # - _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
       - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlice
         slice: 51
       - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor

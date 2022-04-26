@@ -5,9 +5,9 @@ defaults:
 wandb:
   group: sequential_test
   notes: 'This is a test for sequential pocedure'
-  mode: 'offline'
+  mode: 'online'
 
 # Nested argument override of the defualt
 training:
   schedule:
-    epochs: [100,100,100]
+    epochs: [10000, 10000, 10000]

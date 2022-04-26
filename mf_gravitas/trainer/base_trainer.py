@@ -59,7 +59,7 @@ class Trainer_Autoencoder:
                 # gradient step
                 loss.backward()
                 optimizer.step()
-                losses.append(loss)
+                losses.append(loss.detach().item())
                 # TODO check convergence: look if neither Z_algo nor Z_data move anymore! ( infrequently)
 
             d_div, z_div = measure_embedding_diversity(
@@ -76,6 +76,9 @@ class Trainer_Autoencoder:
                 commit=False,
                 step=self.step
             )
+
+           
+
             
             test_losses = []
             for i, data in enumerate(test_dataloader):
@@ -86,8 +89,6 @@ class Trainer_Autoencoder:
 
                 A0 = A0.to(model.device)
                 A1 = A1.to(model.device)
-                optimizer.zero_grad()
-
                 # calculate embedding
                 D0_fwd = model.forward(D0)
 
@@ -97,12 +98,17 @@ class Trainer_Autoencoder:
 
                 # calculate "attracting" forces.
                 loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, model.Z_algo)
-                test_losses.append(loss)
+                test_losses.append(loss.detach().item())
 
-            
+            # self.losses[loss_fn.__name__] = test_losses[-1]
+            # wandb.log(
+            #     self.losses,
+            #     commit=False,
+            #     step=self.step
+            # )
 
             # log losses
-            self.losses[loss_fn.__name__] = torch.stack(losses).mean()
+            self.losses[loss_fn.__name__] = np.mean(test_losses)
             wandb.log(
                 self.losses,
                 commit=False,
@@ -112,17 +118,6 @@ class Trainer_Autoencoder:
 
             self.step += 1
 
-
-            # validation every e epochs
-            test_timer = 10
-            test_losses = []
-            # if e % test_timer == 0:
-            #     # look at the gradient step's effects on validation data
-            #     D_test = train_dataloader.dataset.datasets_meta_features
-            #     D_test = D_test.to(model.device)
-            #     Z_data = model.encode(D_test)
-            #
-            #     tracking.append((model.Z_algo.data.clone(), Z_data))
 
             # TODO validation procedure
 
@@ -160,3 +155,63 @@ class Trainer_Autoencoder:
             en, de, ebn, dbn = unfreezer.__next__()
             self._freeze([en, de, ebn, dbn], unfreeze=True)
         self.train(model, epochs=epochs // no_freeze_steps, *args, **kwargs)
+
+
+class Trainer_MLP:
+    def __init__(self):
+        self.step = 0
+        self.losses = {
+            'ranking_loss': 0
+        }
+        
+
+    def train(self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
+
+        optimizer = torch.optim.Adam(model.parameters(), lr)
+        for e in tqdm(range(int(epochs))):
+            
+
+            losses = []
+            for i, data in enumerate(train_dataloader):
+                (D0, _), (_, _) = data
+
+                # calculate embedding
+                D0_fwd = model.forward(D0)
+
+                # TODO need the optimal ranks
+                
+
+                # Calculate the loss
+                loss = loss_fn(D0, D0_fwd, model.Z_algo)
+
+                # gradient step
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                losses.append(loss.detach().item())
+            
+
+            test_losses = []
+            for i, data in enumerate(test_dataloader):
+                (D0, _), (_, _) = data
+
+                D0 = D0.to(model.device)
+
+                # calculate embedding
+                D0_fwd = model.forward(D0)
+
+
+                # calculate "attracting" forces.
+                loss = loss_fn(D0, D0_fwd, Z0_data, Z1_data, A0, A1, model.Z_algo)
+                test_losses.append(loss.detach().item())
+
+            # log losses
+            self.losses[loss_fn.__name__] = np.mean(test_losses)
+            wandb.log(
+                self.losses,
+                commit=False,
+                step=self.step
+            )
+                
+
+            self.step += 1        
