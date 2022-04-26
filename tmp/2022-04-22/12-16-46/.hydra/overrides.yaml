@@ -1,2 +1,0 @@
-- +experiment=sequential_test
-- +experiment.training.epochs=[3,3,3]
