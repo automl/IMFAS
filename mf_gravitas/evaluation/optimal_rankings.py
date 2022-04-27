@@ -6,20 +6,15 @@ each of these points (using the model's rank prediction module)
 """
 
 import torch
+from hydra.utils import call
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from mf_gravitas.data import DatasetMetaFeatures
-from hydra.utils import call
 
 
 class ZeroShotOptimalDistance:
-    def __init__(   self, 
-                    model, 
-                    ranking_loss,
-                    scaler = MinMaxScaler(),
-                    batch: int = 20,
-                ):
+    def __init__(self, model, ranking_loss, scaler=MinMaxScaler(), batch: int = 20, ):
         self.model = model
         self.ranking_loss = ranking_loss
         self.batch = batch  # TODO unfix here!
@@ -33,19 +28,16 @@ class ZeroShotOptimalDistance:
         self.dataset_meta_features = dataset_meta_features
         self.final_performances = final_performances
 
-        
-
         self.n_algos = len(self.final_performances[0])
         self.n_datas = len(self.dataset_meta_features)
 
         model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
         return self._compare_rankings(
-                    cuboid_scores=cuboid_scores, 
-                    model_scores=cuboid_scores, 
-                    A0=self.final_performances
-                )
-
+            cuboid_scores=cuboid_scores,
+            model_scores=cuboid_scores,
+            A0=self.final_performances
+        )
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
