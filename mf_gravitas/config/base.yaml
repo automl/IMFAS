@@ -5,7 +5,7 @@ defaults:
   - dataset: lcbench
   - dataset/algo_meta: minimal
   - dataset/dataset_meta: minimal
-  - dataset/lc: final_slice
+  - dataset/lc: multi_slice
   - model: rank_mlp
   - evaluation: optimal_rankings
   - training: rank

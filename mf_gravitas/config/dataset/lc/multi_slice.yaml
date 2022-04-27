@@ -7,7 +7,7 @@ transforms:
   modulelist:
     - _target_: mf_gravitas.data.preprocessings.nan_transforms.Column_Mean
     # - _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
-    - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlice
-      slice: 40
-    - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+    - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlices
+      slices: [ 20, 30, 51 ]
+
 metric: ${dataset.lc_metric}
