@@ -5,7 +5,7 @@ defaults:
   - dataset: lcbench
   - model: rank_mlp
   - evaluation: optimal_rankings
-  - training: rank 
+  - training: rank
   - slurm
   - _self_ # at the end means overriding values of lower yaml here!
 
@@ -30,7 +30,7 @@ wandb:
   project: gravitas
   mode: 'online'    # Change to offline or debug mode
   job_type: train
-  tags: []
+  tags: [ ]
   notes: null
   group: null
   sync_tensorboard: False
