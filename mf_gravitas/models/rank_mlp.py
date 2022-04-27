@@ -8,6 +8,8 @@ import torchsort
 
 import pdb
 
+from ott.tools.soft_sort import ranks as ott_ranks
+
 class ActionRankMLP(nn.Module):
     def __init__(
         self,
@@ -22,6 +24,8 @@ class ActionRankMLP(nn.Module):
         self.action_dim = action_dim
         self.hidden_dims = hidden_dims
         self.device = device
+        
+        self.rank = torchsort.soft_rank
         
         self._build_network()
 
@@ -73,8 +77,8 @@ class ActionRankMLP(nn.Module):
         """
 
         # generate soft ranks
-        pred = torchsort.soft_rank(pred, **ts_kwargs)
-        target = torchsort.soft_rank(target, **ts_kwargs)
+        pred = self.rank(pred, **ts_kwargs)
+        target = self.rank(target, **ts_kwargs)
 
         # normalize the soft ranks
         pred = pred - pred.mean()
