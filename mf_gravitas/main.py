@@ -10,7 +10,7 @@ from omegaconf import DictConfig, OmegaConf
 log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
-from mf_gravitas.data import Dataset_Join_Split
+from mf_gravitas.data import Dataset_Join_Split, Dataset_Join_Dmajor
 from mf_gravitas.util import seed_everything, train_test_split
 from torch.utils.data import DataLoader
 
@@ -85,21 +85,38 @@ def pipe_train(cfg: DictConfig) -> None:
     # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
 
-    train_set = Dataset_Join_Split(
+    # dataset_major
+    # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
+    #  algo meta features & dataset
+    train_set = Dataset_Join_Dmajor(
         meta_dataset=dataset_meta_features,
-        meta_algo=algorithm_meta_features,
+        # meta_algo=algorithm_meta_features,
         lc=lc_dataset,
-        splitindex=train_split,
-        competitors=cfg.num_competitors,
-    )
+        split=train_split)
 
-    test_set = Dataset_Join_Split(
+    test_set = Dataset_Join_Dmajor(
         meta_dataset=dataset_meta_features,
-        meta_algo=algorithm_meta_features,
+        # meta_algo=algorithm_meta_features,
         lc=lc_dataset,
-        splitindex=test_split,
-        competitors=cfg.num_competitors,
-    )
+        split=test_split)
+
+    if False:
+        # Fixme: refactor: multiindex + testsplit
+        train_set = Dataset_Join_Split(
+            meta_dataset=dataset_meta_features,
+            meta_algo=algorithm_meta_features,
+            lc=lc_dataset,
+            splitindex=train_split,
+            competitors=cfg.num_competitors,
+        )
+
+        test_set = Dataset_Join_Split(
+            meta_dataset=dataset_meta_features,
+            meta_algo=algorithm_meta_features,
+            lc=lc_dataset,
+            splitindex=test_split,
+            competitors=cfg.num_competitors,
+        )
 
     # wrap with Dataloaders
     train_loader = DataLoader(

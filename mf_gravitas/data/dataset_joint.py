@@ -1,16 +1,16 @@
 from random import randint
 
 from torch.utils.data import Dataset
-import pdb
 
-class Dataset_Join(Dataset):
+
+# FIXME: Refactor joint - gravity, multiindex & compettitor sampling
+class Dataset_Join_Gravity(Dataset):
     def __init__(self, meta_dataset, meta_algo, lc, competitors: int = 0):
         self.meta_dataset = meta_dataset
         self.meta_algo = meta_algo
         self.lc = lc
 
         self.competitors = competitors
-
 
         # Fixme: add consistency checks on rows & columns!
 
@@ -91,10 +91,10 @@ class Dataset_Join(Dataset):
         return len(self.meta_dataset.transformed_df) * len(self.meta_algo.transformed_df)
 
 
-class Dataset_Join_Split(Dataset_Join):
+class Dataset_Join_Split(Dataset_Join_Gravity):
     def __init__(self, splitindex: list[int], *args, **kwargs):
         """
-        Convenience wrapper around Dataset_Join to
+        Convenience wrapper around Dataset_Join_Gravity to
         Deterministically split it into train and test sets based on splitindex.
         :param splitindex: index of the datasets that are to be kept
         """
@@ -114,3 +114,22 @@ class Dataset_Join_Split(Dataset_Join):
 
     def __len__(self):
         return len(self.splitindex) * len(self.meta_dataset)
+
+
+class Dataset_Join_Dmajor(Dataset):
+    def __init__(self, meta_dataset, lc, meta_algo=None, split=None):
+        self.meta_dataset = meta_dataset
+        # self.meta_algo = meta_algo # fixme not required yet
+        self.lc = lc
+
+        if split is not None:
+            self.split = split
+        else:
+            self.split = list(range(len(self.meta_dataset)))
+
+    def __getitem__(self, item):
+        it = self.split[item]
+        return self.meta_dataset[it], self.lc[it]  # fixme: activate, self.meta_algo[a],
+
+    def __len__(self):
+        return len(self.split)
