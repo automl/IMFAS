@@ -1,0 +1,12 @@
+_target_: mf_gravitas.data.DatasetMetaFeatures
+path: ${dataset.preprocessed_path}/meta_features.csv
+index_col: 0
+
+# the important part!
+transforms:
+  _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+  modulelist:
+    - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+    #- _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
+    - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+    - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd

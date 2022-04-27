@@ -2,54 +2,50 @@ import logging
 import pathlib
 
 import hydra
-import torch
+from hydra.core.hydra_config import HydraConfig
 from hydra.utils import instantiate, call
 from omegaconf import DictConfig, OmegaConf
-from hydra.core.hydra_config import HydraConfig
 
 # A logger for this file
 log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Split
-from mf_gravitas.util import seed_everything, train_test_split, measure_embedding_diversity
-from mf_gravitas.evaluation.optimal_rankings import ZeroShotOptimalDistance
+from mf_gravitas.util import seed_everything, train_test_split
 from torch.utils.data import DataLoader
 
 import wandb
-import os 
-import pdb
+import os
 import sys
 
 import string
 import random
 
 
-
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
+
 base_dir = os.getcwd()
+
 
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
-    
     sys.path.append(os.getcwd())
     sys.path.append("..")
 
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
 
     hydra_job = (
-        os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
-        + "_"
-        + os.path.basename(HydraConfig.get().run.dir)
+            os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
+            + "_"
+            + os.path.basename(HydraConfig.get().run.dir)
     )
 
     cfg.wandb.id = hydra_job + "_" + id_generator()
 
-
     run = wandb.init(
-        **cfg.wandb, 
+        **cfg.wandb,
         config=dict_cfg
     )
 
@@ -61,10 +57,9 @@ def pipe_train(cfg: DictConfig) -> None:
         slurm_id = None
 
     wandb.config.update({
-        "command": command, 
+        "command": command,
         "slurm_id": slurm_id
     })
-
 
     orig_cwd = hydra.utils.get_original_cwd()
 
@@ -83,9 +78,9 @@ def pipe_train(cfg: DictConfig) -> None:
         main_raw(cfg.dataset_raw)
 
     # read in the data
-    algorithm_meta_features = instantiate(cfg.dataset.algo_meta_features)
-    dataset_meta_features = instantiate(cfg.dataset.dataset_meta_features)
-    lc_dataset = instantiate(cfg.dataset.learning_curves)
+    algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
+    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
+    lc_dataset = instantiate(cfg.dataset.lc)
 
     # train test split by dataset major
     train_split, test_split = train_test_split(len(dataset_meta_features), cfg.dataset.split)
@@ -106,7 +101,6 @@ def pipe_train(cfg: DictConfig) -> None:
         competitors=cfg.num_competitors,
     )
 
-
     # wrap with Dataloaders
     train_loader = DataLoader(
         train_set,
@@ -122,7 +116,6 @@ def pipe_train(cfg: DictConfig) -> None:
         num_workers=cfg.num_workers
     )
 
-
     # update the input dims adn number of algos based on the sampled stuff
     cfg.model.model.input_dim = dataset_meta_features.df.columns.size
     cfg.model.model.action_dim = len(algorithm_meta_features)
@@ -132,18 +125,17 @@ def pipe_train(cfg: DictConfig) -> None:
         'input_dim': dataset_meta_features.df.columns.size
     })
 
-
     model = instantiate(cfg.model.model)
 
-    #wandb.watch(model, log_freq=)
-    
+    # wandb.watch(model, log_freq=)
+
     call(
-        cfg.training.schedule, 
+        cfg.training.schedule,
         model,
         train_dataloader=train_loader,
-        train_labels = lc_dataset[train_split],
+        train_labels=lc_dataset[train_split],
         test_dataloader=test_loader,
-        test_labels = lc_dataset[test_split],
+        test_labels=lc_dataset[test_split],
     )
 
     # pdb.set_trace()
@@ -151,18 +143,18 @@ def pipe_train(cfg: DictConfig) -> None:
     # evaluation model
     # # fixme: move this to config and instantiate
     evaluator = instantiate(
-        cfg.evaluation.evaluator, 
+        cfg.evaluation.evaluator,
         model=model,
-        _recursive_=False 
+        _recursive_=False
     )
-   
+
     counts = evaluator.forward(
         dataset_meta_features[test_split],
         final_performances=lc_dataset[test_split],
         steps=cfg.evaluation.steps)
-    
+
     # print(counts)
 
 
 if __name__ == '__main__':
-   pipe_train()
+    pipe_train()
