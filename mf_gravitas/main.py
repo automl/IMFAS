@@ -148,18 +148,18 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # pdb.set_trace()
 
-    # # evaluation model
-    # # # fixme: move this to config and instantiate
-    # evaluator = instantiate(
-    #     cfg.evaluation.evaluator, 
-    #     model=model,
-    #     _recursive_=False 
-    # )
+    # evaluation model
+    # # fixme: move this to config and instantiate
+    evaluator = instantiate(
+        cfg.evaluation.evaluator, 
+        model=model,
+        _recursive_=False 
+    )
    
-    # counts = evaluator.forward(
-    #     dataset_meta_features[test_split],
-    #     final_performances=lc_dataset[test_split],
-    #     steps=cfg.evaluation.steps)
+    counts = evaluator.forward(
+        dataset_meta_features[test_split],
+        final_performances=lc_dataset[test_split],
+        steps=cfg.evaluation.steps)
     
     # print(counts)
 

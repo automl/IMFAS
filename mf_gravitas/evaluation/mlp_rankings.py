@@ -12,6 +12,7 @@ from tqdm import tqdm
 from mf_gravitas.data import DatasetMetaFeatures
 from hydra.utils import call
 
+import torchsort
 
 class ZeroShotOptimalDistance:
     def __init__(   self, 
@@ -22,13 +23,24 @@ class ZeroShotOptimalDistance:
                 ):
         self.model = model
         self.ranking_loss = ranking_loss
-        self.batch = batch  # TODO unfix here!
+        self.batch = batch  
         self.scaler = call(scaler)
 
-    def forward(self, dataset_meta_features: DatasetMetaFeatures, final_performances, steps):
+    def forward(self, 
+            dataset_meta_features: DatasetMetaFeatures, 
+            final_performances, steps
+        ):
         """
         Defining the evaluation protocol. Since ZeroShotOptimalDistance
-        is a static method, forward does not depend on some running meth
+        is a static method, forward does not depend on some running method
+
+        Args:
+            dataset_meta_features: DatasetMetaFeatures
+            final_performances: list of final performances
+
+        Returns:
+            list of final performances
+
         """
         self.dataset_meta_features = dataset_meta_features
         self.final_performances = final_performances
