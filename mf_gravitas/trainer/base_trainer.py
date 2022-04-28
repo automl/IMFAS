@@ -161,11 +161,11 @@ class Trainer_Rank:
     def __init__(self):
         self.step = 0
         self.losses = {
-            'ranking_loss': 0
+            #'ranking_loss': 0
         }
         
 
-    def train(self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001, log_wandb=True):
+    def train(self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001, log_wandb=True, slice_index=-1):
 
         
         optimizer = torch.optim.Adam(model.parameters(), lr)
@@ -176,7 +176,7 @@ class Trainer_Rank:
                 
                 # Dataset meta features and final  slice labels
                 D0 = data[0].to(model.device)
-                labels = data[1][0,-1].reshape(1,-1).to(model.device)
+                labels = data[1][0,slice_index].reshape(1,-1).to(model.device)
 
                 # calculate embedding
                 D0_fwd = model.forward(D0)
@@ -200,7 +200,7 @@ class Trainer_Rank:
                 
                  # Dataset meta features and final  slice labels
                 D0 = data[0].to(model.device)
-                labels = data[1][0,-1].reshape(1,-1).to(model.device)
+                labels = data[1][0,slice_index].reshape(1,-1).to(model.device)
 
                 # calculate embedding
                 D0_fwd = model.forward(D0)
@@ -214,7 +214,7 @@ class Trainer_Rank:
                 test_losses.append(loss.detach().item())
 
             # log losses
-            self.losses['ranking_loss'] = np.mean(test_losses)
+            self.losses[f'{slice_index}/ranking_loss'] = np.mean(test_losses)
 
 
             if log_wandb:
@@ -227,4 +227,116 @@ class Trainer_Rank:
 
             self.step += 1        
 
-        return self.losses['ranking_loss']
+        return {
+            'loss' : self.losses[f'{slice_index}/ranking_loss'],
+            'step' : self.step - 1
+        }
+
+
+class Trainer_Ensemble:
+    def __init__(self):
+        self.step = 0
+        self.losses = {
+            #'ranking_loss': 0
+        }
+        
+
+    
+    def  train (self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001):
+        optimizer = torch.optim.Adam(model.parameters(), lr)
+
+        n_slices = model.n_fidelities
+
+        for e in tqdm(range(int(epochs))):
+            for i, data in enumerate(train_dataloader):
+                
+                # Dataset meta features and final  slice labels
+                D0 = data[0].to(model.device)
+
+                labels = []
+                for j in range(n_slices):
+                    labels.append(data[1][0,j].reshape(1,-1).to(model.device))
+                
+
+                # calculate embedding
+                shared_D0, multi_head_D0, final_D0 = model.forward(D0)
+
+
+                multi_head_losses = []
+
+                for j in range(n_slices-1):
+                    
+                    # Calculate the loss on multi heads
+                    multi_head_loss = loss_fn(
+                        pred = multi_head_D0[j],
+                        target = labels[j],
+                    )
+                    multi_head_losses.append(multi_head_loss.detach().item())
+
+                #calculate the loss on final layer
+                final_loss = loss_fn(
+                    pred = final_D0,
+                    target = labels[-1],
+                )
+
+                # Add the final loss to the multi head losses
+                for j in range(len(multi_head_losses)):
+                    multi_head_losses[j] += final_loss
+
+                # gradient step
+                optimizer.zero_grad()
+                [loss.backward() for loss in multi_head_losses]
+                final_loss.backward()
+                optimizer.step()
+                
+
+            test_final_losses = []
+            test_multi_head_losses = []
+
+            for i, data in enumerate(test_dataloader):
+                    
+                # Dataset meta features and final  slice labels
+                D0 = data[0].to(model.device)
+
+                labels = []
+                for j in range(n_slices):
+                    labels.append(data[1][0,j].reshape(1,-1).to(model.device))
+
+                # calculate embedding
+                shared_D0, multi_head_D0, final_D0 = model.forward(D0)
+
+
+                multi_head_losses = []
+
+                for j in range(n_slices-1):
+                    
+                    # Calculate the loss on multi heads
+                    multi_head_loss = loss_fn(
+                        pred = multi_head_D0[j],
+                        target = labels[j],
+                    )
+                    multi_head_losses.append(multi_head_loss.detach().item())
+
+                #calculate the loss on final layer
+                final_loss = loss_fn(
+                    pred = final_D0,
+                    target = labels[-1],
+                )
+
+                # Add the final loss to the multi head losses
+                for j in range(len(multi_head_losses)):
+                    multi_head_losses[j] += final_loss
+
+                test_final_losses.append(final_loss.detach().item())
+                test_multi_head_losses.append(np.mean(multi_head_losses))
+                
+        
+            # log losses
+            for j in range(n_slices-1):
+                self.losses[f'{j}/ranking_loss'] = np.mean(test_multi_head_losses[j])
+            
+            self.losses[f'final_ranking_loss'] = np.mean(test_final_losses)
+
+            self.step += 1
+
+        return (self.losses, self.step-1)
