@@ -165,30 +165,26 @@ class Trainer_Rank:
         }
         
 
-    def train(self, model, loss_fn, train_dataloader, train_labels, test_dataloader, test_labels, epochs, lr=0.001):
+    def train(self, model, loss_fn, train_dataloader, test_dataloader, epochs, lr=0.001, log_wandb=True):
 
         
         optimizer = torch.optim.Adam(model.parameters(), lr)
         for e in tqdm(range(int(epochs))):
 
             losses = []
-            for targets, data in zip(train_labels, test_dataloader):
-                (D0, _), (_, _) = data
+            for i, data in enumerate(train_dataloader):
                 
+                # Dataset meta features and final  slice labels
+                D0 = data[0].to(model.device)
+                labels = data[1][0,-1].reshape(1,-1).to(model.device)
+
                 # calculate embedding
                 D0_fwd = model.forward(D0)
-  
-                # _, true_rankings = torch.topk(targets, largest=False, k=model.action_dim)
-
-                true_rankings = targets
-                true_rankings = true_rankings.reshape(1, -1)
-                true_rankings = true_rankings.to(model.device)
 
                 # Calculate the loss
                 loss = loss_fn(
                     pred = D0_fwd,
-                    target = true_rankings,
-                    regularization="l2"
+                    target = labels,
                 )
 
 
@@ -200,38 +196,35 @@ class Trainer_Rank:
 
             
             test_losses = []
-            for targets, data in zip(test_labels, test_dataloader):
+            for i, data in enumerate(test_dataloader):
                 
-                (D0, _), (_, _) = data
-
-                D0 = D0.to(model.device)
+                 # Dataset meta features and final  slice labels
+                D0 = data[0].to(model.device)
+                labels = data[1][0,-1].reshape(1,-1).to(model.device)
 
                 # calculate embedding
                 D0_fwd = model.forward(D0)
 
-                true_rankings = targets
-                true_rankings = true_rankings.reshape(1, -1)
-                true_rankings = true_rankings.to(model.device)
-
-
-                # _, true_rankings = torch.argsort(targets, largest=False, k=model.action_dim)
-
-                # calculate "attracting" forces.
+                # Calculate the loss
                 loss = loss_fn(
                     pred = D0_fwd,
-                    target = test_labels,
-                    regularization="l2"
+                    target = labels,
                 )
+                
                 test_losses.append(loss.detach().item())
 
             # log losses
             self.losses['ranking_loss'] = np.mean(test_losses)
 
-            wandb.log(
-                self.losses,
-                commit=False,
-                step=self.step
-            )
-                
+
+            if log_wandb:
+                wandb.log(
+                    self.losses,
+                    commit=False,
+                    step=self.step
+                )
+                    
 
             self.step += 1        
+
+        return self.losses['ranking_loss']

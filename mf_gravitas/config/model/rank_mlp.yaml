@@ -1,4 +1,4 @@
 model:
   _target_: mf_gravitas.models.rank_mlp.ActionRankMLP
-  hidden_dims: [ 300, 150 ]
-  device: 'cpu'
+  hidden_dims: [300, 200, 100]
+  device: 'cpu' 
