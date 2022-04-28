@@ -1,0 +1,13 @@
+_target_: mf_gravitas.data.Dataset_LC
+path: ${dataset.preprocessed_path}/logs_subset.h5
+
+# the important part!
+transforms:
+  _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+  modulelist:
+    - _target_: mf_gravitas.data.preprocessings.nan_transforms.Column_Mean
+    # - _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
+    - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlices
+      slices: [ 20, 30, 51 ]
+
+metric: ${dataset.lc_metric}

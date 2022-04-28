@@ -3,14 +3,17 @@
 defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
+  - dataset/algo_meta: minimal
+  - dataset/dataset_meta: minimal
+  - dataset/lc: multi_slice
   - model: rank_mlp
   - evaluation: optimal_rankings
   - training: rank
   - slurm
   - _self_ # at the end means overriding values of lower yaml here!
 
-  - override hydra/job_logging: colorlog
-  - override hydra/hydra_logging: colorlog
+#  - override hydra/job_logging: colorlog
+#  - override hydra/hydra_logging: colorlog
 
 seed: 0
 output_dir: ./tmp
@@ -28,7 +31,7 @@ wandb:
   id: null
   entity: tnt
   project: gravitas
-  mode: 'online'    # Change to offline or debug mode
+  mode: 'offline'    # Change to offline or debug mode
   job_type: train
   tags: [ ]
   notes: null

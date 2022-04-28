@@ -1,7 +1,7 @@
 import pandas as pd
 from torch.utils.data import Dataset
 
-from mf_gravitas.data.preprocessings.lc_slice import LC_TimeSlice
+from mf_gravitas.data.preprocessings.lc_slice import LC_TimeSlices
 
 
 class Dataset_LC(Dataset):
@@ -24,7 +24,7 @@ class Dataset_LC(Dataset):
 
             # for getitem;
             last_time_slice = [trans for trans in self.transforms
-                               if isinstance(trans, LC_TimeSlice)][-1]
+                               if isinstance(trans, LC_TimeSlices)][-1]
 
             if last_time_slice:
                 # time slices create a new dataframe, whose indicies must be known
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     from mf_gravitas.data.preprocessings.table_transforms import ToTensor
     from mf_gravitas.data.preprocessings.transformpipeline import TransformPipeline
 
-    pipe = TransformPipeline([LC_TimeSlice(slice=51), ToTensor()])
+    pipe = TransformPipeline([LC_TimeSlices(slice=51), ToTensor()])
     lc = Dataset_LC(file, 'Train/val_accuracy', pipe)
 
     # lc[('APSFailure', '0')]
