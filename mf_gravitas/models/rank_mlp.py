@@ -73,11 +73,11 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self,
         input_dim: int = 107,
         algo_dim: int = 58,
-        shared_hidden_dims: int = [300, 200], 
+        shared_hidden_dims: List[int] = [300, 200], 
         n_fidelities: int = 2,
-        multi_head_dims: int = [100], 
-        fc_dim: int = [58],
-        device: torch.device = torch.device("cpu"),
+        multi_head_dims: List[int] = [100], 
+        fc_dim: List[int] = [58],
+        device: str= 'cpu',
     ):
         """
         Ensemble fo MLPs to rank based on multiple fidelities
@@ -99,7 +99,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.shared_hidden_dims = shared_hidden_dims
         self.multi_head_dims = multi_head_dims
         self.fc_dim = fc_dim
-        self.device = device
+        self.device = torch.device(device)
         self.n_fidelities = n_fidelities
 
         # self.rank = torchsort.soft_rank

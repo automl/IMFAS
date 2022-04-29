@@ -125,36 +125,39 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # update the input dims adn number of algos based on the sampled stuff
     input_dim = dataset_meta_features.df.columns.size
-    action_dim = len(algorithm_meta_features)
+    n_algos = len(algorithm_meta_features)
 
     wandb.config.update({
-        'n_algos': len(algorithm_meta_features),
-        'input_dim': dataset_meta_features.df.columns.size
+        'n_algos': n_algos,
+        'input_dim': input_dim
     })
 
-    # model = instantiate(cfg.model.model)
-
-    model = AlgoRankMLP_Ensemble()
-
-    # train the model
-    train_ensemble(
-        model=model,
-        train_dataloader=train_loader,
-        test_dataloader=test_loader,
-        epochs=100,
-        lr=0.001,
+    model = instantiate(
+            cfg.model.model,
+            input_dim=input_dim,
+            algo_dim=n_algos
     )
 
 
-
-    # call(
-    #     cfg.training.schedule,
-    #     model,
+    # train the model
+    # train_ensemble(
+    #     model=model,
     #     train_dataloader=train_loader,
-    #     # train_labels=lc_dataset[train_split],
     #     test_dataloader=test_loader,
-    #     # test_labels=lc_dataset[test_split],
+    #     epochs=100,
+    #     lr=0.001,
     # )
+
+
+
+    call(
+        cfg.training.schedule,
+        model,
+        train_dataloader=train_loader,
+        test_dataloader=test_loader,
+        _recursive_=False
+        
+    )
 
     # evaluation model
     # # fixme: move this to config and instantiate

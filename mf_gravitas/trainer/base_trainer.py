@@ -245,7 +245,7 @@ class Trainer_Ensemble:
         self.ranking_fn = ranking_fn
         self.optimizer = optimizer
 
-        self.n_slices = self.model.n_fidelities - 1 
+        self.n_slices = self.model.n_fidelities + 1 
         
         self.loss_kwargs = {
             'ranking_fn' : self.ranking_fn,
@@ -263,13 +263,13 @@ class Trainer_Ensemble:
 
             labels = []
             for j in range(self.n_slices):
-                labels.append(data[1][0,j].reshape(1,-1).to(self.n_slices.device))
+                labels.append(data[1][0,j].reshape(1,-1).to(self.model.device))
 
             # calculate embedding    
             self.model.eval()
             with torch.no_grad():
                 shared_D0, multi_head_D0, final_D0 = self.model.forward(D0)
-                
+
                 # Get the multihead losses
                 multi_head_losses = []
                 for j in range(self.n_slices-1):
@@ -280,6 +280,7 @@ class Trainer_Ensemble:
                         target = labels[j],
                         **self.loss_kwargs
                     )
+
                     multi_head_losses.append(multi_head_loss)
                 
                 # Calculate the loss on final layer
@@ -291,9 +292,9 @@ class Trainer_Ensemble:
 
                 test_final_losses.append(final_loss)
                 [test_multi_head_losses.append(l) for l in multi_head_losses]
-        
+
         for j in range(self.n_slices-1):
-                self.losses[f'{j}/mean_multihead_loss'] = test_multi_head_losses[j]
+                self.losses[f'{j}/multihead_loss'] = test_multi_head_losses[j]
             
         self.losses[f'final_ranking_loss'] = torch.stack(test_final_losses).mean()
 
@@ -302,47 +303,46 @@ class Trainer_Ensemble:
         self.step += 1
 
     
-    def train (self, train_dataloader, epochs):
+    def train(self, train_dataloader):
 
-        for e in tqdm(range(int(epochs))):
-            for _, data in enumerate(train_dataloader):
-                
-                self.optimizer.zero_grad()
-                # Dataset meta features and final  slice labels
-                D0 = data[0].to(self.model.device)
-
-                labels = []
-                for j in range(self.n_slices):
-                    labels.append(data[1][0,j].reshape(1,-1).to(self.model.device))
-                
-                # calculate embedding
-                shared_D0, multi_head_D0, final_D0 = self.model.forward(D0)
-
-                multi_head_losses = []
-                for j in range(self.n_slices-1):
-                    
-                    # Calculate the loss on multi heads
-                    multi_head_loss = self.loss_fn(
-                        pred = multi_head_D0[j],
-                        target = labels[j],
-                        **self.loss_kwargs
-                    )
-                    multi_head_losses.append(multi_head_loss)
-                
-                # Calculate the loss on final head
-                multi_head_sum = sum(multi_head_losses)
+        for _, data in enumerate(train_dataloader):
             
-                #calculate the loss on final layer
-                final_loss = self.loss_fn(
-                    pred = final_D0,
-                    target = labels[-1],
+            self.optimizer.zero_grad()
+            # Dataset meta features and final  slice labels
+            D0 = data[0].to(self.model.device)
+
+            labels = []
+            for j in range(self.n_slices):
+                labels.append(data[1][0,j].reshape(1,-1).to(self.model.device))
+            
+            # calculate embedding
+            shared_D0, multi_head_D0, final_D0 = self.model.forward(D0)
+
+            multi_head_losses = []
+            for j in range(self.n_slices-1):
+                
+                # Calculate the loss on multi heads
+                multi_head_loss = self.loss_fn(
+                    pred = multi_head_D0[j],
+                    target = labels[j],
                     **self.loss_kwargs
                 )
+                multi_head_losses.append(multi_head_loss)
+            
+            # Calculate the loss on final head
+            multi_head_sum = sum(multi_head_losses)
+        
+            #calculate the loss on final layer
+            final_loss = self.loss_fn(
+                pred = final_D0,
+                target = labels[-1],
+                **self.loss_kwargs
+            )
 
-                joint_loss = multi_head_sum + final_loss
+            joint_loss = multi_head_sum + final_loss
 
-                joint_loss.backward()
-                self.optimizer.step()
+            joint_loss.backward()
+            self.optimizer.step()
 
                 
 

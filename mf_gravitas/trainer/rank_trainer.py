@@ -8,6 +8,7 @@ import pdb
 import torchsort
 
 import torch
+from tqdm import tqdm
 
 from mf_gravitas.losses.ranking_loss import spearman
 
@@ -36,10 +37,10 @@ def train_rank(model, train_dataloader, test_dataloader, epochs, lr ):
     score, step = trainer.train(**kwargs)
 
     wandb.log(
-                    score,
-                    commit=False,
-                    step=step
-                )
+        score,
+        commit=False,
+        step=step
+    )
 
     return score
     
@@ -62,23 +63,27 @@ def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr, ranking
         'optimizer':optimizer,
     }
 
+    
+    
     # Initialize the trainer
     trainer = Trainer_Ensemble(**trainer_kwargs)
    
-    # Train the model
-    trainer.train(train_dataloader, epochs)
+    for e in tqdm(range(epochs)):
     
-    # Evaluate the model
-    score = trainer.evaluate(test_dataloader)
+        # Train the model
+        trainer.train(train_dataloader)
+        
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
 
-    # Take the next step
-    trainer.step_next()
+        # Take the next step
+        trainer.step_next()
 
-    wandb.log(
-        score,
-        commit=False,
-        step=trainer.step
-    )
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e
+        )
 
     return score
 

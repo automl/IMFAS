@@ -1,0 +1,8 @@
+# @package _global_
+defaults:
+  - override /training: ensemble
+  
+wandb:
+  group: rank_ensemble
+  notes: 'This is a run for mlp ranking ensemble'
+  mode: 'online'

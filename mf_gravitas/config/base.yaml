@@ -6,9 +6,9 @@ defaults:
   - dataset/algo_meta: minimal
   - dataset/dataset_meta: minimal
   - dataset/lc: multi_slice
-  - model: rank_mlp
+  - model: rank_ensemble
   - evaluation: optimal_rankings
-  - training: rank
+  - training: ensemble
   - slurm
   - _self_ # at the end means overriding values of lower yaml here!
 
