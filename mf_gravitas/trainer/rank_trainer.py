@@ -5,6 +5,11 @@ from mf_gravitas.trainer.base_trainer import Trainer_Ensemble, Trainer_Rank
 import wandb
 
 import pdb
+import torchsort
+
+import torch
+
+from mf_gravitas.losses.ranking_loss import spearman
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -39,29 +44,41 @@ def train_rank(model, train_dataloader, test_dataloader, epochs, lr ):
     return score
     
 
-def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr):
+def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr, ranking_fn=torchsort.soft_rank, optimizer_cls= torch.optim.Adam):
     """
     
     """
-    trainer = Trainer_Ensemble()
-    loss_fn = model.loss
-    
 
-    kwargs = {
+    
+    optimizer = optimizer_cls(
+                    model.parameters(), 
+                    lr
+                )
+
+    trainer_kwargs = {
         'model': model,
-        'loss_fn': loss_fn,
-        'train_dataloader': train_dataloader,
-        'test_dataloader': test_dataloader,
-        'epochs': epochs,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
         'lr': lr,
+        'optimizer':optimizer,
     }
 
-    score, step = trainer.train(**kwargs)
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+   
+    # Train the model
+    trainer.train(train_dataloader, epochs)
+    
+    # Evaluate the model
+    score = trainer.evaluate(test_dataloader)
+
+    # Take the next step
+    trainer.step_next()
 
     wandb.log(
         score,
         commit=False,
-        step=step
+        step=trainer.step
     )
 
     return score

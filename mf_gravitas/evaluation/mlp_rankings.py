@@ -12,8 +12,6 @@ from tqdm import tqdm
 from mf_gravitas.data import DatasetMetaFeatures
 from hydra.utils import call
 
-import torchsort
-
 class ZeroShotOptimalDistance:
     def __init__(   self, 
                     model, 

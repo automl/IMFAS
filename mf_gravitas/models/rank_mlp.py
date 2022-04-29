@@ -66,35 +66,6 @@ class AlgoRankMLP(nn.Module):
         """
         return self.network(D)
 
-    
-    def loss(self, pred, target,  **ts_kwargs):
-        """
-        Loss function for the meta-feature ranker
-
-
-        Args:
-            pred: predicted values
-            target: target values
-            ts_kwargs: keyword arguments for the loss function
-
-        Returns:
-            differentiable loss tensor
-        """
-
-        # generate soft ranks
-        pred = self.rank(pred, **ts_kwargs)
-        target = self.rank(target, **ts_kwargs)
-
-        # normalize the soft ranks
-        pred = pred - pred.mean()
-        pred = pred / pred.norm()
-        target = target - target.mean()
-        target = target / target.norm()
-
-        # compute the loss
-        spear_loss =  (pred * target).sum()
-
-        return spear_loss.abs()
 
 
 class AlgoRankMLP_Ensemble(nn.Module):
@@ -131,7 +102,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.device = device
         self.n_fidelities = n_fidelities
 
-        self.rank = torchsort.soft_rank
+        # self.rank = torchsort.soft_rank
 
         self._build_network()
 
@@ -202,38 +173,6 @@ class AlgoRankMLP_Ensemble(nn.Module):
         final_D = self.final_network(shared_op)
 
         return shared_D, multi_head_D, final_D
-
-
-
-    def loss(self, pred, target,  **ts_kwargs):
-        """
-        Loss function for the meta-feature ranker
-
-
-        Args:
-            pred: predicted values
-            target: target values
-            ts_kwargs: keyword arguments for the loss function
-
-        Returns:
-            differentiable loss tensor
-        """
-
-        # generate soft ranks
-        pred = self.rank(pred, **ts_kwargs)
-        target = self.rank(target, **ts_kwargs)
-
-        # normalize the soft ranks
-        pred = pred - pred.mean()
-        pred = pred / pred.norm()
-        target = target - target.mean()
-        target = target / target.norm()
-
-        # compute the loss
-        spear_loss =  (pred * target).sum()
-
-        return spear_loss.abs() 
-
 
 
 
