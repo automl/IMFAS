@@ -59,7 +59,6 @@ def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr, ranking
         'model': model,
         'loss_fn': spearman,
         'ranking_fn': ranking_fn,
-        'lr': lr,
         'optimizer':optimizer,
     }
 

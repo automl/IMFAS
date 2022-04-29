@@ -234,7 +234,7 @@ class Trainer_Rank:
 
 
 class Trainer_Ensemble:
-    def __init__(self, model, loss_fn, ranking_fn, optimizer, lr):
+    def __init__(self, model, loss_fn, ranking_fn, optimizer):
         self.step = 0
         self.losses = {
             #'ranking_loss': 0
