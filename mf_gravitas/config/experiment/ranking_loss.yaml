@@ -5,4 +5,4 @@ defaults:
 wandb:
   group: rank_mlp
   notes: 'This is a run for mlp ranking'
-  mode: 'offline'
+  mode: 'online'

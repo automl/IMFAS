@@ -1,3 +1,4 @@
+from turtle import clear
 from typing import List
 
 import torch
@@ -12,6 +13,7 @@ import pdb
 
 #TODO shared combiner can be a differential sorting instead of being n MLP
 
+import numpy as np
 
 class ActionRankMLP(nn.Module):
     def __init__(
@@ -141,51 +143,33 @@ class ActionRankMLP_Ensemble(nn.Module):
         """
 
         # Build the shared network
-        shared_modules = []
+        self.shared_network = ActionRankMLP(
+            input_dim=self.meta_features_dim,
+            action_dim=self.shared_hidden_dims[-1],
+            hidden_dims=self.shared_hidden_dims[:-1]
+        )
 
-        input_dim = self.meta_features_dim
-
-        for h_dim in self.shared_hidden_dims:
-            shared_modules.append(nn.Linear(input_dim, h_dim))
-            shared_modules.append(nn.ReLU())
-            input_dim = h_dim
-
-        self.shared_network = torch.nn.Sequential(*shared_modules)
-
-
-        # build a list of multi-head networks, one for each fidelity
-        self.multi_head_networks = []
+        #TODO Parallelize these networks 
+        # Build a list of multi-head networks, one for each fidelity
+        self.multi_head_networks = nn.ModuleList()
 
         for _ in range(self.n_fidelities):
-            multi_head_modules = [] 
-            
-            input_dim = self.shared_hidden_dims[-1]
-            for h_dim in self.multi_head_dims:
-                multi_head_modules.append(nn.Linear(input_dim, h_dim))
-                multi_head_modules.append(nn.ReLU())
-                input_dim = h_dim
+            self.multi_head_networks.append(
+                ActionRankMLP(
+                    input_dim=self.shared_hidden_dims[-1],
+                    action_dim=self.action_dim,
+                    hidden_dims=self.multi_head_dims,
+                )
+            )
 
-            multi_head_modules.append(nn.Linear(input_dim, self.action_dim))
-            multi_head_modules.append(nn.ReLU())
-
-            self.multi_head_networks.append(torch.nn.Sequential(*multi_head_modules))
-
-        self.multi_head_network = nn.Sequential(*self.multi_head_networks)
-
+        
         # Build the final network
-        final_modules = []
-        input_dim = self.action_dim
-        for h_dim in self.fc_dim:
-            final_modules.append(nn.Linear(input_dim, h_dim))
-            final_modules.append(nn.ReLU())
-            input_dim = h_dim
-
-        final_modules.append(nn.Linear(input_dim, self.action_dim))
-        final_modules.append(nn.ReLU())
-
-        self.final_network = torch.nn.Sequential(*final_modules)
-
-
+        self.final_network = ActionRankMLP(
+            input_dim=self.action_dim,
+            action_dim=self.action_dim,
+            hidden_dims=self.fc_dim,
+        )
+        
 
 
     def forward(self, D):
@@ -203,14 +187,20 @@ class ActionRankMLP_Ensemble(nn.Module):
         # Forward through the shared network
         shared_D = self.shared_network(D)
 
+        
+        
         # Forward through the multi-head networks
+        #TODO Parallelize using joblib
         multi_head_D = []
         for idx in range(self.n_fidelities):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
         
-        # Average the outputs
+        #TODO Make less hacky
+        shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
 
-        shared_op = shared_D.mean(dim=0)
+        # [print(d.shape) for d in multi_head_D]
+        # print(shared_op)
+        # pdb.set_trace()
         
         # Forward through the final network
         final_D = self.final_network(shared_op)
@@ -219,7 +209,7 @@ class ActionRankMLP_Ensemble(nn.Module):
 
 
 
-    def pred_loss(self, pred, target,  **ts_kwargs):
+    def loss(self, pred, target,  **ts_kwargs):
         """
         Loss function for the meta-feature ranker
 
@@ -260,8 +250,6 @@ if __name__ == "__main__":
 
     # print the network
 
-    print(network.shared_network)
-    print(network.multi_head_networks)
-    print(network.final_network)
-
-
+    print('shared network',network.shared_network)
+    print('multi-head', network.multi_head_networks)
+    print('final', network.final_network)

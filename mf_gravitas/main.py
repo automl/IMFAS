@@ -23,6 +23,8 @@ import random
 
 import pdb
 
+from mf_gravitas.models.rank_mlp import ActionRankMLP_Ensemble
+from mf_gravitas.trainer.rank_trainer import train_ensemble
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -130,29 +132,42 @@ def pipe_train(cfg: DictConfig) -> None:
         'input_dim': dataset_meta_features.df.columns.size
     })
 
-    model = instantiate(cfg.model.model)
+    # model = instantiate(cfg.model.model)
 
-    call(
-        cfg.training.schedule,
-        model,
+    model = ActionRankMLP_Ensemble()
+
+    # train the model
+    train_ensemble(
+        model=model,
         train_dataloader=train_loader,
-        # train_labels=lc_dataset[train_split],
         test_dataloader=test_loader,
-        # test_labels=lc_dataset[test_split],
+        epochs=100,
+        lr=0.001,
     )
+
+
+
+    # call(
+    #     cfg.training.schedule,
+    #     model,
+    #     train_dataloader=train_loader,
+    #     # train_labels=lc_dataset[train_split],
+    #     test_dataloader=test_loader,
+    #     # test_labels=lc_dataset[test_split],
+    # )
 
     # evaluation model
     # # fixme: move this to config and instantiate
-    evaluator = instantiate(
-        cfg.evaluation.evaluator,
-        model=model,
-        _recursive_=False
-    )
+    # evaluator = instantiate(
+    #     cfg.evaluation.evaluator,
+    #     model=model,
+    #     _recursive_=False
+    # )
 
-    counts = evaluator.forward(
-        dataset_meta_features[test_split],
-        final_performances=lc_dataset[test_split],
-        steps=cfg.evaluation.steps)
+    # counts = evaluator.forward(
+    #     dataset_meta_features[test_split],
+    #     final_performances=lc_dataset[test_split],
+    #     steps=cfg.evaluation.steps)
 
     # print(counts)
 
