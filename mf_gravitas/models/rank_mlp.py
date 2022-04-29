@@ -15,18 +15,18 @@ import pdb
 
 import numpy as np
 
-class ActionRankMLP(nn.Module):
+class AlgoRankMLP(nn.Module):
     def __init__(
         self,
         input_dim: int = 107,
-        action_dim: int = 58,
+        algo_dim: int = 58,
         hidden_dims: List[int] = [300, 200, 100],
         device: torch.device = torch.device("cpu"),
     ):
         
-        super(ActionRankMLP, self).__init__()
+        super(AlgoRankMLP, self).__init__()
         self.meta_features_dim = input_dim
-        self.action_dim = action_dim
+        self.algo_dim = algo_dim
         self.hidden_dims = hidden_dims
         self.device = device
         
@@ -48,7 +48,7 @@ class ActionRankMLP(nn.Module):
             modules.append(nn.ReLU())
             input_dim = h_dim
 
-        modules.append(nn.Linear(input_dim, self.action_dim))
+        modules.append(nn.Linear(input_dim, self.algo_dim))
         modules.append(nn.ReLU())
         
         self.network = torch.nn.Sequential(*modules)
@@ -97,11 +97,11 @@ class ActionRankMLP(nn.Module):
         return spear_loss.abs()
 
 
-class ActionRankMLP_Ensemble(nn.Module):
+class AlgoRankMLP_Ensemble(nn.Module):
     def __init__(
         self,
         input_dim: int = 107,
-        action_dim: int = 58,
+        algo_dim: int = 58,
         shared_hidden_dims: int = [300, 200], 
         n_fidelities: int = 2,
         multi_head_dims: int = [100], 
@@ -113,7 +113,7 @@ class ActionRankMLP_Ensemble(nn.Module):
 
         Args:
             input_dim: input dimension
-            action_dim: number of algorithms
+            Algo_dim: number of algorithms
             shared_hidden_dims: list of hidden dimensions for the shared MLP
             n_fidelities: number of fidelities
             multi_head_dims: list of hidden dimensions for each multi-head
@@ -122,9 +122,9 @@ class ActionRankMLP_Ensemble(nn.Module):
 
         """
 
-        super(ActionRankMLP_Ensemble, self).__init__()
+        super(AlgoRankMLP_Ensemble, self).__init__()
         self.meta_features_dim = input_dim
-        self.action_dim = action_dim
+        self.algo_dim = algo_dim
         self.shared_hidden_dims = shared_hidden_dims
         self.multi_head_dims = multi_head_dims
         self.fc_dim = fc_dim
@@ -143,9 +143,9 @@ class ActionRankMLP_Ensemble(nn.Module):
         """
 
         # Build the shared network
-        self.shared_network = ActionRankMLP(
+        self.shared_network = AlgoRankMLP(
             input_dim=self.meta_features_dim,
-            action_dim=self.shared_hidden_dims[-1],
+            algo_dim=self.shared_hidden_dims[-1],
             hidden_dims=self.shared_hidden_dims[:-1]
         )
 
@@ -155,18 +155,18 @@ class ActionRankMLP_Ensemble(nn.Module):
 
         for _ in range(self.n_fidelities):
             self.multi_head_networks.append(
-                ActionRankMLP(
+                AlgoRankMLP(
                     input_dim=self.shared_hidden_dims[-1],
-                    action_dim=self.action_dim,
+                    algo_dim=self.algo_dim,
                     hidden_dims=self.multi_head_dims,
                 )
             )
 
         
         # Build the final network
-        self.final_network = ActionRankMLP(
-            input_dim=self.action_dim,
-            action_dim=self.action_dim,
+        self.final_network = AlgoRankMLP(
+            input_dim=self.algo_dim,
+            algo_dim=self.algo_dim,
             hidden_dims=self.fc_dim,
         )
         
@@ -197,10 +197,6 @@ class ActionRankMLP_Ensemble(nn.Module):
         
         #TODO Make less hacky
         shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
-
-        # [print(d.shape) for d in multi_head_D]
-        # print(shared_op)
-        # pdb.set_trace()
         
         # Forward through the final network
         final_D = self.final_network(shared_op)
@@ -244,7 +240,7 @@ class ActionRankMLP_Ensemble(nn.Module):
 if __name__ == "__main__":
     
 
-    network = ActionRankMLP_Ensemble()
+    network = AlgoRankMLP_Ensemble()
 
     #print(network)
 

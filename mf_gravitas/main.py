@@ -23,7 +23,7 @@ import random
 
 import pdb
 
-from mf_gravitas.models.rank_mlp import ActionRankMLP_Ensemble
+from mf_gravitas.models.rank_mlp import AlgoRankMLP_Ensemble
 from mf_gravitas.trainer.rank_trainer import train_ensemble
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -134,7 +134,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # model = instantiate(cfg.model.model)
 
-    model = ActionRankMLP_Ensemble()
+    model = AlgoRankMLP_Ensemble()
 
     # train the model
     train_ensemble(
