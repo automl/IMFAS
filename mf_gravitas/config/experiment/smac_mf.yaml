@@ -1,0 +1,94 @@
+# @package _global_
+#defaults:
+#  - override /training: ensemble
+#  - override hydra/sweeper: SMAC
+#  - override hydra/launcher: submitit_smac_slurm
+
+wandb:
+  group: smac_rank_sweep
+  notes: 'This is a run for mlp ranking ensemble'
+  mode: 'online'
+
+max_epochs: 10
+n_layer: 3
+n_neurons: 20
+activation: relu
+solver: sgd
+batch_size: 40
+learning_rate: constant
+learning_rate_init: 0.001
+
+hydra:
+  launcher:
+    partition: cpu_normal
+  sweeper:
+    budget_variable: ${max_epochs}
+    seed: ${seed}
+    n_jobs: 4
+    scenario:
+      run_obj: quality
+      deterministic: true
+      #      wallclock_limit: 100
+      runcount_limit: 50
+      cutoff: 30 # runtime limit for target algorithm
+      memory_limit: 3072 # adapt this to reasonable value for your hardware
+    intensifier:
+      initial_budget: 5
+      max_budget: ${max_epochs}
+      eta: 3
+    search_space:
+      # fixme: overload this for rank ensemble
+      # todo add this search space to the smac_mf.yaml!
+      hyperparameters:
+        n_layer:
+          type: uniform_int
+          lower: 1
+          upper: 5
+          default: ${n_layer}
+        n_neurons:
+          type: uniform_int
+          lower: 8
+          upper: 1024
+          log: true
+          default_value: ${n_neurons}
+        activation:
+          type: categorical
+          choices: [ logistic, tanh, relu ]
+          default_value: ${activation}
+        solver:
+          type: categorical
+          choices: [ lbfgs, sgd, adam ]
+          default_value: ${solver}
+        batch_size:
+          type: uniform_int
+          lower: 30
+          upper: 300
+          default_value: ${batch_size}
+        learning_rate:
+          type: categorical
+          choices: [ constant, invscaling, adaptive ]
+          default_value: ${learning_rate}
+        learning_rate_init:
+          type: uniform_float
+          lower: 0.0001
+          upper: 1
+          default_value: ${learning_rate_init}
+          log: true
+      conditions:
+        - child: batch_size
+          parent: solver
+          type: IN
+          values: [ sgd, adam ]
+        - child: learning_rate
+          parent: solver
+          type: EQ
+          value: sgd
+        - child: learning_rate_init
+          parent: solver
+          type: IN
+          values: [ sgd, adam ]
+
+  run:
+    dir: ./tmp/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./tmp/${now:%Y-%m-%d}/${now:%H-%M-%S}

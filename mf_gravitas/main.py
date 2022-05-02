@@ -21,10 +21,6 @@ import sys
 import string
 import random
 
-import pdb
-
-from mf_gravitas.models.rank_mlp import AlgoRankMLP_Ensemble
-from mf_gravitas.trainer.rank_trainer import train_ensemble
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -86,12 +82,11 @@ def pipe_train(cfg: DictConfig) -> None:
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
     lc_dataset = instantiate(cfg.dataset.lc)
 
-
     # train test split by dataset major
     train_split, test_split = train_test_split(
-                                    len(dataset_meta_features), 
-                                    cfg.dataset.split
-                                )
+        len(dataset_meta_features),
+        cfg.dataset.split
+    )
 
     # dataset_major
     # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
@@ -133,11 +128,10 @@ def pipe_train(cfg: DictConfig) -> None:
     })
 
     model = instantiate(
-            cfg.model.model,
-            input_dim=input_dim,
-            algo_dim=n_algos
+        cfg.model.model,
+        input_dim=input_dim,
+        algo_dim=n_algos
     )
-
 
     # train the model
     # train_ensemble(
@@ -148,15 +142,13 @@ def pipe_train(cfg: DictConfig) -> None:
     #     lr=0.001,
     # )
 
-
-
     call(
         cfg.training.schedule,
         model,
         train_dataloader=train_loader,
         test_dataloader=test_loader,
         _recursive_=False
-        
+
     )
 
     # evaluation model
@@ -173,6 +165,13 @@ def pipe_train(cfg: DictConfig) -> None:
     #     steps=cfg.evaluation.steps)
 
     # print(counts)
+
+    # check if smac sweeper is used.
+    hydra_config = HydraConfig.get()
+    print(hydra_config['sweeper']['search_space'])
+    if 'SMAC' in HydraConfig.get()['sweeper']['_target_']:
+        # todo specify the validation score computation for this configuration & smac
+        return None
 
 
 if __name__ == '__main__':

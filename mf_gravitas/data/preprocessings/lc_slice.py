@@ -26,5 +26,6 @@ class LC_TimeSlices(Transform):
         self.columns = format.columns
         self.index = format.index  # dataset row major
 
+        # fixme: .T is depreciated for more than two dimensions
         sliced = torch.tensor([X[sl].unstack().T.values for sl in self.slices])
         return torch.swapaxes(sliced, 0, 1)
