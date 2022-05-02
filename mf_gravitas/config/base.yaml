@@ -25,12 +25,12 @@ seed: 0
 output_dir: ./tmp
 
 
-num_competitors: 1
+num_competitors: 1 # fixme: move me to autoencoder
 num_workers: 2
 train_batch_size: 1
 test_batch_size: 1
 
-lr: 0.001  # learning rate of the train's optimizer
+lr: 0.001  # fixme: move learning rate of the train's optimizer
 shuffle: True
 
 wandb:

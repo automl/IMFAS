@@ -128,7 +128,7 @@ def pipe_train(cfg: DictConfig) -> None:
     })
 
     model = instantiate(
-        cfg.model.model,
+        cfg.model,
         input_dim=input_dim,
         algo_dim=n_algos
     )

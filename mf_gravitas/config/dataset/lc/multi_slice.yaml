@@ -8,6 +8,6 @@ transforms:
     - _target_: mf_gravitas.data.preprocessings.nan_transforms.Column_Mean
     # - _target_: mf_gravitas.data.preprocessings.table_transforms.Scalar
     - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlices
-      slices: [ 20, 30, 51 ]
+      slices: ${dataset.slices}
 
 metric: ${dataset.lc_metric}

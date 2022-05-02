@@ -7,13 +7,15 @@
 wandb:
   group: smac_rank_sweep
   notes: 'This is a run for mlp ranking ensemble'
-  mode: 'online'
+  mode: 'offline'
 
 max_epochs: 10
 n_layer: 3
 n_neurons: 20
 activation: relu
-solver: sgd
+solver:
+  _target_: sgd
+  lr: ${learning_rate_init}
 batch_size: 40
 learning_rate: constant
 learning_rate_init: 0.001
@@ -40,6 +42,8 @@ hydra:
       # fixme: overload this for rank ensemble
       # todo add this search space to the smac_mf.yaml!
       hyperparameters:
+
+
         n_layer:
           type: uniform_int
           lower: 1

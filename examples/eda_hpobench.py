@@ -1,7 +1,9 @@
-from hpobench.benchmarks.ml.tabular_benchmark import TabularBenchmark
 import glob
 from io import StringIO
+
 import pandas as pd
+
+from hpobench.benchmarks.ml.tabular_benchmark import TabularBenchmark
 
 # COPY PASTE the table from HPOBENCH table 7
 dataset_table = """
@@ -53,7 +55,7 @@ dataset_ids = list(set.intersection(
     *[dataset_ids[model] for model in ['rf', 'svm', 'xgb', 'lr']]
 ))
 
-model = 'svm'
+model = 'lr'
 dataset = dataset_ids[2]
 seed = [8916, 1319, 7222, 7541, 665][0]
 subsample = 1.0
@@ -65,8 +67,7 @@ config = tab.get_configuration_space(seed=seed).sample_configuration()  # fixme:
 result = tab.objective_function(configuration=config, fidelity={"subsample": subsample}, rng=seed)
 
 # available seeds: (which are identical across datasets & algos
-result['info'].keys() # [8916, 1319, 7222, 7541, 665]
-
+result['info'].keys()  # [8916, 1319, 7222, 7541, 665]
 
 for model in ['rf', 'svm', 'xgb', 'lr']:
     for dataset in dataset_ids:
