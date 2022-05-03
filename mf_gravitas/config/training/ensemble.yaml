@@ -1,4 +1,3 @@
-schedule:
-  _target_: mf_gravitas.trainer.rank_trainer.train_ensemble
-  epochs: 1
-  lr: ${lr}
+_target_: mf_gravitas.trainer.rank_trainer.train_ensemble
+epochs: 1
+lr: ${lr}

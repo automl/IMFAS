@@ -1,9 +1,6 @@
 import logging
 
-from mf_gravitas.trainer.base_trainer import Trainer_Autoencoder
-
-import wandb
-
+from mf_gravitas.trainer.autoencoder import Trainer_Autoencoder
 
 # A logger for this file
 log = logging.getLogger(__name__)

@@ -163,7 +163,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # )
 
     call(
-        cfg.training.schedule,
+        cfg.training,
         model,
         train_dataloader=train_loader,
         test_dataloader=test_loader,
