@@ -1,0 +1,179 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.12.14
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.9.7
+    start_time: 1651176832
+    t:
+      1:
+      - 1
+      - 5
+      - 50
+      - 53
+      - 55
+      3:
+      - 14
+      - 16
+      4: 3.9.7
+      5: 0.12.14
+      8:
+      - 5
+dataset:
+  desc: null
+  value:
+    algo_meta:
+      _target_: mf_gravitas.data.AlgorithmMetaFeatures
+      index_col: 0
+      path: ../../../data/raw/LCBench/config_subset.csv
+      transforms:
+        _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+        modulelist:
+        - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+        - _target_: mf_gravitas.data.preprocessings.table_transforms.Drop
+          columns:
+          - imputation_strategy
+          - learning_rate_scheduler
+          - loss
+          - network
+          - normalization_strategy
+          - optimizer
+          - activation
+          - mlp_shape
+        - _target_: mf_gravitas.data.preprocessings.table_transforms.Replace
+          columns:
+          - num_layers
+          replacedict:
+            'True': 1
+        - _target_: mf_gravitas.data.preprocessings.table_transforms.Convert
+          columns:
+          - num_layers
+          dtype: numeric
+        - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+        - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd
+    dataset_meta:
+      _target_: mf_gravitas.data.DatasetMetaFeatures
+      index_col: 0
+      path: ../../../data/raw/LCBench/meta_features.csv
+      transforms:
+        _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+        modulelist:
+        - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+        - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+        - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd
+    lc:
+      _target_: mf_gravitas.data.Dataset_LC
+      metric: Train/val_accuracy
+      path: ../../../data/raw/LCBench/logs_subset.h5
+      transforms:
+        _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+        modulelist:
+        - _target_: mf_gravitas.data.preprocessings.nan_transforms.Column_Mean
+        - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlices
+          slices:
+          - 20
+          - 30
+          - 51
+    lc_metric: Train/val_accuracy
+    name: LCBench
+    preprocessed_path: ../../../data/raw/LCBench
+    split: 0.8
+dataset_raw:
+  desc: null
+  value:
+    dataset_name: LCBench
+    dir_data: ../../../data/
+    enable: false
+    extract: data_2k
+    learning_curves:
+      metrics:
+      - Train/loss
+      - Train/lr
+      - Train/test_balanced_accuracy
+      - Train/test_cross_entropy
+      - Train/test_result
+      - Train/train_accuracy
+      - Train/train_balanced_accuracy
+      - Train/train_cross_entropy
+      - Train/val_accuracy
+      - Train/val_balanced_accuracy
+      - Train/val_cross_entropy
+      - epoch
+      - time
+    re_download: false
+    reload_from_downloads: false
+    selection:
+      algo:
+        _target_: mf_gravitas.data.ensemble.topk.ensemble
+        k: 3
+      metric: final_test_cross_entropy
+evaluation:
+  desc: null
+  value:
+    evaluator:
+      _target_: mf_gravitas.evaluation.optimal_rankings.ZeroShotOptimalDistance
+      batch: 20
+      ranking_loss:
+        _target_: sklearn.metrics.ndcg_score
+      scaler:
+        _target_: sklearn.preprocessing.MinMaxScaler
+    steps: 10
+lr:
+  desc: null
+  value: 0.001
+model:
+  desc: null
+  value:
+    model:
+      _target_: mf_gravitas.models.rank_mlp.ActionRankMLP
+      device: cpu
+      hidden_dims:
+      - 300
+      - 200
+      - 100
+num_competitors:
+  desc: null
+  value: 1
+num_workers:
+  desc: null
+  value: 2
+output_dir:
+  desc: null
+  value: ./tmp
+seed:
+  desc: null
+  value: 0
+shuffle:
+  desc: null
+  value: true
+test_batch_size:
+  desc: null
+  value: 1
+train_batch_size:
+  desc: null
+  value: 1
+training:
+  desc: null
+  value:
+    schedule:
+      _target_: mf_gravitas.trainer.rank_trainer.train_rank
+      epochs: 1000
+      lr: 0.001
+wandb:
+  desc: null
+  value:
+    entity: tnt
+    group: rank_mlp
+    id: null
+    job_type: train
+    mode: online
+    notes: This is a run for mlp ranking
+    project: gravitas
+    resume: allow
+    save_code: false
+    sync_tensorboard: false
+    tags: []

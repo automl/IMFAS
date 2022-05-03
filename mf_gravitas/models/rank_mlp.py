@@ -100,7 +100,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.multi_head_dims = multi_head_dims
         self.fc_dim = fc_dim
         self.device = torch.device(device)
-        self.n_fidelities = n_fidelities
+        self.n_multiheads = n_fidelities - 1   # Number of multi-heads is one less than number f fidelities to account for final fidelity
 
         # self.rank = torchsort.soft_rank
 
@@ -124,7 +124,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         # Build a list of multi-head networks, one for each fidelity
         self.multi_head_networks = nn.ModuleList()
 
-        for _ in range(self.n_fidelities):
+        for _ in range(self.n_multiheads):
             self.multi_head_networks.append(
                 AlgoRankMLP(
                     input_dim=self.shared_hidden_dims[-1],
@@ -163,12 +163,12 @@ class AlgoRankMLP_Ensemble(nn.Module):
         # Forward through the multi-head networks
         #TODO Parallelize using joblib
         multi_head_D = []
-        for idx in range(self.n_fidelities):
+        for idx in range(self.n_multiheads):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
         
         #TODO Make less hacky
         shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
-        
+
         # Forward through the final network
         final_D = self.final_network(shared_op)
 
@@ -180,10 +180,6 @@ if __name__ == "__main__":
     
 
     network = AlgoRankMLP_Ensemble()
-
-    #print(network)
-
-    # print the network
 
     print('shared network',network.shared_network)
     print('multi-head', network.multi_head_networks)

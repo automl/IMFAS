@@ -1,6 +1,6 @@
 model:
   _target_: mf_gravitas.models.rank_mlp.AlgoRankMLP_Ensemble
   shared_hidden_dims: [300, 200] 
-  n_fidelities: 2
-  multi_head_dims: [100]
+  n_fidelities: 3
+  multi_head_dims: [300, 200, 100]
   fc_dim: [58]
