@@ -159,7 +159,8 @@ class AlgoRankMLP_Ensemble(nn.Module):
                 AlgoRankMLP(
                     input_dim=self.shared_hidden_dims[-1],
                     algo_dim=self.algo_dim,
-                    hidden_dims=[self.multi_head_dims],
+                    hidden_dims=self.multi_head_dims,  # fixme: why does this have to be a list
+                    # for smac to work
                 )
             )
 
@@ -194,11 +195,6 @@ class AlgoRankMLP_Ensemble(nn.Module):
         multi_head_D = []
         for idx in range(self.n_multiheads):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
-
-        # Joint module
-        # fixme: reo me
-
-        a = torch.stack(multi_head_D, dim=0)
 
         shared_op = self.joint(torch.stack(multi_head_D, dim=0))
 

@@ -1,20 +1,14 @@
-
-from pathlib import Path
-import random
-from typing import Any, Dict, List
-
 import os
 import random
 import warnings
+from typing import List
 
 import numpy as np
-import torch
-from networkx import Graph, minimum_spanning_edges
 import pandas as pd
-
-
+import torch
 import wandb
-
+from networkx import Graph, minimum_spanning_edges
+from omegaconf import DictConfig, OmegaConf
 
 
 def seed_everything(seed: int):
@@ -25,6 +19,10 @@ def seed_everything(seed: int):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
+
+
+def print_cfg(cfg: DictConfig):
+    print(OmegaConf.to_yaml(cfg))
 
 
 def train_test_split(n, share):
@@ -59,7 +57,7 @@ def calc_min_eucl_spanning_tree(d_test: torch.tensor):
     for index, row in df.iterrows():
         g.add_edge(row['src'], row['dst'], weight=row['eucl'])
 
-    return list(minimum_spanning_edges(g))  
+    return list(minimum_spanning_edges(g))
 
 
 def check_diversity(representation, title, epsilon=0.01):
@@ -77,29 +75,29 @@ def check_diversity(representation, title, epsilon=0.01):
         warnings.warn(f'The {title} representation is not diverse.')
 
         # Warning(f'The {title} representation is not diverse.')
-        #print(representation)
+        # print(representation)
+
 
 def measure_embedding_diversity(model, data):
-        """
-        Calculate the diversity based on euclidiean minimal spanning tree
-        :return:  diversity for datasets, diversity for algos
-        """
+    """
+    Calculate the diversity based on euclidiean minimal spanning tree
+    :return:  diversity for datasets, diversity for algos
+    """
 
-        data_fwd = model.encode(data)
-        z_algo = model.Z_algo
+    data_fwd = model.encode(data)
+    z_algo = model.Z_algo
 
-        data_tree = calc_min_eucl_spanning_tree(data_fwd)
-        z_algo_tree = calc_min_eucl_spanning_tree(z_algo)
+    data_tree = calc_min_eucl_spanning_tree(data_fwd)
+    z_algo_tree = calc_min_eucl_spanning_tree(z_algo)
 
-        d_diversity = sum([tup[2]['weight'] for tup in data_tree])
-        z_diversity = sum([tup[2]['weight'] for tup in z_algo_tree])
+    d_diversity = sum([tup[2]['weight'] for tup in data_tree])
+    z_diversity = sum([tup[2]['weight'] for tup in z_algo_tree])
 
-        # sum of weighted edges
-        return d_diversity, z_diversity
+    # sum of weighted edges
+    return d_diversity, z_diversity
 
 
 def check_wandb_exists(cfg, unique_fields: List[str]):
-
     flat_cfg = list(pd.json_normalize(cfg).T.to_dict().values())[0]
     query_config = {}
     for key, value in flat_cfg.items():

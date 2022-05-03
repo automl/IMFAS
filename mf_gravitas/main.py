@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Dmajor
-from mf_gravitas.util import seed_everything, train_test_split
+from mf_gravitas.util import seed_everything, train_test_split, print_cfg
 from torch.utils.data import DataLoader
 
 import wandb
@@ -27,10 +27,6 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 
 base_dir = os.getcwd()
-
-
-def print_cfg(cfg: DictConfig):
-    print(OmegaConf.to_yaml(cfg))
 
 
 def smac_parse(cfg: DictConfig):
@@ -132,7 +128,7 @@ def pipe_train(cfg: DictConfig) -> None:
     test_loader = DataLoader(
         test_set,
         batch_size=cfg.test_batch_size,
-        shuffle=cfg.shuffle,
+        shuffle=False,
         num_workers=cfg.num_workers
     )
 

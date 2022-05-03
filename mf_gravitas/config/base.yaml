@@ -7,10 +7,10 @@ defaults:
   - dataset/dataset_meta: minimal
   - dataset/lc: multi_slice
   - model: rank_ensemble
-  - evaluation: optimal_rankings
   - training: ensemble
-  - override hydra/sweeper: SMAC
-  - override hydra/launcher: submitit_smac_slurm
+  - evaluation: ensemble_fidelity_rank
+  #  - override hydra/sweeper: SMAC
+  #  - override hydra/launcher: submitit_smac_slurm
 
 
 
