@@ -17,7 +17,7 @@ smac:
   shared_hidden_dims1: 100
   multi_head_dims: 100
   fc_dim0: 100
-  join: avg
+  join: wavg
 
 
 

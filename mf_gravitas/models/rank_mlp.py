@@ -60,7 +60,41 @@ class AlgoRankMLP(nn.Module):
         return self.network(D)
 
 
+class Join_WAVG(nn.Module):
+    def __init__(self, n_weights, vec_dim):
+        """
+        Softmax "normalized and broadcased weights
+        :param n_weights number of learnable inputs
+        """
+        super(Join_WAVG, self).__init__()
+        self.shape = vec_dim, n_weights
+        self.weights = nn.Parameter(torch.linspace(0., 1., n_weights).reshape(1, -1))
+
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, X):
+        broadcased_weights = torch.broadcast_to(self.weights, (1, *self.shape))
+        print(X.shape, broadcased_weights.shape)
+        print(self.softmax(broadcased_weights).shape)
+        print((self.softmax(broadcased_weights) @ X).sum(axis=0))
+        return (self.softmax(broadcased_weights) @ X).sum(axis=0)
+
+
+class Join_AVG(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super(Join_AVG, self).__init__()
+
+    def forward(self, X):
+        return X.mean(dim=0)
+
+
 class AlgoRankMLP_Ensemble(nn.Module):
+    joins = {  # fixme: refactor this as configurables that are instantiated and passed to the
+        # model?
+        'avg': Join_AVG,
+        'wavg': Join_WAVG
+    }
+
     def __init__(
             self,
             input_dim: int = 107,
@@ -69,7 +103,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
             n_fidelities: int = 3,
             multi_head_dims: List[int] = [100],
             fc_dim: List[int] = [58],
-            join: str = 'avg',
+            join: str = 'wavg',
             device: str = 'cpu',
     ):
         """
@@ -96,6 +130,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.fc_dim = fc_dim
         self.device = torch.device(device)
         self.join = join
+        self.n_fidelities = n_fidelities
         self.n_multiheads = n_fidelities - 1
 
         # self.rank = torchsort.soft_rank
@@ -128,7 +163,10 @@ class AlgoRankMLP_Ensemble(nn.Module):
                 )
             )
 
-        self.join_weights = nn.Parameter(torch.ones(1, self.n_multiheads))
+        self.joint = self.joins[self.join](
+            n_weights=self.n_multiheads,
+            vec_dim=self.algo_dim
+        )
 
         # Build the final network
         self.final_network = AlgoRankMLP(
@@ -157,15 +195,12 @@ class AlgoRankMLP_Ensemble(nn.Module):
         for idx in range(self.n_multiheads):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
 
-        # TODO Make less hacky
-        if self.join == 'avg':
-            shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
-        elif self.join == 'wavg':
+        # Joint module
+        # fixme: reo me
 
-            # shared_op = torch.stack(multi_head_D, dim=0)  # TODO: write a broadcasted parameter
-            #  vector weight
-            print(shared_op.shape)
-            # shared_op @ self.joint
+        a = torch.stack(multi_head_D, dim=0)
+
+        shared_op = self.joint(torch.stack(multi_head_D, dim=0))
 
         # Forward through the final network
         final_D = self.final_network(shared_op)
@@ -175,8 +210,6 @@ class AlgoRankMLP_Ensemble(nn.Module):
 
 if __name__ == "__main__":
     network = AlgoRankMLP_Ensemble()
-
-    # print(network)
 
     # print the network
 
