@@ -1,27 +1,23 @@
 import logging
 
-from mf_gravitas.trainer.base_trainer import Trainer_Ensemble, Trainer_Rank
-
-import wandb
-
-import pdb
-import torchsort
-
 import torch
+import torchsort
+import wandb
 from tqdm import tqdm
 
 from mf_gravitas.losses.ranking_loss import spearman
+from mf_gravitas.trainer.base_trainer import Trainer_Ensemble, Trainer_Rank
 
 # A logger for this file
 log = logging.getLogger(__name__)
 
-def train_rank(model, train_dataloader, test_dataloader, epochs, lr ):
+
+def train_rank(model, train_dataloader, test_dataloader, epochs, lr):
     trainer = Trainer_Rank()
     loss_fn = model.loss
     slice_index = -1
 
     print(train_dataloader.dataset.slice_indices)
-    pdb.set_trace()
 
     kwargs = {
         'model': model,
@@ -33,7 +29,6 @@ def train_rank(model, train_dataloader, test_dataloader, epochs, lr ):
         'slice_index': slice_index,
     }
 
-
     score, step = trainer.train(**kwargs)
 
     wandb.log(
@@ -43,36 +38,33 @@ def train_rank(model, train_dataloader, test_dataloader, epochs, lr ):
     )
 
     return score
-    
 
-def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr, ranking_fn=torchsort.soft_rank, optimizer_cls= torch.optim.Adam):
+
+def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr,
+                   ranking_fn=torchsort.soft_rank, optimizer_cls=torch.optim.Adam):
     """
     
     """
 
-    
     optimizer = optimizer_cls(
-                    model.parameters(), 
-                    lr
-                )
+        model.parameters(),
+        lr
+    )
 
     trainer_kwargs = {
         'model': model,
         'loss_fn': spearman,
         'ranking_fn': ranking_fn,
-        'optimizer':optimizer,
+        'optimizer': optimizer,
     }
 
-    
-    
     # Initialize the trainer
     trainer = Trainer_Ensemble(**trainer_kwargs)
-   
+
     for e in tqdm(range(epochs)):
-    
         # Train the model
         trainer.train(train_dataloader)
-        
+
         # Evaluate the model
         score = trainer.evaluate(test_dataloader)
 
@@ -86,9 +78,3 @@ def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr, ranking
         )
 
     return score
-
-    
-   
-
-    
-

@@ -226,7 +226,7 @@ class Trainer_Ensemble:
         self.ranking_fn = ranking_fn
         self.optimizer = optimizer
 
-        self.n_slices = self.model.n_fidelities + 1
+        self.n_slices = self.model.n_multiheads + 1
 
         self.loss_kwargs = {
             'ranking_fn': self.ranking_fn,

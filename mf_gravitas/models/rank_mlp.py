@@ -66,7 +66,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
             input_dim: int = 107,
             algo_dim: int = 58,
             shared_hidden_dims: List[int] = [300, 200],
-            n_fidelities: int = 2,
+            n_fidelities: int = 3,
             multi_head_dims: List[int] = [100],
             fc_dim: List[int] = [58],
             joint: str = 'avg',
@@ -96,7 +96,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.fc_dim = fc_dim
         self.device = torch.device(device)
         self.joint = joint
-        self.n_fidelities = n_fidelities
+        self.n_multiheads = n_fidelities - 1
 
         # self.rank = torchsort.soft_rank
 
@@ -119,7 +119,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         # Build a list of multi-head networks, one for each fidelity
         self.multi_head_networks = nn.ModuleList()
 
-        for _ in range(self.n_fidelities):
+        for _ in range(self.n_multiheads):
             self.multi_head_networks.append(
                 AlgoRankMLP(
                     input_dim=self.shared_hidden_dims[-1],
@@ -128,7 +128,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
                 )
             )
 
-        self.join_weights = nn.Parameter(torch.ones(1, self.n_fidelities))
+        self.join_weights = nn.Parameter(torch.ones(1, self.n_multiheads))
 
         # Build the final network
         self.final_network = AlgoRankMLP(
@@ -154,12 +154,13 @@ class AlgoRankMLP_Ensemble(nn.Module):
         # Forward through the multi-head networks
         # TODO Parallelize using joblib
         multi_head_D = []
-        for idx in range(self.n_fidelities):
+        for idx in range(self.n_multiheads):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
 
         # TODO Make less hacky
-        # shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
-        shared_op = torch.stack(multi_head_D, dim=0)
+        shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
+        # shared_op = torch.stack(multi_head_D, dim=0)  # TODO: write a broadcasted parameter
+        #  vector weight
         print(shared_op.shape)
         # shared_op @ self.joint
 

@@ -4,4 +4,4 @@ preprocessed_path: ../../../data/raw/${dataset.name}  # fixme: is raw what we ar
 lc_metric: Train/val_accuracy # to be extracted & used (see dataset_raw/lcbench for options)
 split: 0.8
 
-slices: [ 30, 51 ]
+slices: [ 20, 30, 51 ]
