@@ -6,4 +6,4 @@ n_fidelities: 3
 multi_head_dims:
   - 100
 fc_dim: [ 58 ]
-joint: wavg
+join: avg

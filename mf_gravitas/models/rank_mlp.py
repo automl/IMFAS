@@ -69,7 +69,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
             n_fidelities: int = 3,
             multi_head_dims: List[int] = [100],
             fc_dim: List[int] = [58],
-            joint: str = 'avg',
+            join: str = 'avg',
             device: str = 'cpu',
     ):
         """
@@ -95,7 +95,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.multi_head_dims = multi_head_dims
         self.fc_dim = fc_dim
         self.device = torch.device(device)
-        self.joint = joint
+        self.join = join
         self.n_multiheads = n_fidelities - 1
 
         # self.rank = torchsort.soft_rank
@@ -124,7 +124,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
                 AlgoRankMLP(
                     input_dim=self.shared_hidden_dims[-1],
                     algo_dim=self.algo_dim,
-                    hidden_dims=self.multi_head_dims,
+                    hidden_dims=[self.multi_head_dims],
                 )
             )
 
@@ -158,11 +158,14 @@ class AlgoRankMLP_Ensemble(nn.Module):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
 
         # TODO Make less hacky
-        shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
-        # shared_op = torch.stack(multi_head_D, dim=0)  # TODO: write a broadcasted parameter
-        #  vector weight
-        print(shared_op.shape)
-        # shared_op @ self.joint
+        if self.join == 'avg':
+            shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
+        elif self.join == 'wavg':
+
+            # shared_op = torch.stack(multi_head_D, dim=0)  # TODO: write a broadcasted parameter
+            #  vector weight
+            print(shared_op.shape)
+            # shared_op @ self.joint
 
         # Forward through the final network
         final_D = self.final_network(shared_op)

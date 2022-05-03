@@ -29,6 +29,24 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 base_dir = os.getcwd()
 
 
+def print_cfg(cfg: DictConfig):
+    print(OmegaConf.to_yaml(cfg))
+
+
+def smac_parse(cfg: DictConfig):
+    print_cfg(cfg)
+
+    cfg.model.shared_hidden_dims = [cfg.smac['shared_hidden_dims0'],
+                                    cfg.smac['shared_hidden_dims1']]
+    cfg.model.multi_head_dims = cfg.smac.multi_head_dims
+    cfg.model.fc_dim = [cfg.smac['fc_dim0']]
+    cfg.model.join = cfg.smac.join
+
+    # fixme: need to update wandb
+    # wandb.config.update({'model'
+    #                      })
+
+
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
     sys.path.append(os.getcwd())
@@ -127,6 +145,8 @@ def pipe_train(cfg: DictConfig) -> None:
         'input_dim': input_dim
     })
 
+    smac_parse(cfg)
+
     model = instantiate(
         cfg.model,
         input_dim=input_dim,
@@ -167,11 +187,15 @@ def pipe_train(cfg: DictConfig) -> None:
     # print(counts)
 
     # check if smac sweeper is used.
+
+    # TODO: make this a specialized evaluation procedure:
+    #  when launcher (a new category i.e. folder: options [smac, default]) is smac,
+    #  create a launcher.evaluation protocol, that overrides the evaluation protocol
     hydra_config = HydraConfig.get()
     print(hydra_config['sweeper']['search_space'])
     if 'SMAC' in HydraConfig.get()['sweeper']['_target_']:
         # todo specify the validation score computation for this configuration & smac
-        return None
+        return 100
 
 
 if __name__ == '__main__':
