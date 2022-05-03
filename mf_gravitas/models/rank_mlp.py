@@ -167,7 +167,7 @@ class AlgoRankMLP_Ensemble(nn.Module):
             multi_head_D.append(self.multi_head_networks[idx](shared_D))
         
         #TODO Make less hacky
-        shared_op = torch.stack(multi_head_D, dim=0).mean(dim=0)
+        shared_op = torch.stack(multi_head_D, dim=0).sum(dim=0)
 
         # Forward through the final network
         final_D = self.final_network(shared_op)
