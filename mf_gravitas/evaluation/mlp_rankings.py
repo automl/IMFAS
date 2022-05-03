@@ -4,13 +4,14 @@ in a zero_shot manner we could reach. To do so, we train our manifold & the algo
 instantiations and densely sample the latent space and compute the ranking for
 each of these points (using the model's rank prediction module)
 """
-
+# fixme: this seems to be the exact same as ./optimal_rankings
 import torch
+from hydra.utils import call
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from mf_gravitas.data import DatasetMetaFeatures
-from hydra.utils import call
+
 
 class ZeroShotOptimalDistance:
     def __init__(   self, 

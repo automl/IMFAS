@@ -1,3 +1,5 @@
+# fixme: move this entire file's wandb logging into the trainer classes, where they'd belong
+
 import logging
 
 import torch
@@ -6,7 +8,8 @@ import wandb
 from tqdm import tqdm
 
 from mf_gravitas.losses.ranking_loss import spearman
-from mf_gravitas.trainer.base_trainer import Trainer_Ensemble, Trainer_Rank
+from mf_gravitas.trainer.rank_ensemble import Trainer_Ensemble
+from mf_gravitas.trainer.rank_trainer_class import Trainer_Rank
 
 # A logger for this file
 log = logging.getLogger(__name__)
