@@ -56,6 +56,13 @@ def pipe_train(cfg: DictConfig) -> None:
             + os.path.basename(HydraConfig.get().run.dir)
     )
 
+    # fixme: remove temporary quickfix to change pass smac config into the hydra config
+    hydra_config = HydraConfig.get()
+
+    if 'SMAC' in hydra_config['sweeper']['_target_'] and \
+            bool(hydra_config['sweeper']['search_space']):
+        smac_parse(cfg)
+
     cfg.wandb.id = hydra_job + "_" + id_generator()
 
     run = wandb.init(
@@ -141,8 +148,6 @@ def pipe_train(cfg: DictConfig) -> None:
         'input_dim': input_dim
     })
 
-    smac_parse(cfg)
-
     model = instantiate(
         cfg.model,
         input_dim=input_dim,
@@ -184,14 +189,19 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # check if smac sweeper is used.
 
-    # TODO: make this a specialized evaluation procedure:
+    # TODO: make a specialized evaluation procedure:
     #  when launcher (a new category i.e. folder: options [smac, default]) is smac,
     #  create a launcher.evaluation protocol, that overrides the evaluation protocol
-    hydra_config = HydraConfig.get()
-    print(hydra_config['sweeper']['search_space'])
-    if 'SMAC' in HydraConfig.get()['sweeper']['_target_']:
-        # todo specify the validation score computation for this configuration & smac
-        return 100
+
+    # hydra_config = HydraConfig.get()
+    # print(hydra_config['sweeper']['search_space'])
+    # if 'SMAC' in HydraConfig.get()['sweeper']['_target_']:
+    #     # todo specify the validation score computation for this configuration & smac
+
+    # TODO : make a specialized test_loader (since during test time we only ever will see the
+    #  dataset meta features and the final performances! (this will require another loader & new
+    #  predict function!)
+    return call(cfg.evaluation, model=model, test_loader=test_loader)
 
 
 if __name__ == '__main__':
