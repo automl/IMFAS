@@ -81,3 +81,62 @@ def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr,
         )
 
     return score
+
+
+def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[300, 500],
+                          ranking_fn=torchsort.soft_rank, optimizer_cls=torch.optim.Adam):
+    """
+    Freezing the final joint model to foster stable learning in the multihead
+    fidelities. (To avoid the double gradient on them earlier components in the
+    earliy stages of training. This supposedly gets us a decent initialization)
+    """
+
+    optimizer = optimizer_cls(
+        model.parameters(),  # fixme: freeze some parameters
+        lr
+    )
+    trainer_kwargs = {
+        'model': model,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
+        'optimizer': optimizer,
+    }
+
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+
+    log.info('Starting Freezed pretraining')
+    for e in tqdm(range(epochs[0])):
+        # Train the model
+        trainer.train(train_dataloader)
+
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
+
+        # Take the next step
+        trainer.step_next()
+
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e
+        )
+
+    log.info('Training fully')
+    for e in tqdm(range(epochs[1])):
+        # Train the model
+        trainer.train(train_dataloader)
+
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
+
+        # Take the next step
+        trainer.step_next()
+
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e + epochs[0]
+        )
+
+    return score
