@@ -1,8 +1,8 @@
 # @package _global_
-#defaults:
-#  #  - override /training: ensemble
-#  - override hydra/sweeper: SMAC
-#  - override hydra/launcher: submitit_smac_slurm
+defaults:
+  #  - override /training: ensemble
+  - override /hydra/sweeper: SMAC
+  - override /hydra/launcher: submitit_smac_slurm
 
 wandb:
   group: smac_rank_sweep
@@ -11,13 +11,7 @@ wandb:
 
 # smac parameter defaults:
 max_epochs: 500
-lr: 0.001
-smac:
-  shared_hidden_dims0: 100 # fixme: change to .0  !!!!
-  shared_hidden_dims1: 100
-  multi_head_dims: 100
-  fc_dim0: 100
-  join: wavg
+
 
 
 
@@ -40,44 +34,7 @@ hydra:
       initial_budget: 5
       max_budget: ${max_epochs}
       eta: 3
-    search_space:
-      # todo add this search space to the smac_mf.yaml!
-      hyperparameters:
-        smac.shared_hidden_dims0: # fixme: directly override the parameter # fixme: change to .0
-          type: uniform_int
-          lower: 100
-          upper: 400
-          #          log: true
-          default: ${smac.shared_hidden_dims0}
-        smac.shared_hidden_dims1:
-          type: uniform_int
-          lower: 100
-          upper: 400
-          #          log: true
-          default: ${smac.shared_hidden_dims1}
-        smac.multi_head_dims:
-          type: uniform_int
-          lower: 100
-          upper: 400
-          #          log: true
-          default: ${smac.multi_head_dims}
-        smac.fc_dim0:
-          type: uniform_int
-          lower: 100
-          upper: 400
-          #          log: true
-          default: ${smac.fc_dim0}
-        smac.join:
-          type: categorical
-          choices: [ avg, wavg ]
-          default_value: ${smac.join}
-        lr: # currently top level ( base ) variable
-          type: uniform_float
-          lower: 0.0001
-          upper: 0.1
-          default_value: ${lr}
-          log: true
-  
+
   run:
     dir: ./tmp/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:

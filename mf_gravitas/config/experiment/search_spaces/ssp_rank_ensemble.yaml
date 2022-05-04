@@ -1,60 +1,53 @@
-n_layer: 10
-n_neurons: 20
-activation: relu
-solver: sgd
-batch_size: 40
-learning_rate: constant
-learning_rate_init: 0.001
+# @package _global_
 
+defaults:
+  - smac_mf
 
-search_space:
-  # fixme: overload this for rank ensemble
-  # todo add this search space to the smac_mf.yaml!
-  hyperparameters:
-    n_layer:
-      type: uniform_int
-      lower: 1
-      upper: 5
-      default: ${n_layer}
-    n_neurons:
-      type: uniform_int
-      lower: 8
-      upper: 1024
-      log: true
-      default_value: ${n_neurons}
-    activation:
-      type: categorical
-      choices: [ logistic, tanh, relu ]
-      default_value: ${activation}
-    solver:
-      type: categorical
-      choices: [ lbfgs, sgd, adam ]
-      default_value: ${solver}
-    batch_size:
-      type: uniform_int
-      lower: 30
-      upper: 300
-      default_value: ${batch_size}
-    learning_rate:
-      type: categorical
-      choices: [ constant, invscaling, adaptive ]
-      default_value: ${learning_rate}
-    learning_rate_init:
-      type: uniform_float
-      lower: 0.0001
-      upper: 1
-      default_value: ${learning_rate_init}
-      log: true
-  conditions:
-    - child: batch_size
-      parent: solver
-      type: IN
-      values: [ sgd, adam ]
-    - child: learning_rate
-      parent: solver
-      type: EQ
-      value: sgd
-    - child: learning_rate_init
-      parent: solver
-      type: IN
-      values: [ sgd, adam ]
+lr: 0.001
+smac:
+  shared_hidden_dims:
+    - 100
+    - 200
+  multi_head_dims: 100
+  fc_dim0: 100
+  join: wavg
+
+hydra:
+  sweeper:
+    search_space:
+      # todo add this search space to the smac_mf.yaml!
+      hyperparameters:
+        smac.shared_hidden_dims.0: # fixme: directly override the parameter # fixme: change to .0
+          type: uniform_int
+          lower: 100
+          upper: 400
+          #          log: true
+          default: ${smac.shared_hidden_dims.0}
+        smac.shared_hidden_dims.1:
+          type: uniform_int
+          lower: 100
+          upper: 400
+          #          log: true
+          default: ${smac.shared_hidden_dims.1}
+        smac.multi_head_dims:
+          type: uniform_int
+          lower: 100
+          upper: 400
+          #          log: true
+          default: ${smac.multi_head_dims}
+        smac.fc_dim0:
+          type: uniform_int
+          lower: 100
+          upper: 400
+          #          log: true
+          default: ${smac.fc_dim0}
+        smac.join:
+          type: categorical
+          choices: [ avg, wavg ]
+          default_value: ${smac.join}
+        lr: # currently top level ( base ) variable
+          type: uniform_float
+          lower: 0.0001
+          upper: 0.1
+          default_value: ${lr}
+          log: true
