@@ -10,6 +10,7 @@ from tqdm import tqdm
 from mf_gravitas.losses.ranking_loss import spearman
 from mf_gravitas.trainer.rank_ensemble import Trainer_Ensemble
 from mf_gravitas.trainer.rank_trainer_class import Trainer_Rank
+from mf_gravitas.util import freeze_tensors
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -91,6 +92,9 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
     earliy stages of training. This supposedly gets us a decent initialization)
     """
 
+    freeze_tensors(model.final_network.parameters(), frosty=True)
+    freeze_tensors(model.joint.parameters(), frosty=True)
+
     optimizer = optimizer_cls(
         model.parameters(),  # fixme: freeze some parameters
         lr
@@ -122,7 +126,26 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
             step=e
         )
 
-    log.info('Training fully')
+    log.info('Training fully')  # -----------------------------------------------
+
+    freeze_tensors(model.final_network.parameters(), frosty=False)
+    freeze_tensors(model.joint.parameters(), frosty=False)
+
+    optimizer = optimizer_cls(
+        model.parameters(),  # fixme: freeze some parameters
+        lr
+    )
+    trainer_kwargs = {
+        'model': model,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
+        'optimizer': optimizer,
+    }
+
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+    trainer.step = epochs[0]
+
     for e in tqdm(range(epochs[1])):
         # Train the model
         trainer.train(train_dataloader)

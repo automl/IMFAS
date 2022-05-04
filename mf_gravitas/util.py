@@ -25,6 +25,18 @@ def print_cfg(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
 
 
+def freeze(listoflayers, frosty=True):
+    """freeze the parameters of the list of layers """
+    for l in listoflayers:
+        for p in l.parameters():
+            p.requires_grad = not frosty
+
+
+def freeze_tensors(listoftensors, frosty=True):
+    for t in listoftensors:
+        t.requires_grad = not frosty
+
+
 def train_test_split(n, share):
     train_split = random.sample(
         list(range(n)),
