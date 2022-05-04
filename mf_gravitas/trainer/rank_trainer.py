@@ -92,11 +92,12 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
     earliy stages of training. This supposedly gets us a decent initialization)
     """
 
+    log.info('Starting Freezed pretraining')
     freeze_tensors(model.final_network.parameters(), frosty=True)
     freeze_tensors(model.joint.parameters(), frosty=True)
 
     optimizer = optimizer_cls(
-        model.parameters(),  # fixme: freeze some parameters
+        model.parameters(),
         lr
     )
     trainer_kwargs = {
@@ -109,7 +110,6 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
     # Initialize the trainer
     trainer = Trainer_Ensemble(**trainer_kwargs)
 
-    log.info('Starting Freezed pretraining')
     for e in tqdm(range(epochs[0])):
         # Train the model
         trainer.train(train_dataloader)
@@ -126,13 +126,13 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
             step=e
         )
 
-    log.info('Training fully')  # -----------------------------------------------
-
-    freeze_tensors(model.final_network.parameters(), frosty=False)
-    freeze_tensors(model.joint.parameters(), frosty=False)
+    log.info('Training using freeze on last stage')  # ---------------------------------------
+    freeze_tensors(model.parameters(), frosty=False)  # unfreeze everything
+    freeze_tensors(model.shared_network.parameters(), frosty=True)
+    freeze_tensors(model.multi_head_networks.parameters(), frosty=True)
 
     optimizer = optimizer_cls(
-        model.parameters(),  # fixme: freeze some parameters
+        model.parameters(),
         lr
     )
     trainer_kwargs = {
@@ -160,6 +160,40 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
             trainer.losses,
             commit=False,
             step=e + epochs[0]
+        )
+
+    log.info('Training fully')  # -----------------------------------------------
+    freeze_tensors(model.parameters(), frosty=False)
+
+    optimizer = optimizer_cls(
+        model.parameters(),
+        lr
+    )
+    trainer_kwargs = {
+        'model': model,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
+        'optimizer': optimizer,
+    }
+
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+    trainer.step = epochs[0] + epochs[1]
+
+    for e in tqdm(range(epochs[2])):
+        # Train the model
+        trainer.train(train_dataloader)
+
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
+
+        # Take the next step
+        trainer.step_next()
+
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e + epochs[1]
         )
 
     return score
