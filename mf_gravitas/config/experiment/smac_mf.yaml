@@ -13,7 +13,7 @@ wandb:
 max_epochs: 500
 lr: 0.001
 smac:
-  shared_hidden_dims0: 100 # fixme: change to .0
+  shared_hidden_dims0: 100 # fixme: change to .0  !!!!
   shared_hidden_dims1: 100
   multi_head_dims: 100
   fc_dim0: 100

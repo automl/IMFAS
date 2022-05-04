@@ -1,6 +1,8 @@
 _target_: mf_gravitas.data.Dataset_LC
 path: ${dataset.preprocessed_path}/logs_subset.h5
 
+#slices: [ 20, 30, 51 ]
+
 # the important part!
 transforms:
   _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline

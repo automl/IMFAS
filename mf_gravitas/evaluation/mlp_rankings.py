@@ -14,21 +14,21 @@ from mf_gravitas.data import DatasetMetaFeatures
 
 
 class ZeroShotOptimalDistance:
-    def __init__(   self, 
-                    model, 
-                    ranking_loss,
-                    scaler = MinMaxScaler(),
-                    batch: int = 20,
-                ):
+    def __init__(self,
+                 model,
+                 ranking_loss,
+                 scaler=MinMaxScaler(),
+                 batch: int = 20,
+                 ):
         self.model = model
         self.ranking_loss = ranking_loss
-        self.batch = batch  
+        self.batch = batch
         self.scaler = call(scaler)
 
-    def forward(self, 
-            dataset_meta_features: DatasetMetaFeatures, 
-            final_performances, steps
-        ):
+    def forward(self,
+                dataset_meta_features: DatasetMetaFeatures,
+                final_performances, steps
+                ):
         """
         Defining the evaluation protocol. Since ZeroShotOptimalDistance
         is a static method, forward does not depend on some running method
@@ -44,18 +44,16 @@ class ZeroShotOptimalDistance:
         self.dataset_meta_features = dataset_meta_features
         self.final_performances = final_performances
 
-        
-
         self.n_algos = len(self.final_performances[0])
         self.n_datas = len(self.dataset_meta_features)
 
         model_dist = self.encode_loader()
         cuboid_scores, model_scores = self.get_scores(steps, model_dist)
         return self._compare_rankings(
-                    cuboid_scores=cuboid_scores, 
-                    model_scores=cuboid_scores, 
-                    A0=self.final_performances
-                )
+            cuboid_scores=cuboid_scores,
+            model_scores=cuboid_scores,
+            A0=self.final_performances
+        )
 
     def encode_loader(self):
         # preallocate & gather all the embeddings for the dataset at hand
@@ -124,7 +122,6 @@ class ZeroShotOptimalDistance:
         :return:torch.Tensor: count of how many better solutions are there for
         each dataset.
         """
-        
 
         _, true_rankings = torch.topk(A0, largest=True, k=self.n_algos)
 
@@ -133,7 +130,7 @@ class ZeroShotOptimalDistance:
         newshape_predicted = true_rankings.shape[0], 1, true_rankings.shape[1]
         # get the model ndcg values
         model_ndcg = torch.zeros(len(true_rankings))
-        
+
         for i, (truth, predicted) in enumerate(zip(
                 true_rankings.reshape(newshape).detach().numpy(),
                 model_scores.reshape(newshape_predicted))):
@@ -143,7 +140,7 @@ class ZeroShotOptimalDistance:
         # get the ranking ndcg against ground truth for each value
         cuboid_ndcg = torch.zeros((len(true_rankings), len(cuboid_scores)))
         newshape_cuboid = cuboid_scores.shape[0], -1, cuboid_scores.shape[1]
-    
+
         for t, truth in tqdm(enumerate(true_rankings.reshape(newshape).detach().numpy())):
             for g, grid_point in enumerate(cuboid_scores.reshape(newshape_cuboid)):
                 cuboid_ndcg[t, g] = call(
