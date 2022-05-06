@@ -8,7 +8,7 @@ defaults:
   - dataset/lc: multi_slice
   - model: rank_ensemble
   - training: freeze_ensemble # ensemble
-  - evaluation: ensemble_fidelity_rank
+  - evaluation: optimal_rankings
   #  - override hydra/sweeper: SMAC
   #  - override hydra/launcher: submitit_smac_slurm
 
