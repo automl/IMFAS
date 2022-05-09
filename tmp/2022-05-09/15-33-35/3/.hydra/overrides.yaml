@@ -1,0 +1,6 @@
+- lr=0.008710434577922916
+- model.multi_head_dims=205.0
+- model.shared_hidden_dims.0=200
+- model.shared_hidden_dims.1=200
+- training.epochs.2=625.0
+- +experiment=search_spaces/smac_rank_multihead

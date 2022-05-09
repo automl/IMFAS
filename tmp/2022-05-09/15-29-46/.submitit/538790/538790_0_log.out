@@ -1,0 +1,7 @@
+submitit INFO (2022-05-09 15:30:02,402) - Starting with JobEnvironment(job_id=538790, hostname=cc1l01, local_rank=0(1), node=0(1), global_rank=0(1))
+submitit INFO (2022-05-09 15:30:02,402) - Loading pickle: /home/mohan/git/current_projects/gravitas/AlgoSelectionMF/tmp/2022-05-09/15-29-46/.submitit/538790/538790_submitted.pkl
+base_dir:  /home/mohan/git/current_projects/gravitas/AlgoSelectionMF
+[2022-05-09 15:30:17,721][__main__][INFO] - Hydra initialized a new config_raw
+submitit INFO (2022-05-09 15:30:17,760) - Job completed successfully
+[2022-05-09 15:30:17,760][submitit][INFO] - Job completed successfully
+

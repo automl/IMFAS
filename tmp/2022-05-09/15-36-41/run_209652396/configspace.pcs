@@ -1,0 +1,4 @@
+lr real [0.0001, 0.1] [0.0031622777]log
+model.multi_head_dims integer [100, 400] [100]log
+model.shared_hidden_dims.0 integer [100, 400] [200]log
+model.shared_hidden_dims.1 integer [100, 400] [200]log

@@ -1,0 +1,133 @@
+{
+  "data": [
+    [
+      [
+        1,
+        null,
+        0,
+        625.0
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        2,
+        null,
+        0,
+        625.0
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        3,
+        null,
+        0,
+        625.0
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        4,
+        null,
+        0,
+        625.0
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ],
+    [
+      [
+        5,
+        null,
+        0,
+        625.0
+      ],
+      [
+        2147483647.0,
+        0.0,
+        {
+          "__enum__": "StatusType.RUNNING"
+        },
+        0.0,
+        0.0,
+        null
+      ]
+    ]
+  ],
+  "config_origins": {
+    "1": "Random initial design.",
+    "2": "Random initial design.",
+    "3": "Random initial design.",
+    "4": "Random initial design.",
+    "5": "Random initial design."
+  },
+  "configs": {
+    "1": {
+      "lr": 0.003916449174261764,
+      "model.multi_head_dims": 110,
+      "model.shared_hidden_dims.0": 334,
+      "model.shared_hidden_dims.1": 119
+    },
+    "2": {
+      "lr": 0.010671820864393935,
+      "model.multi_head_dims": 158,
+      "model.shared_hidden_dims.0": 280,
+      "model.shared_hidden_dims.1": 140
+    },
+    "3": {
+      "lr": 0.007381238832487746,
+      "model.multi_head_dims": 305,
+      "model.shared_hidden_dims.0": 190,
+      "model.shared_hidden_dims.1": 180
+    },
+    "4": {
+      "lr": 0.008710434577922916,
+      "model.multi_head_dims": 205,
+      "model.shared_hidden_dims.0": 184,
+      "model.shared_hidden_dims.1": 281
+    },
+    "5": {
+      "lr": 0.03769046495183537,
+      "model.multi_head_dims": 164,
+      "model.shared_hidden_dims.0": 104,
+      "model.shared_hidden_dims.1": 107
+    }
+  }
+}

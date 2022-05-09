@@ -1,0 +1,1 @@
+{"cpu_time": 0.0, "wallclock_time": 0.0004608631134033203, "evaluations": 0, "cost": 2147483648.0, "incumbent": {"lr": 0.003916449174261764, "model.multi_head_dims": 110, "model.shared_hidden_dims.0": 334, "model.shared_hidden_dims.1": 119}, "budget": 0, "origin": "Random initial design."}

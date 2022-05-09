@@ -1,0 +1,16 @@
+execdir = .
+deterministic = True
+run_obj = quality
+multi_objectives = cost
+overall_obj = par10
+save_results_instantly = True
+par_factor = 10
+cost_for_crash = 2147483647.0
+cutoff = 1800.0
+memory_limit = 3072.0
+algo_runs_timelimit = inf
+wallclock_limit = inf
+always_race_default = False
+ta_run_limit = 300.0
+initial_incumbent = DEFAULT
+pcs_fn = ./tmp/2022-05-09/15-24-44/run_209652396/configspace.json

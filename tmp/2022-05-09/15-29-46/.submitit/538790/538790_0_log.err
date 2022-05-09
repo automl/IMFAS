@@ -1,0 +1,16 @@
+wandb: Currently logged in as: tnt (use `wandb login --relogin` to force relogin)
+2022-05-09 15:30:12.876297: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-05-09 15:30:12.876328: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+wandb: wandb version 0.12.16 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.12.14
+wandb: Run data is saved locally in /home/mohan/git/current_projects/gravitas/AlgoSelectionMF/tmp/2022-05-09/15-29-46/4/wandb/run-20220509_153008-2022-05-09_15-29-46_7F787R
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run 2022-05-09_15-29-46_7F787R
+wandb: ⭐️ View project at https://wandb.ai/tnt/gravitas
+wandb: 🚀 View run at https://wandb.ai/tnt/gravitas/runs/2022-05-09_15-29-46_7F787R
+wandb: Waiting for W&B process to finish... (success).
+wandb: - 0.000 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: \ 0.001 MB of 0.001 MB uploaded (0.000 MB deduped)wandb: | 0.001 MB of 0.011 MB uploaded (0.000 MB deduped)wandb: / 0.001 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: - 0.001 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: \ 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: | 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: / 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: - 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: \ 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: | 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: / 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: - 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: \ 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb: | 0.019 MB of 0.019 MB uploaded (0.000 MB deduped)wandb:                                                                                
+wandb: Synced 2022-05-09_15-29-46_7F787R: https://wandb.ai/tnt/gravitas/runs/2022-05-09_15-29-46_7F787R
+wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./tmp/2022-05-09/15-29-46/4/wandb/run-20220509_153008-2022-05-09_15-29-46_7F787R/logs
