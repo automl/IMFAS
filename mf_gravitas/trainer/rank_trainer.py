@@ -92,6 +92,8 @@ def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[
     earliy stages of training. This supposedly gets us a decent initialization)
     """
 
+    epochs = [int(e) for e in epochs]
+
     log.info('Starting Freezed pretraining')
     freeze_tensors(model.final_network.parameters(), frosty=True)
     freeze_tensors(model.joint.parameters(), frosty=True)

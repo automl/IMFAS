@@ -14,8 +14,12 @@ defaults:
 
 # smac parameter defaults:
 
-
+## change relative data dir due to hydra_smac_sweeper
+dataset_raw:
+  dir_data: ../../../../data/
 dataset:
+  preprocessed_path: ../../../../data/raw/${dataset.name}
+
   slices: [ 15, 30, 40, 51 ]
 
 model:
@@ -24,6 +28,8 @@ model:
   shared_hidden_dims:
     - 200
     - 200
+  fc_dim:
+    - 58 # explicit fixture
 
 training:
   epochs:

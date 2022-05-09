@@ -157,13 +157,21 @@ class AlgoRankMLP_Ensemble(nn.Module):
         # Build a list of multi-head networks, one for each fidelity
         self.multi_head_networks = nn.ModuleList()
 
+        print(self.shared_hidden_dims)
+        if isinstance(self.multi_head_dims, list):
+            hid = self.multi_head_dims
+        # elif isinstance(self.multihead_dims, float):
+        #     hid = [self.multi_head_dims]
+
+        else:
+            hid = [int(self.multi_head_dims)]
+            # raise ValueError(f'multi_head looks like this: {self.multi_head_dims}')
         for _ in range(self.n_multiheads):
             self.multi_head_networks.append(
                 AlgoRankMLP(
                     input_dim=self.shared_hidden_dims[-1],
                     algo_dim=self.algo_dim,
-                    hidden_dims=self.multi_head_dims,  # fixme: why does this have to be a list
-                    # for smac to work
+                    hidden_dims=hid,
                 )
             )
 

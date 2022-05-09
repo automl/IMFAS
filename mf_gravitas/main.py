@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Dmajor
-from mf_gravitas.util import seed_everything, train_test_split
+from mf_gravitas.util import seed_everything, train_test_split, print_cfg
 from torch.utils.data import DataLoader
 
 import wandb
@@ -24,14 +24,13 @@ import torch
 
 from hydra.utils import get_original_cwd
 
-import pdb
-
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
 base_dir = os.getcwd()
+
 
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
@@ -40,6 +39,7 @@ def pipe_train(cfg: DictConfig) -> None:
     print('base_dir: ', base_dir)
 
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
+    print_cfg(cfg)
 
     hydra_job = (
             os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))

@@ -5,6 +5,9 @@ defaults:
   - override /hydra/sweeper: SMAC  # be carefull to make it /hydra
   - override /hydra/launcher: submitit_smac_slurm
 
+
+
+
 min_epochs: 400
 
 # define smac mf
@@ -14,12 +17,12 @@ hydra:
   sweeper:
     budget_variable: training.epochs.2
     seed: ${seed}
-    n_jobs: 4
+    n_jobs: 10
     scenario:
       run_obj: quality
       deterministic: true
       #      wallclock_limit: 100
-      runcount_limit: 300
+      runcount_limit: 50
       cutoff: 1800 # runtime limit for target algorithm
       memory_limit: 3072 # adapt this to reasonable value for your hardware
     intensifier_kwargs:
