@@ -65,19 +65,22 @@ class Join_WAVG(nn.Module):
         """
         Softmax "normalized and broadcased weights
         :param n_weights number of learnable inputs
+        :vec_dim: number of algorithms (dim of X)
         """
         super(Join_WAVG, self).__init__()
         self.shape = vec_dim, n_weights
-        self.weights = nn.Parameter(torch.linspace(0., 1., n_weights).reshape(1, -1))
+        self.weights = nn.Parameter(
+            torch.distributions.Uniform(0., 1.).sample((n_weights, 1, 1))
+        )
 
         self.softmax = nn.Softmax(dim=1)
 
+    def __repr__(self):
+        return f'Join WAVG:\n\tLearned weights: {self.weights.data}'
+
     def forward(self, X):
-        broadcased_weights = torch.broadcast_to(self.weights, (1, *self.shape))
-        print(X.shape, broadcased_weights.shape)
-        print(self.softmax(broadcased_weights).shape)
-        print((self.softmax(broadcased_weights) @ X).sum(axis=0))
-        return (self.softmax(broadcased_weights) @ X).sum(axis=0)
+        s = self.softmax(self.weights)
+        return (s * X).sum(dim=0)
 
 
 class Join_AVG(nn.Module):

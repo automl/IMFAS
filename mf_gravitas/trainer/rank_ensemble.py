@@ -59,6 +59,7 @@ class Trainer_Ensemble:
 
                 test_final_losses.append(final_loss)
                 [test_multi_head_losses.append(l) for l in multi_head_losses]
+            return multi_head_losses
 
         for j in range(self.n_slices - 1):
             self.losses[f'{j}/multihead_loss'] = test_multi_head_losses[j]

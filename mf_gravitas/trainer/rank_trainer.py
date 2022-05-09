@@ -10,6 +10,7 @@ from tqdm import tqdm
 from mf_gravitas.losses.ranking_loss import spearman
 from mf_gravitas.trainer.rank_ensemble import Trainer_Ensemble
 from mf_gravitas.trainer.rank_trainer_class import Trainer_Rank
+from mf_gravitas.util import freeze_tensors
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -78,6 +79,121 @@ def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr,
             trainer.losses,
             commit=False,
             step=e
+        )
+
+    return score
+
+
+def train_ensemble_freeze(model, train_dataloader, test_dataloader, lr, epochs=[300, 500],
+                          ranking_fn=torchsort.soft_rank, optimizer_cls=torch.optim.Adam):
+    """
+    Freezing the final joint model to foster stable learning in the multihead
+    fidelities. (To avoid the double gradient on them earlier components in the
+    earliy stages of training. This supposedly gets us a decent initialization)
+    """
+
+    log.info('Starting Freezed pretraining')
+    freeze_tensors(model.final_network.parameters(), frosty=True)
+    freeze_tensors(model.joint.parameters(), frosty=True)
+
+    optimizer = optimizer_cls(
+        model.parameters(),
+        lr
+    )
+    trainer_kwargs = {
+        'model': model,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
+        'optimizer': optimizer,
+    }
+
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+
+    for e in tqdm(range(epochs[0])):
+        # Train the model
+        trainer.train(train_dataloader)
+
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
+
+        # Take the next step
+        trainer.step_next()
+
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e
+        )
+
+    log.info('Training using freeze on last stage')  # ---------------------------------------
+    freeze_tensors(model.parameters(), frosty=False)  # unfreeze everything
+    freeze_tensors(model.shared_network.parameters(), frosty=True)
+    freeze_tensors(model.multi_head_networks.parameters(), frosty=True)
+
+    optimizer = optimizer_cls(
+        model.parameters(),
+        lr
+    )
+    trainer_kwargs = {
+        'model': model,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
+        'optimizer': optimizer,
+    }
+
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+    trainer.step = epochs[0]
+
+    for e in tqdm(range(epochs[1])):
+        # Train the model
+        trainer.train(train_dataloader)
+
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
+
+        # Take the next step
+        trainer.step_next()
+
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e + epochs[0]
+        )
+
+    log.info('Training fully')  # -----------------------------------------------
+    freeze_tensors(model.parameters(), frosty=False)
+
+    optimizer = optimizer_cls(
+        model.parameters(),
+        lr
+    )
+    trainer_kwargs = {
+        'model': model,
+        'loss_fn': spearman,
+        'ranking_fn': ranking_fn,
+        'optimizer': optimizer,
+    }
+
+    # Initialize the trainer
+    trainer = Trainer_Ensemble(**trainer_kwargs)
+    trainer.step = epochs[0] + epochs[1]
+
+    for e in tqdm(range(epochs[2])):
+        # Train the model
+        trainer.train(train_dataloader)
+
+        # Evaluate the model
+        score = trainer.evaluate(test_dataloader)
+
+        # Take the next step
+        trainer.step_next()
+
+        wandb.log(
+            trainer.losses,
+            commit=False,
+            step=e + epochs[1]
         )
 
     return score
