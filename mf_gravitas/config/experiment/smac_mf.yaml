@@ -19,7 +19,7 @@ hydra:
       run_obj: quality
       deterministic: true
       #      wallclock_limit: 100
-      runcount_limit: 50
+      runcount_limit: 300
       cutoff: 1800 # runtime limit for target algorithm
       memory_limit: 3072 # adapt this to reasonable value for your hardware
     intensifier:

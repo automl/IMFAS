@@ -30,41 +30,40 @@ lr: 0.001
 
 wandb:
   group: smac_rankmlp_freeze
-  notes: 'Running the freeze training procedure for optimizing the multiheads'
-  mode: 'offline'
+  notes: 'Running the freeze training procedure for optimizing the multiheads and determine AVG vs WAVG'
+  mode: 'online'
 
 hydra:
   sweeper:
     search_space:
-      # todo add this search space to the smac_mf.yaml!
       hyperparameters:
         model.shared_hidden_dims.0:
           type: uniform_int
           lower: 100
           upper: 400
-          #          log: true
+          log: true
           default: ${model.shared_hidden_dims.0}
         model.shared_hidden_dims.1:
           type: uniform_int
           lower: 100
           upper: 400
-          #          log: true
+          log: true
           default: ${model.shared_hidden_dims.1}
         model.multi_head_dims:
           type: uniform_int
           lower: 100
           upper: 400
-          #          log: true
+          log: true
           default: ${model.multi_head_dims.0}
         #        model.fc_dim.0:
         #          type: uniform_int
         #          lower: 20
         #          upper: 400
-        #          #          log: true
+        #          log: true
         #          default: ${model.fc_dim.0}
         #        model.join:
         #          type: categorical
-        #          choices: [ avg, wavg - ]
+        #          choices: [ avg, wavg ]
         #          default_value: ${model.join}
         lr: # currently top level ( base ) variable
           type: uniform_float
