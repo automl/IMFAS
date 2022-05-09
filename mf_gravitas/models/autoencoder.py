@@ -4,7 +4,6 @@ import torch
 import torch.distributions as td
 import torch.nn as nn
 
-
 class ParticleGravityAutoencoder(nn.Module):
     # TODO allow for algo meta features
     def __init__(
@@ -18,11 +17,16 @@ class ParticleGravityAutoencoder(nn.Module):
             device=None,
     ):
         """
-        :param nodes: list of number of nodes from input to output
-        :param weights: list of floats indicating the weights in the loss:
-        reconstruction, algorithm pull towards datasets, data-similarity-attraction,
-        data-dissimilarity-repelling.
-        :param n_algos: number of algorithms to place in the embedding space
+
+        Args:
+            input_dim: dimension of the input data
+            hidden_dims: list of hidden dimensions for the encoder
+            embedding_dim: dimension of the latent space
+            weights: weights for the loss function
+            repellent_share: share of the comparison space that is repellent
+            n_algos: number of algorithms to compare
+            device: device to use
+
         """
         super().__init__()
         self.device = device
@@ -96,18 +100,48 @@ class ParticleGravityAutoencoder(nn.Module):
     def forward(self, D):
         """
         Forward path through the meta-feature autoencoder
-        :param D: input tensor
-        :return: tuple: output tensor
+        
+        Args:
+            D: input data
+
+        Returns:
+            Forward path through the meta-feature autoencoder
         """
         return self.decode(self.encode(D))
 
     def _loss_reconstruction(self, D0, D0_fwd, *args, **kwargs):
-        # reconstruction loss (Autoencoder loss)
-        # its purpose is to avoid simple single point solution with catastrophic
-        # information loss - in the absence of a repelling force.
+        """
+        Reconstruction loss of the meta-feature autoencoder
+
+        Args:
+            D0: input data
+            D0_fwd: forward path through the meta-feature autoencoder
+            *args:
+            **kwargs:
+
+        Returns:
+            Reconstruction loss
+
+        """
         return torch.nn.functional.mse_loss(D0, D0_fwd)
 
     def _loss_datasets(self, D0, D0_fwd, Z0_data, Z1_data, A0, A1, Z_algo):
+        """
+        Loss function attracting datasets by landmark algorithm embeddings.
+
+        Args:
+            D0: input data
+            D0_fwd: forward path through the meta-feature autoencoder
+            Z0_data: embedding of dataset D0
+            Z1_data: embedding of dataset D1
+            A0: landmark algorithm embedding of dataset D0
+            A1: landmark algorithm embedding of dataset D1
+            Z_algo: landmark algorithm embedding of all algorithms
+
+        Returns:
+            Loss function attracting datasets by landmark algorithm embeddings.
+
+        """
 
         reconstruction = self._loss_reconstruction(D0, D0_fwd)
         # batch similarity order + no_repellents

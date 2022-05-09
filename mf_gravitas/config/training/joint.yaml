@@ -1,4 +1,3 @@
-schedule:
-  _target_: mf_gravitas.trainer.schedules.train_gravity
-  epochs: [ 10, 10 ]
-  lr: ${lr}
+_target_: mf_gravitas.trainer.schedules.train_gravity
+epochs: [ 10, 10 ]
+lr: ${lr}

@@ -1,0 +1,41 @@
+# @package _global_
+defaults:
+  #  - override /training: ensemble
+  - override /hydra/sweeper: SMAC
+  - override /hydra/launcher: submitit_smac_slurm
+
+wandb:
+  group: smac_rank_sweep
+  notes: 'This is a run for mlp ranking ensemble'
+  mode: 'offline'
+
+# smac parameter defaults:
+max_epochs: 500
+
+
+
+
+# define smac mf
+hydra:
+  launcher:
+    partition: cpu_normal
+  sweeper:
+    budget_variable: ${max_epochs}
+    seed: ${seed}
+    n_jobs: 4
+    scenario:
+      run_obj: quality
+      deterministic: true
+      #      wallclock_limit: 100
+      runcount_limit: 50
+      cutoff: 30 # runtime limit for target algorithm
+      memory_limit: 3072 # adapt this to reasonable value for your hardware
+    intensifier:
+      initial_budget: 5
+      max_budget: ${max_epochs}
+      eta: 3
+
+  run:
+    dir: ./tmp/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./tmp/${now:%Y-%m-%d}/${now:%H-%M-%S}

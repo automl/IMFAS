@@ -4,7 +4,7 @@ in a zero_shot manner we could reach. To do so, we train our manifold & the algo
 instantiations and densely sample the latent space and compute the ranking for
 each of these points (using the model's rank prediction module)
 """
-
+# fixme: this seems to be the exact same as ./optimal_rankings
 import torch
 from hydra.utils import call
 from sklearn.preprocessing import MinMaxScaler
@@ -14,16 +14,32 @@ from mf_gravitas.data import DatasetMetaFeatures
 
 
 class ZeroShotOptimalDistance:
-    def __init__(self, model, ranking_loss, scaler=MinMaxScaler(), batch: int = 20, ):
+    def __init__(self,
+                 model,
+                 ranking_loss,
+                 scaler=MinMaxScaler(),
+                 batch: int = 20,
+                 ):
         self.model = model
         self.ranking_loss = ranking_loss
-        self.batch = batch  # TODO unfix here!
+        self.batch = batch
         self.scaler = call(scaler)
 
-    def forward(self, dataset_meta_features: DatasetMetaFeatures, final_performances, steps):
+    def forward(self,
+                dataset_meta_features: DatasetMetaFeatures,
+                final_performances, steps
+                ):
         """
         Defining the evaluation protocol. Since ZeroShotOptimalDistance
-        is a static method, forward does not depend on some running meth
+        is a static method, forward does not depend on some running method
+
+        Args:
+            dataset_meta_features: DatasetMetaFeatures
+            final_performances: list of final performances
+
+        Returns:
+            list of final performances
+
         """
         self.dataset_meta_features = dataset_meta_features
         self.final_performances = final_performances
@@ -106,21 +122,15 @@ class ZeroShotOptimalDistance:
         :return:torch.Tensor: count of how many better solutions are there for
         each dataset.
         """
-        from hydra.utils import call
 
         _, true_rankings = torch.topk(A0, largest=True, k=self.n_algos)
-
-        # now compare model rankings with true rankings so that we see how far
-        # we have gotten with training
-        # fixme: dependence on hydra call is bad if we do not pass a cfg value
-
-        # call(self.ranking_loss, true_rankings, scores)  # overall loss
 
         # from sklearn.metrics import ndcg_score
         newshape = true_rankings.shape[0], -1, true_rankings.shape[1]
         newshape_predicted = true_rankings.shape[0], 1, true_rankings.shape[1]
         # get the model ndcg values
         model_ndcg = torch.zeros(len(true_rankings))
+
         for i, (truth, predicted) in enumerate(zip(
                 true_rankings.reshape(newshape).detach().numpy(),
                 model_scores.reshape(newshape_predicted))):
@@ -130,9 +140,7 @@ class ZeroShotOptimalDistance:
         # get the ranking ndcg against ground truth for each value
         cuboid_ndcg = torch.zeros((len(true_rankings), len(cuboid_scores)))
         newshape_cuboid = cuboid_scores.shape[0], -1, cuboid_scores.shape[1]
-        # from joblib import Parallel
-        # Parallel(n_jobs=2)(delayed(sqrt)(i ** 2) for i in range(10))
-        # Parallel  # TODO: optimize this loop, because it is very slow
+
         for t, truth in tqdm(enumerate(true_rankings.reshape(newshape).detach().numpy())):
             for g, grid_point in enumerate(cuboid_scores.reshape(newshape_cuboid)):
                 cuboid_ndcg[t, g] = call(
@@ -142,7 +150,5 @@ class ZeroShotOptimalDistance:
         counts = torch.zeros(len(model_ndcg))
         for i, datapoint_ndcg in enumerate(model_ndcg):
             counts[i] = sum(cuboid_ndcg[i] > datapoint_ndcg)
-
-            # Consider: based on this we can actually select the targets for our m-shot
 
         return counts
