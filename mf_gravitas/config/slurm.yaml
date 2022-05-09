@@ -11,4 +11,4 @@ hydra:
       - unset WANDB_DIR
       - unset WANDB_IGNORE_GLOBS
 
-    timeout_min: 720    
+#    timeout_min: 720

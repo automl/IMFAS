@@ -14,7 +14,7 @@ defaults:
 
 
 
-  #  - slurm # FIXME disabled this for smac sweeper: todo move smac sweeper config to experiments!
+  - slurm # FIXME disabled this for smac sweeper: todo move smac sweeper config to experiments!
 
   - _self_ # at the end means overriding values of lower yaml here!
 
