@@ -29,24 +29,11 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 base_dir = os.getcwd()
 
 
-# def smac_parse(cfg: DictConfig):
-#     print_cfg(cfg)
-#
-#     cfg.model.shared_hidden_dims = [cfg.smac['shared_hidden_dims0'],
-#                                     cfg.smac['shared_hidden_dims1']]
-#     cfg.model.multi_head_dims = cfg.smac.multi_head_dims
-#     cfg.model.fc_dim = [cfg.smac['fc_dim0']]
-#     cfg.model.join = cfg.smac.join
-#
-#     # fixme: need to update wandb
-#     # wandb.config.update({'model'
-#     #                      })
-
-
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
     sys.path.append(os.getcwd())
     sys.path.append("..")
+    print(base_dir)
 
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
 

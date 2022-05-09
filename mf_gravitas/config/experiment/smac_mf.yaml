@@ -12,7 +12,7 @@ hydra:
   launcher:
     partition: cpu_normal
   sweeper:
-    budget_variable: ${training.epochs.2}
+    budget_variable: training.epochs.2
     seed: ${seed}
     n_jobs: 4
     scenario:
@@ -22,7 +22,7 @@ hydra:
       runcount_limit: 300
       cutoff: 1800 # runtime limit for target algorithm
       memory_limit: 3072 # adapt this to reasonable value for your hardware
-    intensifier:
+    intensifier_kwargs:
       initial_budget: ${min_epochs}
       max_budget: ${training.epochs.2}
       eta: 4

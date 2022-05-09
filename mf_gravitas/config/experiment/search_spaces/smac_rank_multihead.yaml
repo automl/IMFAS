@@ -13,11 +13,7 @@ defaults:
 
 
 # smac parameter defaults:
-training:
-  epochs:
-    - 200 # pretraining I (multihead-only)
-    - 0  # pretraining II (final-head-only)
-    - 10000 # full training budget (will be overridden by sweeper)
+
 
 dataset:
   slices: [ 15, 30, 40, 51 ]
@@ -25,6 +21,16 @@ dataset:
 model:
   n_fidelities: 4  # fixme: the length should automatically adjusted to dataset.slices!
   join: wavg
+  shared_hidden_dims:
+    - 200
+    - 200
+
+training:
+  epochs:
+    - 200 # pretraining I (multihead-only)
+    - 0  # pretraining II (final-head-only)
+    - 10000 # full training budget (will be overridden by sweeper)
+
 lr: 0.001
 
 
@@ -35,6 +41,8 @@ wandb:
 
 hydra:
   sweeper:
+
+    budget_variable: training.epochs.2
     search_space:
       hyperparameters:
         model.shared_hidden_dims.0:
