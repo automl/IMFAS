@@ -24,7 +24,7 @@ dataset:
 
 model:
   n_fidelities: 4  # fixme: the length should automatically adjusted to dataset.slices!
-  join: avg
+  join: wavg
 lr: 0.001
 
 
