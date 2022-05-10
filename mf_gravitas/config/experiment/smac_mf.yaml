@@ -17,7 +17,7 @@ hydra:
   sweeper:
     budget_variable: training.epochs.2
     seed: ${seed}
-    n_jobs: 10
+    n_jobs: 12
     scenario:
       run_obj: quality
       deterministic: true
@@ -28,7 +28,7 @@ hydra:
     intensifier_kwargs:
       initial_budget: ${min_epochs}
       max_budget: ${training.epochs.2}
-      eta: 4
+      eta: 3
 
   run:
     dir: ./tmp/${now:%Y-%m-%d}/${now:%H-%M-%S}
