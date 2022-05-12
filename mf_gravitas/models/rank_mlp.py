@@ -3,6 +3,7 @@ from typing import List
 import torch
 import torch.nn as nn
 import torchsort
+from omegaconf import ListConfig
 
 
 # from ott.tools.soft_sort import ranks as ott_ranks
@@ -158,12 +159,14 @@ class AlgoRankMLP_Ensemble(nn.Module):
         self.multi_head_networks = nn.ModuleList()
 
         print(self.shared_hidden_dims)
-        if isinstance(self.multi_head_dims, list):
+        # Fixme: issue hydra / smac fuck with us here
+        if isinstance(self.multi_head_dims, list) or isinstance(self.multi_head_dims, ListConfig):
             hid = self.multi_head_dims
         # elif isinstance(self.multihead_dims, float):
         #     hid = [self.multi_head_dims]
 
         else:
+            print(self.multi_head_dims)
             hid = [int(self.multi_head_dims)]
             # raise ValueError(f'multi_head looks like this: {self.multi_head_dims}')
         for _ in range(self.n_multiheads):

@@ -17,7 +17,7 @@ hydra:
   sweeper:
     budget_variable: training.epochs.2
     seed: ${seed}
-    n_jobs: 12
+    n_jobs: 4
     scenario:
       run_obj: quality
       deterministic: true
