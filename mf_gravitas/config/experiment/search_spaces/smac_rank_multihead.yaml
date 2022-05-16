@@ -13,28 +13,42 @@ defaults:
 
 
 # smac parameter defaults:
+
+## change relative data dir due to hydra_smac_sweeper
+dataset_raw:
+  dir_data: ../../../data/
+dataset:
+  preprocessed_path: ../../../data/raw/${dataset.name}
+
+  slices: [ 15, 30, 40, 51 ]
+
+model:
+  n_fidelities: 4  # fixme: the length should automatically adjusted to dataset.slices!
+  join: wavg
+  shared_hidden_dims:
+    - 200
+    - 200
+  fc_dim:
+    - 58 # explicit fixture
+
 training:
   epochs:
     - 200 # pretraining I (multihead-only)
     - 0  # pretraining II (final-head-only)
     - 10000 # full training budget (will be overridden by sweeper)
 
-dataset:
-  slices: [ 15, 30, 40, 51 ]
-
-model:
-  n_fidelities: 4  # fixme: the length should automatically adjusted to dataset.slices!
-  join: wavg
 lr: 0.001
 
 
 wandb:
   group: smac_rankmlp_freeze
   notes: 'Running the freeze training procedure for optimizing the multiheads and determine AVG vs WAVG'
-  mode: 'online'
+  mode: 'offline'
 
 hydra:
   sweeper:
+
+    budget_variable: training.epochs.2
     search_space:
       hyperparameters:
         model.shared_hidden_dims.0:

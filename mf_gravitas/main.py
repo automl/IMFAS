@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Dmajor
-from mf_gravitas.util import seed_everything, train_test_split
+from mf_gravitas.util import seed_everything, train_test_split, print_cfg
 from torch.utils.data import DataLoader
 
 import wandb
@@ -20,6 +20,9 @@ import sys
 
 import string
 import random
+import torch
+
+from hydra.utils import get_original_cwd
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -29,26 +32,14 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 base_dir = os.getcwd()
 
 
-# def smac_parse(cfg: DictConfig):
-#     print_cfg(cfg)
-#
-#     cfg.model.shared_hidden_dims = [cfg.smac['shared_hidden_dims0'],
-#                                     cfg.smac['shared_hidden_dims1']]
-#     cfg.model.multi_head_dims = cfg.smac.multi_head_dims
-#     cfg.model.fc_dim = [cfg.smac['fc_dim0']]
-#     cfg.model.join = cfg.smac.join
-#
-#     # fixme: need to update wandb
-#     # wandb.config.update({'model'
-#     #                      })
-
-
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
     sys.path.append(os.getcwd())
     sys.path.append("..")
+    print('base_dir: ', base_dir)
 
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
+    print_cfg(cfg)
 
     hydra_job = (
             os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
@@ -58,10 +49,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # fixme: remove temporary quickfix to change pass smac config into the hydra config
     hydra_config = HydraConfig.get()
-
-    # if 'SMAC' in hydra_config['sweeper']['_target_'] and \
-    #         bool(hydra_config['sweeper']['search_space']):
-    #     smac_parse(cfg)
+    log.info(get_original_cwd())
 
     cfg.wandb.id = hydra_job + "_" + id_generator()
 
@@ -164,41 +152,12 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
     # fixme: remove highly specific weighing scheme for multihead losses!
-    import torch
+
     head_losses = torch.tensor(valid_score)
     fidelity_weights = torch.nn.functional.softmax(torch.log(
         torch.tensor(cfg.dataset.slices[:-1],  # multihead does not need the last fidelity!
                      dtype=torch.float)))
     valid_score = fidelity_weights @ head_losses.type(torch.float).T
-
-    # evaluation model
-    # # fixme: move this to config and instantiate
-    # evaluator = instantiate(
-    #     cfg.evaluation.evaluator,
-    #     model=model,
-    #     _recursive_=False
-    # )
-
-    # counts = evaluator.forward(
-    #     dataset_meta_features[test_split],
-    #     final_performances=lc_dataset[test_split],
-    #     steps=cfg.evaluation.steps)
-
-    # check if smac sweeper is used.
-
-    # TODO: make a specialized evaluation procedure:
-    #  when launcher (a new category i.e. folder: options [smac, default]) is smac,
-    #  create a launcher.evaluation protocol, that overrides the evaluation protocol
-
-    # hydra_config = HydraConfig.get()
-    # print(hydra_config['sweeper']['search_space'])
-    # if 'SMAC' in HydraConfig.get()['sweeper']['_target_']:
-    #     # todo specify the validation score computation for this configuration & smac
-
-    # TODO : make a specialized test_loader (since during test time we only ever will see the
-    #  dataset meta features and the final performances! (this will require another loader & new
-    #  predict function!)
-    # return call(cfg.evaluation, model=model, test_loader=test_loader)
 
     return valid_score
 

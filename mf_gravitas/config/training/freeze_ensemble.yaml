@@ -1,3 +1,6 @@
 _target_: mf_gravitas.trainer.rank_trainer.train_ensemble_freeze
-epochs: [ 3, 0 , 4 ]
+epochs:
+  - 1
+  - 2
+  - 3
 lr: ${lr}

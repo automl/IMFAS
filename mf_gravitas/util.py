@@ -124,7 +124,7 @@ def check_wandb_exists(cfg, unique_fields: List[str]):
         'state': 'finished',
         **query_config_wandb
     }
-    print(query_wandb)
+    # print(query_wandb)
 
     api = wandb.Api()
     runs = api.runs("tnt/carl", query_wandb)
