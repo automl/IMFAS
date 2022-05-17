@@ -11,4 +11,4 @@ shared_hidden_dims:
   - 200 
 n_fidelities: 3
 fc_dim: [ 58 ]
-sequential: True
+sequential: False

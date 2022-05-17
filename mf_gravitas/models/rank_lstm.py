@@ -219,7 +219,7 @@ class RankLSTM_Ensemble(nn.Module):
         if self.sequential:
             final_D = self.final_network(lstm_D[-1])
         else:
-            final_D = self.final_network(lstm_D.mean(dim=0))
+            final_D = self.final_network(torch.stack(lstm_D).mean(dim=0))
 
         return shared_D, lstm_D, final_D
 
