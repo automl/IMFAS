@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - override /training: lstm_ensemble
+  - override /model: rank_lstm
+  
+wandb:
+  group: rank_lstm
+  notes: 'This is a run for lstm ranking ensemble'
+  mode: 'offline'
+
+
+train_batch_size: 5
+test_batch_size: 5

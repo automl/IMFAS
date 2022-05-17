@@ -1,0 +1,14 @@
+_target_: mf_gravitas.models.rank_lstm.RankLSTM_Ensemble
+
+lstm_hidden_dims:
+  - 100
+  - 100
+lstm_layers:
+  - 2
+  - 2
+shared_hidden_dims:
+  - 300
+  - 200 
+n_fidelities: 3
+fc_dim: [ 58 ]
+sequential: True

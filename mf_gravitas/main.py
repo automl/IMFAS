@@ -142,6 +142,8 @@ def pipe_train(cfg: DictConfig) -> None:
         algo_dim=n_algos
     )
 
+
+
     # fixme: validation score should not be computed during run !
     valid_score = call(
         cfg.training,
@@ -151,15 +153,15 @@ def pipe_train(cfg: DictConfig) -> None:
         _recursive_=False
     )
 
-    # fixme: remove highly specific weighing scheme for multihead losses!
+    # # fixme: remove highly specific weighing scheme for multihead losses!
 
-    head_losses = torch.tensor(valid_score)
-    fidelity_weights = torch.nn.functional.softmax(torch.log(
-        torch.tensor(cfg.dataset.slices[:-1],  # multihead does not need the last fidelity!
-                     dtype=torch.float)))
-    valid_score = fidelity_weights @ head_losses.type(torch.float).T
+    # head_losses = torch.tensor(valid_score)
+    # fidelity_weights = torch.nn.functional.softmax(torch.log(
+    #     torch.tensor(cfg.dataset.slices[:-1],  # multihead does not need the last fidelity!
+    #                  dtype=torch.float)))
+    # valid_score = fidelity_weights @ head_losses.type(torch.float).T
 
-    return valid_score
+    # return valid_score
 
 
 if __name__ == '__main__':

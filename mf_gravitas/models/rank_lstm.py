@@ -7,6 +7,8 @@ from torch.nn import Linear, LSTM
 
 from mf_gravitas.models.rank_mlp import AlgoRankMLP
 
+import pdb
+
 class RankLSTM(nn.Module):
     def __init__(
             self, 
@@ -45,7 +47,7 @@ class RankLSTM(nn.Module):
 
         # Readout layer to convert hidden state output to the final output
         
-        if readout is not None:
+        if readout is None:
             self.readout = nn.Linear(
                             hidden_dim, 
                             output_dim
@@ -64,17 +66,24 @@ class RankLSTM(nn.Module):
         
         # TODO test other initializations
 
+        x = torch.reshape(x, (1, x.shape[0], x.shape[1]))
+        # print(x.shape)
+        # pdb.set_trace()
+
+
+        
+
         # Initialize hidden state with zeros
         h0 = torch.zeros(
                 self.layer_dim,     # Number of layers
-                x.size(0),          # batch_dim
+                x.shape[0],          # batch_dim
                 self.hidden_dim     # hidden_dim
             ).requires_grad_()
 
         # Initialize cell state with 0s
         c0 = torch.zeros(
                 self.layer_dim,     # Number of layers
-                x.size(0),          # batch_dim  
+                x.shape[0],          # batch_dim  
                 self.hidden_dim     # hidden_dim
             ).requires_grad_()
 
@@ -98,12 +107,12 @@ class RankLSTM_Ensemble(nn.Module):
             lstm_layers: int = [2, 2],
             shared_hidden_dims: List[int] = [300, 200],
             fc_dim: List[int] = [58],
-            n_fidelities: int = 3,            
-            join: str = 'wavg',
+            n_fidelities: int = 3,   
+            sequential: bool = True,         
             device: str = 'cpu',
     ):
         """
-        Ensemble fo MLPs to rank based on multiple fidelities
+        Sequential Ensemble of LSTM cells to rank based on multiple fidelities
 
         Args:
             input_dim: input dimension
@@ -133,6 +142,8 @@ class RankLSTM_Ensemble(nn.Module):
         assert(len(self.lstm_hidden_dims) == len(self.lstm_layers))
         assert(len(self.lstm_hidden_dims) == n_fidelities - 1)
 
+        self.sequential  = sequential
+
         self.rank = torchsort.soft_rank
 
         self._build_network()
@@ -152,11 +163,10 @@ class RankLSTM_Ensemble(nn.Module):
 
 
         # Build the lstms
-        lstms = []
-
+        self.lstm_network = nn.ModuleList()
         ipd = self.shared_hidden_dims[-1]
         for i in range(len(self.lstm_hidden_dims)):
-            lstms.append(
+            self.lstm_network.append(
                 RankLSTM(
                     input_dim=ipd,
                     hidden_dim=self.lstm_hidden_dims[i],
@@ -166,9 +176,10 @@ class RankLSTM_Ensemble(nn.Module):
                 )
             )
 
-            ipd = self.algo_dim
+            if self.sequential:
+                ipd = self.algo_dim
 
-        self.lstm_network = torch.nn.Sequential(*lstms)
+        # self.lstm_network = torch.nn.Sequential(*self.lstm_network)
 
         # Build the final network
         self.final_network = AlgoRankMLP(
@@ -192,10 +203,23 @@ class RankLSTM_Ensemble(nn.Module):
         shared_D = self.shared_network(D)
 
         # Forward through the lstm networks to get the readouts
-        lstm_D = self.lstm_network(shared_D)
+        lstm_D = []
+        ip = shared_D
 
-        # Forward through the final network
-        final_D = self.final_network(lstm_D)
+        for i in range(len(self.lstm_network)):
+        
+            op = self.lstm_network[i](ip)
+            lstm_D.append(op)
+            
+            if self.sequential:
+                ip = op
+
+    
+        # Forward through the final network    
+        if self.sequential:
+            final_D = self.final_network(lstm_D[-1])
+        else:
+            final_D = self.final_network(lstm_D.mean(dim=0))
 
         return shared_D, lstm_D, final_D
 
