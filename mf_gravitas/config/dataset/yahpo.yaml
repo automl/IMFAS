@@ -1,0 +1,9 @@
+name: yahpo
+preprocessed_path: ../../../data/raw/${dataset.name}
+split: 0.8
+
+slices: [ 1, 10, 20, 51 ]
+metric: val_cross_entropy
+
+# fixme: remove legacy
+lc_metric: None

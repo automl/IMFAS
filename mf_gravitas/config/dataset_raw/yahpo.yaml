@@ -1,11 +1,11 @@
 _target_: mf_gravitas.data.yahpo.raw_pipe.raw_pipe
 dataset_name: yahpo
-enable: true
+enable: true  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
 dir_data: ../../../../data/
-
 
 selection:
   bench: lcbench
+  noisy: false
   # options:
   # lcbench, rbv2_svm, rbv2_ranger, rbv2_rpart, rbv2_glmnet, rbv2_xgboost, rbv2_aknn, rbv2_super,
   # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,
@@ -21,11 +21,12 @@ selection:
     init_budget: ${dataset_raw.selection.n_algos}
 
   # fidelity depends on fidelity type & ranges for respective benchmark
-  slices: [ 1, 10, 20, 51 ]
-  metric: val_cross_entropy
+  slices: ${dataset.slices}
+  metric: ${dataset.metric}
   # options:
   # time , val_accuracy , val_cross_entropy , val_balanced_accuracy ,
   # test_cross_entropy , test_balanced_accuracy
+
 
 
 

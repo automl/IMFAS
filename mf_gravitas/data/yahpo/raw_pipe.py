@@ -135,22 +135,25 @@ OPENML_IDS = {
 # BENCHS = {'lcbench': lcbench, 'iaml': iaml, 'rbv2': rbv2, 'rbv2_iaml': rbv2_iaml}
 
 
-def raw_pipe(*args, **kwargs):
+def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd explicitly
     cfg = DictConfig(kwargs)
 
     # directory paths
-    orig_cwd = pathlib.Path(hydra.utils.get_original_cwd())
-    dir_data = pathlib.Path(cfg.dir_data)
-    dir_downloads = dir_data / 'downloads'
+    orig_cwd = pathlib.Path(hydra.utils.get_original_cwd()).parents[0]
+    dir_data = orig_cwd / 'data'
+    dir_data.mkdir(parents=True, exist_ok=True)
     dir_raw_dataset = dir_data / 'raw' / cfg.dataset_name
+    dir_raw_dataset_bench = dir_raw_dataset / cfg.selection.bench
+    dir_raw_dataset_bench.mkdir(parents=True, exist_ok=True)
 
-    log.debug(f'loading benchmark {cfg.selection.bench}')
-    bench = BenchmarkSet(scenario=cfg.selection.bench)
+    log.debug(f'loading yahpo benchmark {cfg.selection.bench}')
+    bench = BenchmarkSet(scenario=cfg.selection.bench, noisy=cfg.selection.noisy)
 
     log.info('collecting meta data')
     tasks = get_tasks(OPENML_IDS[cfg.selection.bench], download_data=False, )
     dataset_ids = {t.dataset_id for t in tasks}
 
+    # collect dataset meta features -----------------------
     ms = get_datasets(dataset_ids, download_data=False, )
     qualities = {m.id: m.qualities for m in ms}
     dataset_meta_features = pd.DataFrame.from_dict(qualities).T
@@ -164,24 +167,18 @@ def raw_pipe(*args, **kwargs):
     fidelity_range = bench.get_fidelity_space()
     fidelity_type = 'epoch'  # fixme: either epoch or trainsize
 
+    # fixing the configspace for init design (remove id & fidelity)
     config_space = bench.config_space.get_hyperparameters_dict()
     config_space.pop('OpenML_task_id')
     config_space.pop(fidelity_type)
-
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameters(config_space.values())
 
-    # from ConfigSpace.util import deactivate_inactive_hyperparameters
-    #
-    # cs = bench.config_space
-    # deactivate_inactive_hyperparameters(
-    #     {'OpenML_task_id': OPENML_IDS[cfg.selection.bench][0], fidelity_type: 10},
-    #     cs
-    # )
-    # cs.is_valid_configuration()
-
+    # sample the algorithms from configspace
     design = call(cfg.selection.algo, cs=cs, traj_logger=log)
     configs = design._select_configurations()
+
+    # gather per dataset the respective performances for all configs
     slices = {}
     for inst in OPENML_IDS[cfg.selection.bench]:
         bench.set_instance(str(inst))
@@ -198,8 +195,20 @@ def raw_pipe(*args, **kwargs):
 
         slices[inst] = pd.concat(sl, axis=1)
 
-    multidex = pd.concat(slices, axis=0)
+    # create multiindex learningcurve tensor
+    lc = pd.concat(slices, axis=0)
+    lc.index.set_names(('Dataset', 'Algo_HP'))
+    lc.columns.set_names('Fidelity')
+
+    # Algorithm Meta Features
+    algo_meta_features = pd.DataFrame.from_dict(
+        {i: c.get_dictionary() for i, c in enumerate(configs)}
+    )
+    algo_meta_features.columns.set_names('AlgoID')
+    algo_meta_features.drop(index=['OpenML_task_id', fidelity_type], inplace=True)
+    algo_meta_features = algo_meta_features.T
 
     log.info('writing out to files')
-
-    # hdf
+    algo_meta_features.to_csv(dir_raw_dataset_bench / 'config_subset.csv')
+    dataset_meta_features.to_csv(dir_raw_dataset_bench / 'meta_features.csv')
+    lc.to_hdf(dir_raw_dataset_bench / 'logs_subset.h5', key='dataset', mode='w')

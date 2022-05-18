@@ -5,9 +5,14 @@ from mf_gravitas.data.preprocessings.lc_slice import LC_TimeSlices
 
 
 class Dataset_LC(Dataset):
-    def __init__(self, path, metric, transforms):
+    def __init__(self, path, transforms, metric: str = 'None'):
+        """
+        :param metric: Lcbench needs another specifier to subset the dataset.
+        """
         self.df = pd.read_hdf(path, mode='r')
-        self.df = self.df.xs(key=metric)
+
+        if metric != 'None':
+            self.df = self.df.xs(key=metric)
 
         # consider: is this possible by read in? - to reduce memory overhead
 
