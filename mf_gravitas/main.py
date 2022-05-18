@@ -85,10 +85,10 @@ def pipe_train(cfg: DictConfig) -> None:
     if cfg.dataset_raw.enable:
         call(cfg.dataset_raw, _recursive_=False)
 
-        log.info(f'\n{"!" * 30}\nTerminating after generating raw data. To continue override your '
-                 'config with "dataset_raw.enable=false" ')
-
-        return None
+        # log.info(f'\n{"!" * 30}\nTerminating after generating raw data. To continue, override your '
+        #          'config with "dataset_raw.enable=false" ')
+        #
+        # return None
 
     # read in the data
     algorithm_meta_features = instantiate(cfg.dataset.algo_meta)

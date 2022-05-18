@@ -3,15 +3,15 @@
 defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
-  - dataset/algo_meta: minimal
-  - dataset/dataset_meta: minimal
+  - dataset/algo_meta: lcbench_minimal
+  - dataset/dataset_meta: lcbench_minimal
   - dataset/lc: multi_slice
   - model: rank_ensemble
   - training: freeze_ensemble # ensemble
   - evaluation: optimal_rankings
   #  - override hydra/sweeper: SMAC
   #  - override hydra/launcher: submitit_smac_slurm
-  
+
   - slurm # FIXME disabled this for smac sweeper: todo move smac sweeper config to experiments!
 
   - _self_ # at the end means overriding values of lower yaml here!
