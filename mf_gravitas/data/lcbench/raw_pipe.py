@@ -14,13 +14,18 @@ from mf_gravitas.data.util import subset
 log = logging.getLogger(__name__)
 
 
-def main_raw(cfg: DictConfig):
+def raw_pipe(*args, **kwargs):
     """
     Do heavy computation on the raw datasets - and move them to the data/preprocessing
     folder.
 
     For instance do Subset the HP-configurations by subsetting or ensembling.
     """
+
+    # make it a hydra pipe again:
+    cfg = DictConfig(kwargs)
+
+    # directory paths
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd())
     dir_data = pathlib.Path(cfg.dir_data)
     dir_downloads = dir_data / 'downloads'

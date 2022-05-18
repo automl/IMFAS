@@ -9,7 +9,6 @@ from omegaconf import DictConfig, OmegaConf
 # A logger for this file
 log = logging.getLogger(__name__)
 
-from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Dmajor
 from mf_gravitas.util import seed_everything, train_test_split, print_cfg
 from torch.utils.data import DataLoader
@@ -84,7 +83,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
-        main_raw(cfg.dataset_raw)
+        call(cfg.dataset_raw, _recursive_=False)
 
     # read in the data
     algorithm_meta_features = instantiate(cfg.dataset.algo_meta)

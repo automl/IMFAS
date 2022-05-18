@@ -97,4 +97,63 @@ openml_ids = {
     'iaml_super': [41146, 1489, 40981, 1067]
 }
 
-set.intersection({k: set(v) for k, v in openml_ids.items()}.values())
+# none of the datasets are used in all benchmarks!
+set.intersection({k: set(v) for k, v in openml_ids.items()}.values())  # rbv2 & iaml intersection!
+
+set.intersection(*[set(v) for k, v in openml_ids.items() if k != 'lcbench'])
+
+iaml = set.intersection(*[set(v) for k, v in openml_ids.items() if k.startswith('iaml')])
+rbv2 = set.intersection(*[set(v) for k, v in openml_ids.items() if k.startswith('rbv2')])
+rbv2_k = [k for k in openml_ids.keys() if k.startswith('rbv2')]
+iaml_k = [k for k in openml_ids.keys() if k.startswith('iaml')]
+
+from openml.datasets import get_dataset
+from openml.tasks import get_tasks, get_task
+from yahpo_gym import *
+
+bench = BenchmarkSet(scenario="lcbench")
+bench.instances
+bench.set_instance(bench.instances[0])
+
+config = bench.config_space.sample_configuration(1).get_dictionary()
+fidelity_name = 'epoch'
+config[fidelity_name]
+# Evaluate
+print(bench.objective_function(config))
+
+tasks = get_tasks(openml_ids['lcbench'], download_data=False)
+task = get_task(openml_ids['lcbench'][0], download_data=False)
+dataset = get_dataset(dataset_id=task.dataset_id, download_data=False)
+
+import pandas as pd
+
+dataset_meta_features = pd.DataFrame.from_dict({task.dataset_id: dataset.qualities}).T
+
+# TODO Algorithm meta features
+
+
+# Sample yahpo using todo latin hypercube / sobol design -- make this optional!
+# depending on the number of sobol, it might make sense to use the todo  topk sampling strategy,
+# which we already have.
+smac.initial_design.sobol_design
+smac.initial_design.latin_hypercube_design.LHDesign
+
+# TODO always the best performing config (raw/yahpo_data/<bench>/best_params_resnet.json)
+
+# todo configspace is here : (raw/yahpo_data/<bench>/config_space.json) (has to be refactored
+#  though!
+
+# TODO: choose either noisy or not noisy!
+
+configs = LHDesign(
+    cs: ConfigSpace.configuration_space.ConfigurationSpace,
+        rng: numpy.random.mtrand.RandomState = None,
+                                               traj_logger: smac.utils.io.traj_logging.TrajLogger = None,
+                                                                                                    ta_run_limit: int = 99999,
+                                                                                                                        configs:
+Optional[List[ConfigSpace.configuration_space.Configuration]] = None,
+                                                                n_configs_x_params: Optional[
+    int] = 10,
+)
+
+# Write out to

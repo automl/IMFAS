@@ -2,17 +2,14 @@ import logging
 import pathlib
 
 import hydra
-from hydra.core.hydra_config import HydraConfig
-from hydra.utils import instantiate, call
-from omegaconf import DictConfig, OmegaConf
-
-import ConfigSpace as CS
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
-
+from hydra.core.hydra_config import HydraConfig
+from hydra.utils import instantiate
+from omegaconf import DictConfig, OmegaConf
 from smac.configspace import ConfigurationSpace
 from smac.facade.smac_mf_facade import SMAC4MF
 from smac.scenario.scenario import Scenario
@@ -20,11 +17,9 @@ from smac.scenario.scenario import Scenario
 # A logger for this file
 log = logging.getLogger(__name__)
 
-from mf_gravitas.data.pipe_raw import main_raw
 from mf_gravitas.data import Dataset_Join_Dmajor
 from mf_gravitas.util import seed_everything, train_test_split
 from torch.utils.data import DataLoader
-
 
 import numpy as np
 
@@ -35,7 +30,6 @@ import sys
 import string
 import random
 
-from mf_gravitas.trainer.base_trainer import Trainer_Rank
 from mf_gravitas.models.rank_mlp import ActionRankMLP
 
 from mf_gravitas.trainer.rank_trainer import train_rank
@@ -48,22 +42,20 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 base_dir = os.getcwd()
 
 
-
-
-def smac_train(cfg, train_dataloader, test_dataloader, input_dims, output_dims ):
+def smac_train(cfg, train_dataloader, test_dataloader, input_dims, output_dims):
     lr = cfg["learning_rate"]
 
     model = ActionRankMLP(
-        input_dim = input_dims,
+        input_dim=input_dims,
         hidden_dims=[cfg["n_neurons"]] * cfg["n_layer"],
-        action_dim = output_dims,
+        action_dim=output_dims,
     )
-
 
     # train model
     score = train_rank(model, train_dataloader, test_dataloader, cfg["epochs"], lr)
 
     return score
+
 
 @hydra.main(config_path='config', config_name='base')
 def pipe_train(cfg: DictConfig) -> None:
@@ -111,7 +103,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
-        main_raw(cfg.dataset_raw)
+        instantiate(cfg.raw_pipe)
 
     # read in the data
     algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
@@ -120,9 +112,9 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
-                                    len(dataset_meta_features), 
-                                    cfg.dataset.split
-                                )
+        len(dataset_meta_features),
+        cfg.dataset.split
+    )
 
     # dataset_major
     # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
@@ -163,7 +155,7 @@ def pipe_train(cfg: DictConfig) -> None:
         'input_dim': dataset_meta_features.df.columns.size
     })
 
-    #model = instantiate(cfg.model.model)
+    # model = instantiate(cfg.model.model)
     n_layer = UniformIntegerHyperparameter("n_layer", 1, 5, default_value=1)
     n_neurons = UniformIntegerHyperparameter(
         "n_neurons", 8, 1024, log=True, default_value=10
@@ -187,7 +179,7 @@ def pipe_train(cfg: DictConfig) -> None:
         ]
     )
 
-     # SMAC scenario object
+    # SMAC scenario object
     scenario = Scenario(
         {
             "run_obj": "quality",  # we optimize quality (alternative to runtime)
@@ -223,12 +215,10 @@ def pipe_train(cfg: DictConfig) -> None:
         config=cs.get_default_configuration(),
         budget=max_epochs,
         seed=123456,
-        
 
     )[1]
 
     print("Value for default configuration: %.4f" % def_value)
-
 
 
 if __name__ == '__main__':

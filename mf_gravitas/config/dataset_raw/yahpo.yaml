@@ -1,0 +1,33 @@
+_target_: mf_gravitas.data.yahpo.raw_pipe.raw_pipe
+dataset_name: yahpo
+enable: true
+dir_data: ../../../../data/
+
+
+selection:
+  bench: lcbench
+  # options:
+  # lcbench, rbv2_svm, rbv2_ranger, rbv2_rpart, rbv2_glmnet, rbv2_xgboost, rbv2_aknn, rbv2_super,
+  # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,
+  n_algos: 13
+  algo:
+    _target_: smac.initial_design.latin_hypercube_design.LHDesign
+    # smac.initial_design.sobol_design.SobolDesign
+    rng:
+      _target_: numpy.random.RandomState
+      seed: ${seed}
+    ta_run_limit: 9999
+
+    init_budget: ${dataset_raw.selection.n_algos}
+
+  # fidelity depends on fidelity type & ranges for respective benchmark
+  slices: [ 1, 10, 20, 51 ]
+  metric: val_cross_entropy
+  # options:
+  # time , val_accuracy , val_cross_entropy , val_balanced_accuracy ,
+  # test_cross_entropy , test_balanced_accuracy
+
+
+
+
+

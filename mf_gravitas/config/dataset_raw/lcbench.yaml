@@ -1,3 +1,4 @@
+_target_: mf_gravitas.data.lcbench.raw_pipe.raw_pipe
 dataset_name: LCBench
 
 #TODO Change to relative
@@ -6,6 +7,8 @@ extract: data_2k  # json file
 enable: False # whether to override the preprocessing
 re_download: False
 reload_from_downloads: False # will override the '*subset' files
+
+
 
 
 selection:
