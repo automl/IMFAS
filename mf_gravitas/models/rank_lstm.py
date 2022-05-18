@@ -55,42 +55,36 @@ class RankLSTM(nn.Module):
         else:
             self.readout = readout
 
-    def forward(self, x):
+        self.double()
+
+    def forward(self, init_hidden, context):
         '''
         Forward pass of the LSTM
         Args:
-            x: Input tensor of shape (batch_dim, seq_dim, feature_dim)
+            init_hidden : Initializer for hidden and/or cell state
+            context     : Input tensor of shape (batch_dim, seq_dim, feature_dim)
+
         Returns:
             Output tensor of shape (batch_dim, output_dim) i.e. the  output readout of the LSTM for each element in a batch 
         '''
+    
+        # Initialize hidden state with the output of the preious MLP
+        h0 = torch.stack([init_hidden for _ in range(self.layer_dim)]).requires_grad_().double()
         
-        # TODO test other initializations
-
-        x = torch.reshape(x, (1, x.shape[0], x.shape[1]))
-        # print(x.shape)
-        # pdb.set_trace()
-
-
-        
-
-        # Initialize hidden state with zeros
-        h0 = torch.zeros(
-                self.layer_dim,     # Number of layers
-                x.shape[0],          # batch_dim
-                self.hidden_dim     # hidden_dim
-            ).requires_grad_()
 
         # Initialize cell state with 0s
         c0 = torch.zeros(
                 self.layer_dim,     # Number of layers
-                x.shape[0],          # batch_dim  
+                context.shape[0],   # batch_dim  
                 self.hidden_dim     # hidden_dim
-            ).requires_grad_()
+            ).requires_grad_().double()
 
-        # detach the gates because we do truncated BPTT
-        out, (hn, cn) = self.lstm(x, (h0, c0))
+        # Feed the context as a batched sequence so that at every rollout step, a fidelity 
+        # is fed as an input to the LSTM
+        out, (hn, cn) = self.lstm(context.double(), (h0, c0))
 
-        # Index hidden state of last time step and pass that to the output readout
+        # Convert the last element of the lstm into values that 
+        # can be ranked 
         out = self.readout(out[:, -1, :]) 
 
         return out
@@ -103,12 +97,9 @@ class RankLSTM_Ensemble(nn.Module):
             self,
             input_dim: int = 107,
             algo_dim: int = 58,
-            lstm_hidden_dims: List[int] = [100, 100],
-            lstm_layers: int = [2, 2],
-            shared_hidden_dims: List[int] = [300, 200],
-            fc_dim: List[int] = [58],
-            n_fidelities: int = 3,   
-            sequential: bool = True,         
+            # lstm_hidden_dims: List[int] = 100,
+            lstm_layers: int = 2,
+            shared_hidden_dims: List[int] = [300, 200],  
             device: str = 'cpu',
     ):
         """
@@ -130,21 +121,10 @@ class RankLSTM_Ensemble(nn.Module):
         super(RankLSTM_Ensemble, self).__init__()
         self.meta_features_dim = input_dim
         self.algo_dim = algo_dim
-        self.lstm_hidden_dims = lstm_hidden_dims
+        # self.lstm_hidden_dims = lstm_hidden_dims
         self.lstm_layers = lstm_layers
         self.shared_hidden_dims = shared_hidden_dims
-        self.fc_dim = fc_dim
         self.device = torch.device(device)
-
-        self.n_fidelities = n_fidelities
-
-        # Basic assertions for lstms
-        assert(len(self.lstm_hidden_dims) == len(self.lstm_layers))
-        assert(len(self.lstm_hidden_dims) == n_fidelities - 1)
-
-        self.sequential  = sequential
-
-        self.rank = torchsort.soft_rank
 
         self._build_network()
 
@@ -163,32 +143,15 @@ class RankLSTM_Ensemble(nn.Module):
 
 
         # Build the lstms
-        self.lstm_network = nn.ModuleList()
-        ipd = self.shared_hidden_dims[-1]
-        for i in range(len(self.lstm_hidden_dims)):
-            self.lstm_network.append(
-                RankLSTM(
-                    input_dim=ipd,
-                    hidden_dim=self.lstm_hidden_dims[i],
-                    layer_dim=self.lstm_layers[i],
+        self.lstm_network = RankLSTM(
+                    input_dim=self.algo_dim,
+                    hidden_dim=self.shared_hidden_dims[-1],
+                    layer_dim=self.lstm_layers,
                     output_dim=self.algo_dim,
                     readout=None
                 )
-            )
 
-            if self.sequential:
-                ipd = self.algo_dim
-
-        # self.lstm_network = torch.nn.Sequential(*self.lstm_network)
-
-        # Build the final network
-        self.final_network = AlgoRankMLP(
-            input_dim=self.algo_dim,
-            algo_dim=self.algo_dim,
-            hidden_dims=self.fc_dim,
-        )
-
-    def forward(self, D):
+    def forward(self, dataset_meta_features, fidelities):
         """
         Forward path through the meta-feature ranker
 
@@ -200,28 +163,15 @@ class RankLSTM_Ensemble(nn.Module):
         """
 
         # Forward through the shared network
-        shared_D = self.shared_network(D)
+        shared_D = self.shared_network(dataset_meta_features)
 
         # Forward through the lstm networks to get the readouts
-        lstm_D = []
-        ip = shared_D
+        lstm_D = self.lstm_network(
+                            init_hidden = shared_D,
+                            context= fidelities   
+                        )
 
-        for i in range(len(self.lstm_network)):
-        
-            op = self.lstm_network[i](ip)
-            lstm_D.append(op)
-            
-            if self.sequential:
-                ip = op
-
-    
-        # Forward through the final network    
-        if self.sequential:
-            final_D = self.final_network(lstm_D[-1])
-        else:
-            final_D = self.final_network(torch.stack(lstm_D).mean(dim=0))
-
-        return shared_D, lstm_D, final_D
+        return shared_D, lstm_D
 
 
 if __name__ == "__main__":
@@ -231,4 +181,4 @@ if __name__ == "__main__":
 
     print('shared network', network.shared_network)
     print('lstm_net', network.lstm_network)
-    print('final', network.final_network)
+    # print('final', network.final_network)

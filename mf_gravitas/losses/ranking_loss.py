@@ -1,6 +1,7 @@
 import torch 
 import numpy as np
 
+import pdb 
 
 def spearman(pred, target, ranking_fn, **ts_kwargs):
         """
@@ -28,5 +29,6 @@ def spearman(pred, target, ranking_fn, **ts_kwargs):
 
         # compute the loss
         spear_loss =  (pred * target).sum()
+
 
         return spear_loss.abs()
