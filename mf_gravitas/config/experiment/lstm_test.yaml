@@ -6,9 +6,10 @@ defaults:
 wandb:
   group: rank_lstm
   notes: 'This is a run for lstm ranking ensemble'
-  mode: 'offline'
+  mode: 'online'
 
 
-train_batch_size: 5
-test_batch_size: 5
+train_batch_size: 8
+test_batch_size: 8
 
+seed: 2

@@ -20,12 +20,13 @@ class RankLSTM(nn.Module):
         ):
         '''
         Basic implementation of a an LSTM network
+
         Args:
-            input_dim: Dimension of the input
-            hidden_dim: Dimension of the hidden state
-            layer_dim: Number of layers
-            output_dim: Dimension of the output
-            readout: Optional readout layer for decoding the hidden state
+            input_dim   : Dimension of the input
+            hidden_dim  : Dimension of the hidden state
+            layer_dim   : Number of layers
+            output_dim  : Dimension of the output
+            readout     : Optional readout layer for decoding the hidden state
         '''
         super(RankLSTM, self).__init__()
         

@@ -90,7 +90,7 @@ def train_ensemble(model, train_dataloader, test_dataloader, epochs, lr,
 
 
 def train_lstm(model, train_dataloader, test_dataloader, epochs, lr,
-                   ranking_fn=torchsort.soft_rank, optimizer_cls=torch.optim.Adam):
+                   ranking_fn=torchsort.soft_rank, optimizer_cls=torch.optim.Adam, test_lim=5):
     """
     
     """
@@ -105,6 +105,7 @@ def train_lstm(model, train_dataloader, test_dataloader, epochs, lr,
         'loss_fn': spearman,
         'ranking_fn': ranking_fn,
         'optimizer': optimizer,
+        'test_lim': test_lim
     }
 
     # Initialize the trainer
