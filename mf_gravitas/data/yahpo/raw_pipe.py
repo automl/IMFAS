@@ -7,7 +7,7 @@ import pandas as pd
 from hydra.utils import call
 from omegaconf import DictConfig
 from openml.datasets import get_datasets
-from openml.tasks import get_tasks, get_task
+from openml.tasks import get_tasks
 from yahpo_gym import BenchmarkSet
 
 # A logger for this path
@@ -156,105 +156,29 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     try:
         tasks = get_tasks(bench.instances, download_data=False, )
+        dataset_ids = {t.dataset_id for t in tasks}
 
     except:
         log.debug('Failed loading the dataset in a bunch. trying to resolve using individual ids')
-        tasks = []
-        for inst in bench.instances:
-            try:
-                tasks.append(get_task(inst, download_data=False))
-            except:
-                missing.append(inst)
 
-        missing = set(missing)
-        avail = set(bench.instances)
+        dataset_ids = bench.instances
+        # dataset_ids = {d.id: d.qualities
+        #                for d in get_datasets(bench.instances, download_data=False)}
 
-        # avail - missing results: # in comments the symmetric difference
-        iaml_ranger = {}  # holds for all iaml!
-        rbv2_svm = {'14', '4538', '12', '38', '151', '23', '31', '16', '42', '29', '3', '50', '22',
-                    '60', '37', '4534', '11', '334', '6', '312', '28', '54', '15', '307', '300',
-                    '18',
-                    '32', '24'}
-        rbv2_ranger = {'312', '28', '14', '60', '151', '4538', '54', '11', '37', '6', '16', '24',
-                       '22',
-                       '18', '300', '334', '12', '3', '15', '38', '307', '32', '4534', '42', '31',
-                       '23',
-                       '4541', '50', '29'}
-        rbv2_glmnet = {'24', '14', '11', '4534', '15', '23', '42', '6', '3', '28', '29', '151',
-                       '32',
-                       '18', '16', '60', '307', '50', '38', '4541', '300', '312', '37', '12',
-                       '4538',
-                       '31', '22', '334', '54'}
-        rbv2_xgboost = {'31', '60', '6', '307', '15', '37', '18', '54', '22', '32', '11', '334',
-                        '23',
-                        '16', '42', '29', '312', '4534', '24', '14', '4541', '151', '3', '300',
-                        '4538',
-                        '38', '50', '28', '12'}
-
-        # computed the missing ids
-        rbv2_svm_miss = {'1464', '1056', '1590', '4135', '1501', '1049', '40499', '40668', '1515',
-                         '6332', '41138', '46', '40979', '40701', '1457', '41162', '40498', '182',
-                         '1478', '1487', '40978', '40900', '41212', '41157', '1497', '1220', '470',
-                         '1067', '40984', '1111', '1050', '188', '1489', '1486', '40994', '1063',
-                         '1053', '375', '1475', '41142', '469', '1480', '41027', '40982', '1476',
-                         '1461', '40496', '1485', '40685', '41146', '1040', '41143', '458', '41163',
-                         '44', '1462', '41278', '41164', '4154', '1068', '41156', '4134', '40975',
-                         '1510', '40536', '40981', '1494', '1468', '41216', '40966', '377', '40983',
-                         '41169', '1493', '1479', '40670', '181', '23381'}
-        rbv2_rpart_miss = {'41142', '41143', '1501', '46', '40994', '44', '41168', '1476', '181',
-                           '40685', '1485', '1478', '41156', '23517', '40983', '1464', '1040',
-                           '40996',
-                           '40496', '41157', '40900', '40499', '377', '40981', '1487', '41146',
-                           '6332',
-                           '1515', '40923', '41162', '41138', '1489', '41163', '469', '41165',
-                           '41159',
-                           '41166', '1220', '1063', '4134', '40927', '41150', '1457', '1475',
-                           '1590',
-                           '1049', '40975', '1497', '1486', '1111', '1067', '4154', '470', '40966',
-                           '1494', '40668', '1050', '40984', '40982', '1056', '1480', '1493',
-                           '23512',
-                           '41164', '554', '41027', '1462', '41169', '182', '40701', '375', '41212',
-                           '1468', '1068', '1479', '23381', '188', '40670', '458', '41161', '1053',
-                           '1510', '40978', '40536', '4135', '1461', '40979', '40498'}
-        rbv2_ranger_miss = {'40670', '1067', '40498', '1040', '1461', '41161', '41157', '40685',
-                            '4135',
-                            '41162', '23381', '40981', '40983', '40496', '41159', '4154', '377',
-                            '1111',
-                            '41216', '41278', '1489', '1480', '40499', '181', '1493', '41164',
-                            '1464',
-                            '1485', '182', '1220', '41165', '469', '40996', '40536', '188', '40979',
-                            '40984', '40975', '40900', '4134', '6332', '1462', '1479', '41143',
-                            '1494',
-                            '1475', '1501', '375', '1068', '23517', '41142', '1497', '40668',
-                            '41150',
-                            '1468', '1486', '40978', '40701', '40927', '41163', '41212', '1476',
-                            '44',
-                            '1050', '1510', '41146', '1053', '1487', '40966', '1457', '23512',
-                            '41168',
-                            '1049', '1056', '40994', '40982', '41027', '470', '1478', '1063', '458',
-                            '41166', '41169', '46', '1515', '40923', '554', '1590', '41138',
-                            '41156'}
-
-        rbv2_glmnet_miss = {}  # not computed yet
-        rbv2_xgboost_miss = {}  # not computed yet
-
-        # available, that is not in the other
-        set.symmetric_difference(rbv2_svm, rbv2_ranger)  # 4541
-        set.symmetric_difference(rbv2_svm, rbv2_glmnet)  # 4541
-        set.symmetric_difference(rbv2_svm, rbv2_xgboost)  # 4541
-        set.symmetric_difference(rbv2_glmnet, rbv2_xgboost)  # none
-        set.symmetric_difference(rbv2_ranger, rbv2_xgboost)  # none
-
-        set.symmetric_difference(rbv2_svm_miss, rbv2_ranger_miss)
-        set.symmetric_difference(rbv2_rpart_miss, rbv2_ranger_miss)  # {'41216', '41278'}
-
-        log.debug(f'Failed to load task ids for bench: {cfg.selection.bench}'
-                  f' on openml: \n {missing}')
-        remaining = avail - missing
-        log.debug(f'loaded the following ids successfully: {remaining}.'
-                  f'Continuing with these {len(remaining)} tasks')
-
-    dataset_ids = {t.dataset_id for t in tasks}
+        # for inst in bench.instances:
+        #     try:
+        #         tasks.append(get_task(inst, download_data=False))
+        #     except:
+        #         missing.append(inst)
+        #
+        # missing = set(missing)
+        # avail = set(bench.instances)
+        #
+        # log.debug(f'Failed to load task ids for bench: {cfg.selection.bench}'
+        #           f' on openml: \n {missing}')
+        # remaining = avail - missing
+        # log.debug(f'loaded the following ids successfully: {remaining}.'
+        #           f'Continuing with these {len(remaining)} tasks')
 
     # collect dataset meta features -----------------------
     ms = get_datasets(dataset_ids, download_data=False, )

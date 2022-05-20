@@ -1,6 +1,6 @@
 _target_: mf_gravitas.data.yahpo.raw_pipe.raw_pipe
 dataset_name: yahpo
-enable: false  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
+enable: true  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
 dir_data: ../../../../data/
 
 selection:
