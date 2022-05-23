@@ -15,7 +15,7 @@ dataset:
   slices: [ 10, 20, 30, 40, 51 ]
 
 dataset_raw:
-  enable: false
+  enable: True
   bench: lcbench
   fidelity_type: epoch
   noise: false

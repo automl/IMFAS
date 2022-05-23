@@ -8,8 +8,11 @@ from hydra.utils import call
 from omegaconf import DictConfig
 from openml.datasets import get_datasets
 from openml.tasks import get_tasks
-from yahpo_gym import BenchmarkSet
+from yahpo_gym import BenchmarkSet, local_config
 
+import pdb
+
+import pprint
 # A logger for this path
 log = logging.getLogger(__name__)
 
@@ -141,13 +144,21 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     # directory paths
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd()).parents[0]
     dir_data = orig_cwd / 'data'
+    
+    local_config.init_config()
+    local_config.set_data_path(orig_cwd / 'yahpo_data')
+
+
     dir_data.mkdir(parents=True, exist_ok=True)
     dir_raw_dataset = dir_data / 'raw' / cfg.dataset_name
     dir_raw_dataset_bench = dir_raw_dataset / cfg.selection.bench
     dir_raw_dataset_bench.mkdir(parents=True, exist_ok=True)
 
     log.debug(f'loading yahpo benchmark {cfg.selection.bench}')
-    bench = BenchmarkSet(scenario=cfg.selection.bench, noisy=cfg.selection.noisy)
+    bench = BenchmarkSet(
+                scenario=cfg.selection.bench, 
+                noisy=cfg.selection.noisy
+            )
 
     log.info('collecting meta data')
 
@@ -182,6 +193,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     # collect dataset meta features -----------------------
     ms = get_datasets(dataset_ids, download_data=False, )
+
     qualities = {m.id: m.qualities for m in ms}
     dataset_meta_features = pd.DataFrame.from_dict(qualities).T
 
@@ -194,8 +206,13 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     # fixing the configspace for init design (remove id & fidelity)
     config_space = bench.config_space.get_hyperparameters_dict()
-    config_space.pop('OpenML_task_id')
-    config_space.pop(cfg.selection.fidelity_type)
+    
+    # pprint.pprint(config_space)
+    # pdb.set_trace()
+
+    config_space.pop('gamma')
+
+    #config_space.pop(cfg.selection.fidelity_type)
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameters(config_space.values())
 
@@ -234,6 +251,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     algo_meta_features = algo_meta_features.T
 
     log.info('writing out to files')
+
     # fixme: rename these file names (& lcbench's as well connsistently)
     algo_meta_features.to_csv(dir_raw_dataset_bench / 'config_subset.csv')
     dataset_meta_features.to_csv(dir_raw_dataset_bench / 'meta_features.csv')

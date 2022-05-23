@@ -155,16 +155,6 @@ def pipe_train(cfg: DictConfig) -> None:
         _recursive_=False
     )
 
-    # fixme: remove highly specific weighing scheme for multihead losses!
-
-    head_losses = torch.tensor(valid_score)
-    fidelity_weights = torch.nn.functional.softmax(torch.log(
-        torch.tensor(cfg.dataset.slices[:-1],  # multihead does not need the last fidelity!
-                     dtype=torch.float)))
-    valid_score = fidelity_weights @ head_losses.type(torch.float).T
-
-    return valid_score
-
 
 if __name__ == '__main__':
     pipe_train()
