@@ -1,5 +1,5 @@
 _target_: mf_gravitas.data.Dataset_LC
-path: ${dataset.preprocessed_path}/logs_subset.h5
+path: ${dataset.path.lc_meta}
 
 # the important part!
 transforms:

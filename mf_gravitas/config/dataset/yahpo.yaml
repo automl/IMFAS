@@ -1,5 +1,5 @@
 name: yahpo
-preprocessed_path: ../../../data/raw/${dataset.name}
+preprocessed_path: ../../../../data/raw/${dataset.name}
 
 path:
   algo_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/config_subset.csv

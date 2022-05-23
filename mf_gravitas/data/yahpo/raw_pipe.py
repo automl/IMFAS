@@ -10,9 +10,6 @@ from openml.datasets import get_datasets
 from openml.tasks import get_tasks
 from yahpo_gym import BenchmarkSet, local_config
 
-import pdb
-
-import pprint
 # A logger for this path
 log = logging.getLogger(__name__)
 
@@ -144,10 +141,9 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     # directory paths
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd()).parents[0]
     dir_data = orig_cwd / 'data'
-    
-    local_config.init_config()
-    local_config.set_data_path(orig_cwd / 'yahpo_data')
 
+    local_config.init_config()
+    local_config.set_data_path(orig_cwd / 'data/downloads/yahpo_data')
 
     dir_data.mkdir(parents=True, exist_ok=True)
     dir_raw_dataset = dir_data / 'raw' / cfg.dataset_name
@@ -156,9 +152,9 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     log.debug(f'loading yahpo benchmark {cfg.selection.bench}')
     bench = BenchmarkSet(
-                scenario=cfg.selection.bench, 
-                noisy=cfg.selection.noisy
-            )
+        scenario=cfg.selection.bench,
+        noisy=cfg.selection.noisy
+    )
 
     log.info('collecting meta data')
 
@@ -206,13 +202,13 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     # fixing the configspace for init design (remove id & fidelity)
     config_space = bench.config_space.get_hyperparameters_dict()
-    
+
     # pprint.pprint(config_space)
     # pdb.set_trace()
 
-    config_space.pop('gamma')
+    # config_space.pop('gamma')
 
-    #config_space.pop(cfg.selection.fidelity_type)
+    # config_space.pop(cfg.selection.fidelity_type)
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameters(config_space.values())
 
