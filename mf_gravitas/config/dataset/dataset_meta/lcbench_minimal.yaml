@@ -1,5 +1,5 @@
 _target_: mf_gravitas.data.DatasetMetaFeatures
-path: ${dataset.preprocessed_path}/meta_features.csv
+path: ${dataset.path.data_meta}
 index_col: 0
 
 # the important part!

@@ -5,7 +5,7 @@ defaults:
   - dataset: lcbench
   - dataset/algo_meta: lcbench_minimal
   - dataset/dataset_meta: lcbench_minimal
-  - dataset/lc: multi_slice
+  - dataset/lc_meta: multi_slice
   - model: rank_ensemble
   - training: freeze_ensemble # ensemble
   - evaluation: optimal_rankings

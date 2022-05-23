@@ -93,7 +93,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # read in the data
     algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
-    lc_dataset = instantiate(cfg.dataset.lc)
+    lc_dataset = instantiate(cfg.dataset.lc_meta)
 
     # train test split by dataset major
     train_split, test_split = train_test_split(

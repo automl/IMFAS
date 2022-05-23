@@ -1,5 +1,5 @@
 _target_: mf_gravitas.data.AlgorithmMetaFeatures
-path: ${dataset.preprocessed_path}/config_subset.csv
+path: ${dataset.path.algo_meta}
 index_col: 0 # pd.read argument
 
 # the important part!
