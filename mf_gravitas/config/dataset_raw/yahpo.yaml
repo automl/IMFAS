@@ -11,7 +11,7 @@ selection:
   # carefull, iaml_* do not have a proper openmlid and are therefor not available:
   # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,
 
-  fidelity_type: repl
+  fidelity_type: trainsize
   # options: 'trainsize', 'repl' for iaml_* & rbv2_*
   # 'epoch' for lcbench
 

@@ -203,14 +203,14 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     # fixing the configspace for init design (remove id & fidelity)
     config_space = bench.config_space.get_hyperparameters_dict()
 
-    # pprint.pprint(config_space)
-    # pdb.set_trace()
-
-    # config_space.pop('gamma')
-
     # config_space.pop(cfg.selection.fidelity_type)
     cs = ConfigSpace.ConfigurationSpace()
-    cs.add_hyperparameters(config_space.values())
+    cs.add_hyperparameters(
+        [HP for k, HP in config_space.items()
+         if k not in ['task_id', *bench.config.fidelity_params]]
+    )
+    # cs.add_hyperparameters(config_space.values())
+    cs.add_conditions(bench.config_space.get_conditions())
 
     # sample the algorithms from configspace
     design = call(cfg.selection.algo, cs=cs, traj_logger=log)
@@ -227,6 +227,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
             conf = [c.get_dictionary() for c in configs]
             # update conf
             d = {'OpenML_task_id': str(inst), cfg.selection.fidelity_type: s}
+            
             [c.update(d) for c in conf]
 
             sl[s] = pd.DataFrame.from_dict(bench.objective_function(conf))[cfg.selection.metric]
