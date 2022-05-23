@@ -8,6 +8,7 @@ path:
 
 split: 0.8
 
+<<<<<<< HEAD
 slices: 
   - 0.1 
   - 0.2
@@ -72,6 +73,10 @@ slices:
     # - 51
 
 metric: acc
+=======
+slices: [ 0.1, 0.3, 0.5, 1. ] #[ 1, 10, 20, 51 ] lcbench
+metric: f1 # acc # Train/accuracy
+>>>>>>> feature_Yahpo
 
 # fixme: remove legacy
 lc_metric: None

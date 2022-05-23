@@ -41,6 +41,10 @@ selection:
   #  'acc', 'bac', 'auc', 'brier', 'f1', 'logloss', 'timetrain',
   #  'timepredict', 'memory'
 
+  # iaml_ranger options:
+#  [ 'mmce', 'f1', 'auc', 'logloss', 'ramtrain', 'rammodel', 'rampredict',
+#    'timetrain', 'timepredict', 'mec', 'ias', 'nf' ],
+
 
 
 
