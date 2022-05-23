@@ -21,6 +21,8 @@ import string
 import random
 import torch
 
+import pdb
+
 from hydra.utils import get_original_cwd
 
 
@@ -93,6 +95,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # read in the data
     algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
+
     lc_dataset = instantiate(cfg.dataset.lc)
 
     # train test split by dataset major
@@ -154,16 +157,6 @@ def pipe_train(cfg: DictConfig) -> None:
         test_dataloader=test_loader,
         _recursive_=False
     )
-
-    # fixme: remove highly specific weighing scheme for multihead losses!
-
-    head_losses = torch.tensor(valid_score)
-    fidelity_weights = torch.nn.functional.softmax(torch.log(
-        torch.tensor(cfg.dataset.slices[:-1],  # multihead does not need the last fidelity!
-                     dtype=torch.float)))
-    valid_score = fidelity_weights @ head_losses.type(torch.float).T
-
-    return valid_score
 
 
 if __name__ == '__main__':

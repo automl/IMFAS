@@ -1,0 +1,102 @@
+dataset_raw:
+  _target_: mf_gravitas.data.yahpo.raw_pipe.raw_pipe
+  dataset_name: yahpo
+  enable: false
+  dir_data: ../../../data/
+  selection:
+    bench: lcbench
+    fidelity_type: epoch
+    noisy: false
+    n_algos: 50
+    algo:
+      _target_: smac.initial_design.latin_hypercube_design.LHDesign
+      rng:
+        _target_: numpy.random.RandomState
+        seed: ${seed}
+      ta_run_limit: 9999
+      init_budget: ${dataset_raw.selection.n_algos}
+    slices: ${dataset.slices}
+    metric: ${dataset.metric}
+dataset:
+  name: yahpo
+  preprocessed_path: ../../../data/raw/${dataset.name}/${dataset_raw.selection.bench}
+  split: 0.8
+  slices:
+  - 1
+  - 10
+  - 20
+  - 51
+  metric: val_cross_entropy
+  lc_metric: None
+  algo_meta:
+    _target_: mf_gravitas.data.AlgorithmMetaFeatures
+    path: ${dataset.preprocessed_path}/config_subset.csv
+    index_col: 0
+    transforms:
+      _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+      modulelist:
+      - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+  dataset_meta:
+    _target_: mf_gravitas.data.DatasetMetaFeatures
+    path: ${dataset.preprocessed_path}/meta_features.csv
+    index_col: 0
+    transforms:
+      _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+      modulelist:
+      - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
+      - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
+      - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd
+  lc:
+    _target_: mf_gravitas.data.Dataset_LC
+    path: ${dataset.preprocessed_path}/logs_subset.h5
+    transforms:
+      _target_: mf_gravitas.data.preprocessings.transformpipeline.TransformPipeline
+      modulelist:
+      - _target_: mf_gravitas.data.preprocessings.nan_transforms.Column_Mean
+      - _target_: mf_gravitas.data.preprocessings.lc_slice.LC_TimeSlices
+        slices: ${dataset.slices}
+    metric: ${dataset.lc_metric}
+model:
+  _target_: mf_gravitas.models.rank_mlp.AlgoRankMLP_Ensemble
+  shared_hidden_dims:
+  - 300
+  - 200
+  n_fidelities: 3
+  multi_head_dims:
+  - 100
+  fc_dim:
+  - 58
+  join: avg
+training:
+  _target_: mf_gravitas.trainer.rank_trainer.train_ensemble
+  epochs: 3
+  lr: ${lr}
+evaluation:
+  steps: 10
+  evaluator:
+    _target_: mf_gravitas.evaluation.optimal_rankings.ZeroShotOptimalDistance
+    ranking_loss:
+      _target_: sklearn.metrics.ndcg_score
+    batch: 20
+    scaler:
+      _target_: sklearn.preprocessing.MinMaxScaler
+seed: 0
+output_dir: ./tmp
+num_competitors: 1
+num_workers: 2
+train_batch_size: 1
+test_batch_size: 1
+lr: 0.001
+shuffle: true
+wandb:
+  id: null
+  entity: tnt
+  project: gravitas
+  mode: online
+  job_type: train
+  tags: []
+  notes: This is a run for mlp ranking ensemble
+  group: rank_ensemble
+  sync_tensorboard: false
+  save_code: false
+  resume: allow

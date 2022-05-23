@@ -1,5 +1,5 @@
 name: yahpo
-preprocessed_path: ../../../data/raw/${dataset.name}
+preprocessed_path: ../../../data/raw/${dataset.name}/${dataset_raw.selection.bench}
 split: 0.8
 
 slices: [ 1, 10, 20, 51 ]
