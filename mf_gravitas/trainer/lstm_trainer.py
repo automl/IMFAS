@@ -53,21 +53,21 @@ class Trainer_Ensemble_lstm:
                         **self.loss_kwargs
                     )
 
-                # self.readout.load_state_dict(self.model.lstm_network.readout.state_dict())
-                # D0_rank = self.readout.forward(shared_D0.detach())
+                self.readout.load_state_dict(self.model.lstm_network.readout.state_dict())
+                D0_rank = self.readout.forward(shared_D0.detach())
 
-                # Get the loss for lstm output
-                # shared_loss = self.loss_fn(
-                #         pred=D0_rank,
-                #         target=data[1][:,-1,:],
-                #         **self.loss_kwargs
-                #     )
+                #Get the loss for lstm output
+                shared_loss = self.loss_fn(
+                        pred=D0_rank.detach(),
+                        target=data[1][:,-1,:],
+                        **self.loss_kwargs
+                    )
 
                 test_lstm_losses.append(lstm_loss)
-                #test_shared_losses.append(shared_loss)
+                test_shared_losses.append(shared_loss)
 
         self.losses[f'lstm_loss'] = torch.stack(test_lstm_losses).mean()
-        #self.losses[f'shared_loss'] = torch.stack(test_shared_losses).mean()
+        self.losses[f'shared_loss'] = torch.stack(test_shared_losses).mean()
 
 
 
