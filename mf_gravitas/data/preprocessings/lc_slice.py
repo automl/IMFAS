@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 
 from mf_gravitas.data.preprocessings.table_transforms import Transform
@@ -18,7 +19,7 @@ class LC_TimeSlices(Transform):
     def fit(self, X):
         """
         :param X: is an Array, where the time dimension is #fixme ???
-        :return: torch.Tensor: (n_datasets, n_slices, n_algorithms)
+        :return: torch.Tensor: (n_slices, n_datasets n_algorithms)
         # fixme: downstream must be tensor!
         """
         # X[self.slices]
@@ -27,5 +28,5 @@ class LC_TimeSlices(Transform):
         self.index = format.index  # dataset row major
 
         # fixme: .T is depreciated for more than two dimensions
-        sliced = torch.tensor([X[sl].unstack().T.values for sl in self.slices])
+        sliced = torch.tensor(np.array([X[sl].unstack().T.values for sl in self.slices]))
         return torch.swapaxes(sliced, 0, 1)

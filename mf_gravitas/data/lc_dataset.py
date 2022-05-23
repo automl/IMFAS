@@ -22,10 +22,10 @@ class Dataset_LC(Dataset):
         if transforms is not None:
             if transforms.fitted:
                 # fixme: .T is depreciated for more than two dimensions
-                self.transformed_df = self.transforms.transform(self.df).T
+                self.transformed_df = self.transforms.transform(self.df)
             else:
                 # fixme: .T is depreciated for more than two dimensions
-                self.transformed_df = self.transforms.fit(self.df).T
+                self.transformed_df = self.transforms.fit(self.df)
             self.df = self.df[51].unstack().T  # transform the df appropriately
             # self.transformed_df = self.transformed_df
 

@@ -2,8 +2,6 @@ _target_: mf_gravitas.models.rank_mlp.AlgoRankMLP_Ensemble
 shared_hidden_dims:
   - 300
   - 200 # todo ${ model.hidden2_dim } interpolation for smac?
-n_fidelities: 3
 multi_head_dims:
   - 100
-fc_dim: [ 58 ]
 join: avg
