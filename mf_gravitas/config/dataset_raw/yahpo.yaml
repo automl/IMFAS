@@ -33,9 +33,13 @@ selection:
   slices: ${dataset.slices}
 
   metric: ${dataset.metric}
-  # options:
+  # lcbench options:
   # time , val_accuracy , val_cross_entropy , val_balanced_accuracy ,
   # test_cross_entropy , test_balanced_accuracy
+
+  # rbv2_svm options:
+  #  'acc', 'bac', 'auc', 'brier', 'f1', 'logloss', 'timetrain',
+  #  'timepredict', 'memory'
 
 
 

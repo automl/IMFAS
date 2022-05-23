@@ -197,7 +197,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     # assuming constant hp across taskids
     # get the Configurations that we will look at across all algorithms
     log.debug('Deciding the configurations across datasets')
-    inst = OPENML_IDS[cfg.selection.bench][0]
+    inst = bench.instances[0]
     bench.set_instance(str(inst))
 
     # fixing the configspace for init design (remove id & fidelity)
@@ -218,7 +218,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     # gather per dataset the respective performances for all configs
     slices = {}
-    for inst in OPENML_IDS[cfg.selection.bench]:
+    for inst in bench.instances:
         bench.set_instance(str(inst))
         log.debug(f'collecting learning curve')
 
@@ -226,8 +226,14 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
         for s in cfg.selection.slices:
             conf = [c.get_dictionary() for c in configs]
             # update conf
-            d = {'OpenML_task_id': str(inst), cfg.selection.fidelity_type: s}
-            
+            d = {'OpenML_task_id': str(inst),
+                 'task_id': str(inst),
+                 # add in the changing fidelity parameter!
+                 cfg.selection.fidelity_type: s,
+                 # add in the other fidelity parameters
+                 **{k: hp.upper for k, hp in bench.get_fidelity_space().items()
+                    if k != cfg.selection.fidelity_type}}
+
             [c.update(d) for c in conf]
 
             sl[s] = pd.DataFrame.from_dict(bench.objective_function(conf))[cfg.selection.metric]

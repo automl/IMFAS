@@ -26,7 +26,7 @@ class Dataset_LC(Dataset):
             else:
                 # fixme: .T is depreciated for more than two dimensions
                 self.transformed_df = self.transforms.fit(self.df).T
-            self.df = self.df[51].unstack().T  # transform the df appropriately
+            self.df = self.df[self.df.columns[-1]].unstack().T  # transform the df appropriately
             # self.transformed_df = self.transformed_df
 
             # for getitem;
