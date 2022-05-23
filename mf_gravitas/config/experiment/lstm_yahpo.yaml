@@ -4,10 +4,14 @@ defaults:
   - override /dataset: yahpo
   - override /dataset/algo_meta: yahpo_rbv2_svm_minimal
   - override /dataset/dataset_meta: yahpo_lcbench_minimal
-  - override /training: ensemble
-  - override /model: rank_ensemble
+  - override /training: lstm_ensemble
+  - override /model: rank_lstm
 
 wandb:
-  group: rank_ensemble
-  notes: 'This is a run for mlp ranking ensemble'
+  group: yahpo_lstm
+  notes: 'This is a run for lstm ensemble'
   mode: 'online'
+
+
+train_batch_size: 8
+test_batch_size: 8
