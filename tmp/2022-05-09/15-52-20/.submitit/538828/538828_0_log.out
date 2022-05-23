@@ -1,7 +1,0 @@
-submitit INFO (2022-05-09 15:52:22,432) - Starting with JobEnvironment(job_id=538828, hostname=cc1l01, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-05-09 15:52:22,433) - Loading pickle: /home/mohan/git/current_projects/gravitas/AlgoSelectionMF/tmp/2022-05-09/15-52-20/.submitit/538828/538828_submitted.pkl
-base_dir:  /home/mohan/git/current_projects/gravitas/AlgoSelectionMF
-[2022-05-09 15:52:27,713][__main__][INFO] - /home/mohan/git/current_projects/gravitas/AlgoSelectionMF
-Problem at: /home/mohan/git/current_projects/gravitas/AlgoSelectionMF/mf_gravitas/main.py 56 pipe_train
-submitit INFO (2022-05-09 15:53:33,984) - Job completed successfully
-[2022-05-09 15:53:33,984][submitit][INFO] - Job completed successfully

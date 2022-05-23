@@ -1,9 +1,0 @@
-wandb: W&B API key is configured (use `wandb login --relogin` to force relogin)
-wandb: ERROR Error while calling W&B API: Error 1040: Too many connections (<Response [500]>)
-wandb: ERROR Error while calling W&B API: Error 1040: Too many connections (<Response [500]>)
-wandb: ERROR Error while calling W&B API: Error 1040: Too many connections (<Response [500]>)
-wandb: Network error (HTTPError), entering retry loop.
-wandb: ERROR Error communicating with wandb process
-wandb: ERROR try: wandb.init(settings=wandb.Settings(start_method='fork'))
-wandb: ERROR or:  wandb.init(settings=wandb.Settings(start_method='thread'))
-wandb: ERROR For more info see: https://docs.wandb.ai/library/init#init-start-error

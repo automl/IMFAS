@@ -1,9 +1,0 @@
-submitit INFO (2022-05-09 15:52:22,432) - Starting with JobEnvironment(job_id=538827, hostname=cc1l01, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2022-05-09 15:52:22,433) - Loading pickle: /home/mohan/git/current_projects/gravitas/AlgoSelectionMF/tmp/2022-05-09/15-52-20/.submitit/538827/538827_submitted.pkl
-base_dir:  /home/mohan/git/current_projects/gravitas/AlgoSelectionMF
-[2022-05-09 15:52:27,723][__main__][INFO] - /home/mohan/git/current_projects/gravitas/AlgoSelectionMF
-[2022-05-09 15:52:32,122][wandb.sdk.internal.internal_api][ERROR] - 500 response executing GraphQL.
-[2022-05-09 15:52:32,123][wandb.sdk.internal.internal_api][ERROR] - {"error":"Error 1040: Too many connections"}
-Problem at: /home/mohan/git/current_projects/gravitas/AlgoSelectionMF/mf_gravitas/main.py 56 pipe_train
-submitit INFO (2022-05-09 15:53:30,485) - Job completed successfully
-[2022-05-09 15:53:30,485][submitit][INFO] - Job completed successfully

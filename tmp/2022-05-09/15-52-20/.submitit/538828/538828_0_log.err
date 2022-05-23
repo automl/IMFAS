@@ -1,7 +1,0 @@
-wandb: W&B API key is configured (use `wandb login --relogin` to force relogin)
-wandb: Network error (HTTPError), entering retry loop.
-wandb: Network error (ReadTimeout), entering retry loop.
-wandb: ERROR Error communicating with wandb process
-wandb: ERROR try: wandb.init(settings=wandb.Settings(start_method='fork'))
-wandb: ERROR or:  wandb.init(settings=wandb.Settings(start_method='thread'))
-wandb: ERROR For more info see: https://docs.wandb.ai/library/init#init-start-error
