@@ -9,7 +9,7 @@ path:
 split: 0.8
 
 slices: [ 0.1, 0.3, 0.5, 1. ] #[ 1, 10, 20, 51 ] lcbench
-metric: acc
+metric: f1 # acc # Train/accuracy
 
 # fixme: remove legacy
 lc_metric: None
