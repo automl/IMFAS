@@ -1,4 +1,6 @@
 _target_: mf_gravitas.trainer.rank_trainer.train_lstm
-epochs: 400
-test_lim: 5
-lr: ${lr}
+epochs: 500
+test_lim: 10
+log_freq: 3
+
+lr: ${lr} 

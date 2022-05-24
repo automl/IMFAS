@@ -3,6 +3,8 @@ import numpy as np
 
 import pdb 
 
+from sklearn.metrics import ndcg_score
+
 def spearman(pred, target, ranking_fn, **ts_kwargs):
         """
         Loss function for the meta-feature ranker
@@ -24,11 +26,14 @@ def spearman(pred, target, ranking_fn, **ts_kwargs):
         # normalize the soft ranks
         pred = pred - pred.mean()
         pred = pred / pred.norm()
+        
+        # target = (target - target.min()) / (target.max() - target.min())
         target = target - target.mean()
         target = target / target.norm()
 
-        # compute the loss
-        spear_loss =  (pred * target).sum()
+        
+        # compute the correlation 
+        speark_rank =  (pred * target).sum()
 
-
-        return spear_loss.abs()
+        # loss is the complement, which needs to be minimized
+        return 1 - speark_rank   
