@@ -5,6 +5,8 @@ import pdb
 
 from sklearn.metrics import ndcg_score
 
+from torch.nn import Softmax
+
 def spearman(pred, target, ranking_fn, **ts_kwargs):
         """
         Loss function for the meta-feature ranker
@@ -53,17 +55,14 @@ def weighted_spearman(pred, target, ranking_fn, **ts_kwargs):
             differentiable loss tensor
         """
 
-        weights = target / target.norm()
-
-        print(weights.min(), weights.max())
-
+        m = Softmax(dim=1)
+        weights = m(target)
 
         # generate soft ranks
+        pred = pred*weights
         pred = ranking_fn(pred, **ts_kwargs)
         target = ranking_fn(target, **ts_kwargs)
-
         
-
         # normalize the soft ranks
         pred = pred - pred.mean()
         pred = pred / pred.norm()

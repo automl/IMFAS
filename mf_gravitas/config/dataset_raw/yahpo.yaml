@@ -4,7 +4,7 @@ enable: True  # CAREFULL: changing anything below will have to be enabled in the
 dir_data: ../../../data/
 
 selection:
-  bench: rbv2_svm
+  bench: rbv2_ranger
   # options:
   # lcbench, rbv2_svm, rbv2_ranger, rbv2_rpart, rbv2_glmnet, rbv2_xgboost, rbv2_aknn, rbv2_super,
 
