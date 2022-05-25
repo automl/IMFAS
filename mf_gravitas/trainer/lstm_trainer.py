@@ -8,7 +8,7 @@ class Trainer_Ensemble_lstm:
         self.losses = {
             # 'ranking_loss': 0
         }
-
+        
         self.model = model
         self.loss_fn = loss_fn
         self.ranking_fn = ranking_fn
@@ -76,6 +76,8 @@ class Trainer_Ensemble_lstm:
 
     def train(self, train_dataloader):
 
+        train_lstm_losses = []
+
         for _, data in enumerate(train_dataloader):
 
             self.optimizer.zero_grad()
@@ -96,8 +98,12 @@ class Trainer_Ensemble_lstm:
                             **self.loss_kwargs
                         )
 
-            
+            train_lstm_losses.append(lstm_loss)
+
 
             lstm_loss.backward()
             
             self.optimizer.step()
+
+
+        self.losses[f'train_lstm_loss'] = torch.stack(train_lstm_losses).mean()
