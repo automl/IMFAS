@@ -2,13 +2,13 @@
 defaults:
   - override /dataset_raw: yahpo
   - override /dataset: yahpo
-    # - override /dataset/algo_meta: yahpo_rbv2_super_minimal
+  # - override /dataset/algo_meta: yahpo_rbv2_xgboost_minimal
   - override /dataset/dataset_meta: yahpo_lcbench_minimal
   - override /training: lstm_ensemble
   - override /model: rank_lstm
 
 wandb:
-  group: rbv2_super
+  group: rbv2_aknn
   notes: 'This is a run for lstm ensemble'
   mode: 'online'
 
@@ -16,4 +16,4 @@ wandb:
 train_batch_size: 10
 test_batch_size: 10
 
-lr: 0.001
+lr: 0.0005

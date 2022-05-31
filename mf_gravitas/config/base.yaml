@@ -3,7 +3,7 @@
 defaults:
   - dataset_raw: lcbench
   - dataset: lcbench
-  - dataset/algo_meta: lcbench_minimal
+  # - dataset/algo_meta: lcbench_minimal
   - dataset/dataset_meta: lcbench_minimal
   - dataset/lc_meta: multi_slice
   - model: rank_ensemble

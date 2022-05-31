@@ -91,7 +91,7 @@ def pipe_train(cfg: DictConfig) -> None:
         # return None
 
     # read in the data
-    algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
+    # algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
     lc_dataset = instantiate(cfg.dataset.lc_meta)
 
@@ -133,7 +133,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # update the input dims adn number of algos based on the sampled stuff
     input_dim = dataset_meta_features.df.columns.size
-    n_algos = len(algorithm_meta_features)
+    n_algos = 50
 
     wandb.config.update({
         'n_algos': n_algos,

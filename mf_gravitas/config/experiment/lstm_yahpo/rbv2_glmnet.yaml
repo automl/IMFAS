@@ -2,7 +2,7 @@
 defaults:
   - override /dataset_raw: yahpo
   - override /dataset: yahpo
-  - override /dataset/algo_meta: yahpo_rbv2_glmnet_minimal
+    # - override /dataset/algo_meta: yahpo_rbv2_glmnet_minimal
   - override /dataset/dataset_meta: yahpo_lcbench_minimal
   - override /training: lstm_ensemble
   - override /model: rank_lstm

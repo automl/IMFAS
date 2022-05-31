@@ -108,7 +108,7 @@ def train_lstm(model, train_dataloader, test_dataloader, epochs, lr,
 
     trainer_kwargs = {
         'model': model,
-        'loss_fn': weighted_spearman,
+        'loss_fn': spearman,
         'ranking_fn': ranking_fn,
         'optimizer': optimizer,
         'test_lim': test_lim
