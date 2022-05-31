@@ -1,0 +1,51 @@
+# @package _global_
+# FIXME: currently only the current configuration dataset is cached
+#  any alteration to this config require a dataset_raw.enable: true to then cache
+#  a better way to do it would be to once get all the available fidelities in one df
+#  and then lazily load from there! This will reduce the burdon of recompute!
+defaults:
+  - override /dataset_raw: yahpo
+  - override /dataset: yahpo
+  - override /dataset/algo_meta: yahpo_lcbench_minimal
+  - override /dataset/dataset_meta: yahpo_lcbench_minimal
+
+# actual experiment
+model:
+  _target_: sklearn.model_selection.HalvingGridSearchCV
+  estimator:
+    _target_: mf_gravitas.models.rank_mlp.AlgoRankMLP_Ensemble
+    slices:
+      _target_: mf_gravitas.data.Datasets_Join_Dmajor
+      meta_dataset: dataset.dataset_meta
+      lc: dataset.lc_meta
+      meta_algo: dataset.algo_meta
+      split: [ 0, 1, 2, 3 ] # explicit algo ids of test dataset! same as param_grid.algo_id
+
+  param_grid:
+    # algo id defines the
+    algo_id: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49 ]
+  resource: 'budget'
+  max_resources: 51 # last entry of dataset.slices
+  min_resources: 10 # first entry of dataset.slices
+  factor: 2
+
+dataset:
+  # when changing the slices, make sure to load them first!
+  slices: [ 10, 20, 30, 40, 51 ]
+  metric: acc
+
+dataset_raw:
+  enable: True
+  # select the benchmark to use from yahpo or lcbench
+  bench: lcbench  # make sure it is aligned with above's defaults!
+  fidelity_type: epoch
+  noise: false
+  n_algos: 50
+  algo: # selection procedure of configs in surrogate benchmarks
+    _target_: smac.initial_design.latin_hypercube_design.LHDesign
+    # smac.initial_design.sobol_design.SobolDesign
+
+wandb:
+  group: gravity_full
+  notes: 'Running successive halving on ${dataset_raw.bench}'
+  mode: 'online'

@@ -119,7 +119,7 @@ class Dataset_Join_Split(Dataset_Join_Gravity):
 class Dataset_Join_Dmajor(Dataset):
     def __init__(self, meta_dataset, lc, meta_algo=None, split=None):
         self.meta_dataset = meta_dataset
-        # self.meta_algo = meta_algo # fixme not required yet
+        self.meta_algo = meta_algo  # fixme not required yet
         self.lc = lc
 
         if split is not None:

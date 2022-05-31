@@ -2,6 +2,7 @@ _target_: mf_gravitas.data.yahpo.raw_pipe.raw_pipe
 dataset_name: yahpo
 enable: True  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
 dir_data: ../../../data/
+fidelity_type: trainsize
 
 selection:
   bench: rbv2_svm
@@ -11,7 +12,7 @@ selection:
   # carefull, iaml_* do not have a proper openmlid and are therefor not available:
   # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,
 
-  fidelity_type: trainsize
+  fidelity_type: ${dataset_raw.fidelity_type}
   # options: 'trainsize', 'repl' for iaml_* & rbv2_*
   # 'epoch' for lcbench
 

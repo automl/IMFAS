@@ -9,9 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 # A logger for this file
 log = logging.getLogger(__name__)
 
-from mf_gravitas.data import Dataset_Join_Dmajor
 from mf_gravitas.util import seed_everything, train_test_split, print_cfg
-from torch.utils.data import DataLoader
 
 import wandb
 import os
@@ -19,7 +17,6 @@ import sys
 
 import string
 import random
-import torch
 
 from hydra.utils import get_original_cwd
 
@@ -90,10 +87,11 @@ def pipe_train(cfg: DictConfig) -> None:
         #
         # return None
 
+    # move this definition into the config file of dataset_join_dmajor
     # read in the data
-    algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
-    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
-    lc_dataset = instantiate(cfg.dataset.lc_meta)
+    # algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
+    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)  # fixme this is still required
+    # lc_dataset = instantiate(cfg.dataset.lc_meta)
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
@@ -104,36 +102,44 @@ def pipe_train(cfg: DictConfig) -> None:
     # dataset_major
     # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
     #  algo meta features & dataset
-    train_set = Dataset_Join_Dmajor(
-        meta_dataset=dataset_meta_features,
-        lc=lc_dataset,
-        split=train_split
-    )
 
-    test_set = Dataset_Join_Dmajor(
-        meta_dataset=dataset_meta_features,
-        lc=lc_dataset,
-        split=test_split
-    )
-
+    train_set = instantiate(cfg.dataset.base_dataset, split=train_split)
+    test_set = instantiate(cfg.dataset.base_dataset, split=test_split)
+    # train_set = Dataset_Join_Dmajor(
+    #     meta_dataset=dataset_meta_features,
+    #     lc=lc_dataset,
+    #     split=train_split
+    # )
+    #
+    # test_set = Dataset_Join_Dmajor(
+    #     meta_dataset=dataset_meta_features,
+    #     lc=lc_dataset,
+    #     split=test_split
+    # )
+    # refactor dataloaders to config file
     # wrap with Dataloaders
-    train_loader = DataLoader(
-        train_set,
-        batch_size=cfg.train_batch_size,
-        shuffle=cfg.shuffle,
-        num_workers=cfg.num_workers
-    )
 
-    test_loader = DataLoader(
-        test_set,
-        batch_size=cfg.test_batch_size,
-        shuffle=False,
-        num_workers=cfg.num_workers
-    )
+    train_loader = instantiate(cfg.dataloader.base_dataloader, dataset=train_set)
+    test_loader = instantiate(cfg.dataloader.base_dataloader, dataset=test_set)
+    #
+    # train_loader = DataLoader(
+    #     train_set,
+    #     batch_size=cfg.train_batch_size,
+    #     shuffle=cfg.shuffle,
+    #     num_workers=cfg.num_workers
+    # )
+    #
+    # test_loader = DataLoader(
+    #     test_set,
+    #     batch_size=cfg.test_batch_size,
+    #     shuffle=False,
+    #     num_workers=cfg.num_workers
+    # )
 
     # update the input dims adn number of algos based on the sampled stuff
     input_dim = dataset_meta_features.df.columns.size
-    n_algos = len(algorithm_meta_features)
+    n_algos = len(algorithm_meta_features)  # fixme: instead calculate from joint dataset or
+    # directly in config! (number of algorithms! carefull with train/test split!)
 
     wandb.config.update({
         'n_algos': n_algos,
