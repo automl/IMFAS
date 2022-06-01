@@ -6,16 +6,14 @@ path:
   data_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/meta_features.csv
   lc_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/logs_subset.h5
 
-base_dataset:
-  _partial_: true # since split must be added # FIXME: continue here!
+dataset_class:
   _target_: mf_gravitas.data.Dataset_Join_Dmajor
-  meta_dataset: dataset.dataset_meta
-  lc: dataset.lc_meta
+  meta_dataset: ${dataset.dataset_meta}
+  lc: ${dataset.lc_meta}
   #      meta_algo: dataset.algo_meta
 
 # fixme: refactor this to be separately configurable at will for train/test
-base_dataloader:
-  _partial_: true # since split must be added # FIXME: continue here!
+dataloader_class:
   _target_: torch.utils.data.DataLoader
   batch_size: ${test_batch_size}
   shuffle: False

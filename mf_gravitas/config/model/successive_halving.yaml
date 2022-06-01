@@ -1,0 +1,13 @@
+_target_: sklearn.model_selection.HalvingGridSearchCV
+estimator:
+  _target_: mf_gravitas.models.successive_halving.AlgoSurrogateLookup
+  slices:
+    _target_: mf_gravitas.data.Dataset_Join_Dmajor
+    meta_dataset: ${dataset.dataset_meta}
+    lc: ${dataset.lc_meta}
+    split: [ 0, 1, 2, 3 ] # explicit algo ids of test dataset! same as param_grid.algo_id
+
+resource: 'budget'
+max_resources: 51 # last entry of dataset.slices
+min_resources: 10 # first entry of dataset.slices
+factor: 2

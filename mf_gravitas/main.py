@@ -95,7 +95,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
-        len(dataset_meta_features),
+        len(dataset_meta_features),  # todo refactor
         cfg.dataset.split
     )
 
@@ -103,8 +103,9 @@ def pipe_train(cfg: DictConfig) -> None:
     # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
     #  algo meta features & dataset
 
-    train_set = instantiate(cfg.dataset.base_dataset, split=train_split)
-    test_set = instantiate(cfg.dataset.base_dataset, split=test_split)
+    train_set = instantiate(cfg.dataset.dataset_class, split=train_split)
+    test_set = instantiate(cfg.dataset.dataset_class, split=test_split)
+
     # train_set = Dataset_Join_Dmajor(
     #     meta_dataset=dataset_meta_features,
     #     lc=lc_dataset,
@@ -119,8 +120,8 @@ def pipe_train(cfg: DictConfig) -> None:
     # refactor dataloaders to config file
     # wrap with Dataloaders
 
-    train_loader = instantiate(cfg.dataloader.base_dataloader, dataset=train_set)
-    test_loader = instantiate(cfg.dataloader.base_dataloader, dataset=test_set)
+    train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set)
+    test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
     #
     # train_loader = DataLoader(
     #     train_set,
@@ -137,20 +138,36 @@ def pipe_train(cfg: DictConfig) -> None:
     # )
 
     # update the input dims adn number of algos based on the sampled stuff
-    input_dim = dataset_meta_features.df.columns.size
-    n_algos = len(algorithm_meta_features)  # fixme: instead calculate from joint dataset or
-    # directly in config! (number of algorithms! carefull with train/test split!)
+    if 'n_algos' not in cfg.dataset_raw.keys():  # todo refactor this if statement
+        input_dim = len(train_set.meta_dataset.df.index)
+        n_algos = len(train_set.lc.index)  # fixme: instead calculate from joint dataset or
+        # directly in config! (number of algorithms! careful with train/test split!)
 
-    wandb.config.update({
-        'n_algos': n_algos,
-        'input_dim': input_dim
-    })
+        wandb.config.update({
+            'n_algos': n_algos,
+            'input_dim': input_dim
+        })
 
-    model = instantiate(
-        cfg.model,
-        input_dim=input_dim,
-        algo_dim=n_algos
-    )
+        model = instantiate(
+            cfg.model,
+            input_dim=input_dim,
+            algo_dim=n_algos
+        )
+    else:
+        # explicitly required since it is an experimental feature
+        from sklearn.experimental import enable_halving_search_cv
+        enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
+        x = OmegaConf.to_container(
+            cfg.param_grid,
+            resolve=True,
+            enum_to_str=True
+        )  # fixme: resolve this in config already?
+
+        model = instantiate(cfg.model, param_grid=x, _convert_='partial')
+        print(model.param_grid.__class__)
+
+        if model.__class__.__name__ == 'HalvingGridSearchCV':
+            model.fit(X=[None], y=[None])
 
     # fixme: validation score should not be computed during run !
     valid_score = call(
@@ -160,6 +177,8 @@ def pipe_train(cfg: DictConfig) -> None:
         test_dataloader=test_loader,
         _recursive_=False
     )
+
+    return valid_score  # needed for smac
 
 
 if __name__ == '__main__':

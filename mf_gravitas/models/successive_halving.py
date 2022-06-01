@@ -1,12 +1,13 @@
+from sklearn.base import BaseEstimator
 from sklearn.experimental import enable_halving_search_cv  # noqa
 
 
-class AlgoSurrogateLookup:
+class AlgoSurrogateLookup(BaseEstimator):
     """sklearn estimator API for multi-fidelity lookup in HalvingGridSearchCV,
     an instance of this class serves as an algo surrogate. This way, HalvingGridSearchCV
     can spawn the algorithms at the current budget and lookup their performance."""
 
-    def __init__(self, algo_id, slices, budget):
+    def __init__(self, slices, algo_id=None, budget=None):
         """
         :param algo_id: algorithms ids available in slices (relevant for fidelity progressions
         from HalvingGridSearchCV.
@@ -28,6 +29,9 @@ class AlgoSurrogateLookup:
         self.budget = budget
         self.algo_id = algo_id
 
+        return self
+
+    def fit(self, X, y):
         return self
 
 # slices must be the entire range of available budgets - alternatively, we could
