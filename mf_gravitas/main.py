@@ -18,6 +18,8 @@ import sys
 import string
 import random
 
+from tqdm import tqdm
+
 from hydra.utils import get_original_cwd
 
 
@@ -151,7 +153,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
         # model.estimator.slices.split == test_split --this way datasets are parallel in seeds
         spears = {}
-        for d in test_split:
+        for d in tqdm(test_split):
             # indexed with 0 and slices.split holds the relevant data id already!
             cfg.model.estimator.slices.split = [d]
             model = instantiate(cfg.model, _convert_='partial')

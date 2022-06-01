@@ -11,7 +11,7 @@ def train_evaluate(model: HalvingGridSearchCV, **kwargs):
     # fixme: make sure CV' s n_split don't fuck with us - since we want to lookup all of the
     #  datasets at once. i.e. be aware of _BaseKFold.n_splits_ !
 
-    print(model.best_estimator_)
+    # print(model.best_estimator_)
     pd.DataFrame.from_dict(model.cv_results_)
 
     # get runhistory
