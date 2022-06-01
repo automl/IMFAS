@@ -2,7 +2,7 @@ _target_: mf_gravitas.data.lcbench.raw_pipe.raw_pipe
 dataset_name: LCBench
 
 #TODO Change to relative
-dir_data: ../../../../data/
+dir_data: ../../../data/
 extract: data_2k  # json file
 enable: False # whether to override the preprocessing
 re_download: False

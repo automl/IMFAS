@@ -1,0 +1,6 @@
+_target_: mf_gravitas.models.rank_lstm.RankLSTM_Ensemble
+
+lstm_layers: 2
+shared_hidden_dims:
+  - 300
+  - 200

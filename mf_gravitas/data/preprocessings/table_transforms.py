@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 
-
+import pdb
 class Transform(nn.Module):
     # Fixme: nn.Module inheritance is required by nn.Sequential
     """
@@ -53,6 +53,10 @@ class ToTensor(Transform):
         self.columns = columns
 
     def fit(self, X, dtype=torch.float32):
+
+        # print(X.values)
+        # pdb.set_trace()
+
         return torch.tensor(X.values, dtype=dtype)
 
 
