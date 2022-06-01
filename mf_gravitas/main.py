@@ -80,6 +80,10 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
+        # FIXME: check if anything (LHD, nalgos, dataset slices, ...) changed,
+        #   and trigger a recalculation automatically - so we need to write out the
+        #   config alongside the dataset, that generated the dataset - and compare
+        #   the current against it.
         call(cfg.dataset_raw, _recursive_=False)
 
         # log.info(f'\n{"!" * 30}\nTerminating after generating raw data. To continue, override your '
@@ -95,7 +99,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
-        len(dataset_meta_features),  # todo refactor
+        len(dataset_meta_features),  # todo refactor - needs to be aware of dropped meta features
         cfg.dataset.split
     )
 
@@ -106,36 +110,8 @@ def pipe_train(cfg: DictConfig) -> None:
     train_set = instantiate(cfg.dataset.dataset_class, split=train_split)
     test_set = instantiate(cfg.dataset.dataset_class, split=test_split)
 
-    # train_set = Dataset_Join_Dmajor(
-    #     meta_dataset=dataset_meta_features,
-    #     lc=lc_dataset,
-    #     split=train_split
-    # )
-    #
-    # test_set = Dataset_Join_Dmajor(
-    #     meta_dataset=dataset_meta_features,
-    #     lc=lc_dataset,
-    #     split=test_split
-    # )
-    # refactor dataloaders to config file
-    # wrap with Dataloaders
-
     train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set)
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
-    #
-    # train_loader = DataLoader(
-    #     train_set,
-    #     batch_size=cfg.train_batch_size,
-    #     shuffle=cfg.shuffle,
-    #     num_workers=cfg.num_workers
-    # )
-    #
-    # test_loader = DataLoader(
-    #     test_set,
-    #     batch_size=cfg.test_batch_size,
-    #     shuffle=False,
-    #     num_workers=cfg.num_workers
-    # )
 
     # update the input dims adn number of algos based on the sampled stuff
     if 'n_algos' not in cfg.dataset_raw.keys():  # todo refactor this if statement
@@ -153,29 +129,50 @@ def pipe_train(cfg: DictConfig) -> None:
             input_dim=input_dim,
             algo_dim=n_algos
         )
-    else:
+
+        valid_score = call(
+            cfg.training,
+            model,
+            train_dataloader=train_loader,
+            test_dataloader=test_loader,
+            _recursive_=False
+        )
+
+    elif cfg.model._target_.split('.')[-1] == 'HalvingGridSearchCV':
+        # fixme: refactor this if
+        #  branch, that is specificaly targeting the HalvingGridSearchCV.
+
         # explicitly required since it is an experimental feature
+
+        from mf_gravitas.losses.ranking_loss import spear_halve_loss
         from sklearn.experimental import enable_halving_search_cv
+        import pandas as pd
         enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
 
-        model = instantiate(cfg.model, _convert_='partial')
-        print('model.param_grid.__class__: ', model.param_grid.__class__)
+        # model.estimator.slices.split == test_split --this way datasets are parallel in seeds
+        spears = {}
+        for d in test_split:
+            # indexed with 0 and slices.split holds the relevant data id already!
+            cfg.model.estimator.slices.split = [d]
+            model = instantiate(cfg.model, _convert_='partial')
 
-        # TODO model.estimator.sclices.split == test_split --this way it is parallel in seeds
-        # TODO make fit + spearman rank a valid_score function
+            # fixme: validation score should not be computed during training!
+            valid_score = call(
+                cfg.training,
+                model,
+                train_dataloader=train_loader,
+                test_dataloader=test_loader,
+                _recursive_=False
+            )
 
-        if model.__class__.__name__ == 'HalvingGridSearchCV':
-            model.fit(X=[None], y=[None])
+            final_performances = test_set.lc.transformed_df[d][-1]
 
-    # fixme: validation score should not be computed during run !
-    valid_score = call(
-        cfg.training,
-        model,
-        train_dataloader=train_loader,
-        test_dataloader=test_loader,
-        _recursive_=False
-    )
+            spears[d] = spear_halve_loss(valid_score, final_performances).numpy()
 
+        # fixme: spearman is a constant for all test datasets.
+        pd.DataFrame.from_dict(spears, orient='index').to_csv('halving_test_spear.csv')
+
+    # TODO trainsize config incl rescaled 100
     return valid_score  # needed for smac
 
 

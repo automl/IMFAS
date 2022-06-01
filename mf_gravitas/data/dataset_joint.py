@@ -128,6 +128,13 @@ class Dataset_Join_Dmajor(Dataset):
             self.split = list(range(len(self.meta_dataset)))
 
     def __getitem__(self, item):
+        """
+        :item: index of dataset to be fetched
+        :return: (dataset_meta_feature vector for this dataset ,
+         this dataset's tensor (n_slices, n_algo)). the second entry is essentially
+         all the available fidelity slices / learning curve (first dim/index) for all
+         algorithms (second dim: columns)
+        """
         it = self.split[item]
         return self.meta_dataset[it], self.lc[it]  # fixme: activate, self.meta_algo[a],
 

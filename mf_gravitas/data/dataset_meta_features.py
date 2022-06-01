@@ -23,6 +23,10 @@ class DatasetMetaFeatures(Dataset):
         return len(self.transformed_df)
 
     def __getitem__(self, idx):
+        """
+        idx: is the dataset's index; i.e. the dataset that is to be queried.
+        it is of length n_meta_features.
+        """
         if not isinstance(self.transformed_df, torch.Tensor):
             raise ValueError('You are trying to index a dataframe not tensor!')
         return self.transformed_df[idx]

@@ -21,7 +21,11 @@ class AlgoSurrogateLookup(BaseEstimator):
     def score(self, X, y):
         # ignore X, y, since we are not fitting the algo, but lookup it's performacne
 
-        return self.slices[int(self.budget)][self.algo_id]
+        # 0 index is appropriate only if successively halving is used and the split variable is
+        # overriden at each iteration. so in split always the dataset's id of the test dataset is
+        # written to
+        # 1 index referes to the tuple from dataset_Dmajor's get_item'r return value
+        return self.slices[0][1][int(self.budget)][self.algo_id].numpy()
 
     def set_param(self, budget, algo_id):
         """Set the param to the current budget, returning an instance of the
