@@ -157,14 +157,12 @@ def pipe_train(cfg: DictConfig) -> None:
         # explicitly required since it is an experimental feature
         from sklearn.experimental import enable_halving_search_cv
         enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
-        x = OmegaConf.to_container(
-            cfg.param_grid,
-            resolve=True,
-            enum_to_str=True
-        )  # fixme: resolve this in config already?
 
-        model = instantiate(cfg.model, param_grid=x, _convert_='partial')
-        print(model.param_grid.__class__)
+        model = instantiate(cfg.model, _convert_='partial')
+        print('model.param_grid.__class__: ', model.param_grid.__class__)
+
+        # TODO model.estimator.sclices.split == test_split --this way it is parallel in seeds
+        # TODO make fit + spearman rank a valid_score function
 
         if model.__class__.__name__ == 'HalvingGridSearchCV':
             model.fit(X=[None], y=[None])
