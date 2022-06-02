@@ -14,29 +14,29 @@ defaults:
 model:
   estimator:
     slices:
-      split: [ ] # datasets can be explicitly specified here, but should be computed based on
-  #      train/test split function's seeding such that baseline uses same datasets!
+      split: [ ] # datasets can be explicitl specified here, but should be computed based on
+    #      train/test split function's seeding such that baseline uses same datasets!
+    scaling: 10
   param_grid:
+    # range dataset_raw.n_algos
     algo_id: [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49 ]
   resource: 'budget'
-  max_resources: 51
-  min_resources: 1
+  max_resources: 100
+  min_resources: 10
   factor: 2
 
 
 dataset:
   # when changing the slices, make sure to load them first!
   # loading all lcbench slices
-  slices: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-            24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
-            45, 46, 47, 48, 49, 50, 51 ]
+  slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ]
   metric: acc
 
 dataset_raw:
-  enable: False # FIXME: make a
+  enable: True # FIXME: make a
   # select the benchmark to use from yahpo or lcbench
-  bench: lcbench  # make sure it is aligned with above's defaults!
-  fidelity_type: epoch
+  bench: ranger  # make sure it is aligned with above's defaults!
+  fidelity_type: trainsize
   noise: false
   n_algos: 50
   algo: # selection procedure of configs in surrogate benchmarks
