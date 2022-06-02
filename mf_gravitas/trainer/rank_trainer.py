@@ -7,7 +7,7 @@ import torchsort
 import wandb
 from tqdm import tqdm
 
-from mf_gravitas.losses.ranking_loss import spearman
+from mf_gravitas.losses.ranking_loss import spearman, weighted_spearman
 from mf_gravitas.trainer.rank_ensemble import Trainer_Ensemble
 from mf_gravitas.trainer.rank_trainer_class import Trainer_Rank
 from mf_gravitas.util import freeze_tensors

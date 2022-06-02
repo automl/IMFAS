@@ -10,8 +10,8 @@ transforms:
     - _target_: mf_gravitas.data.preprocessings.nan_transforms.Zero_fill
     - _target_: mf_gravitas.data.preprocessings.table_transforms.Drop
       columns: # fixme: do not drop categorical features in algo meta features
-        - learner_id
-        - num.impute.selected.cpo
+        - booster
+        - task_id
 
     - _target_: mf_gravitas.data.preprocessings.table_transforms.ToTensor
     - _target_: mf_gravitas.data.preprocessings.tensor_transforms.ScaleStd
