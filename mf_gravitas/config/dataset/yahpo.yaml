@@ -6,6 +6,7 @@ path:
   data_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/meta_features.csv
   lc_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/logs_subset.h5
 
+#
 dataset_class:
   _target_: mf_gravitas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
@@ -23,13 +24,13 @@ dataloader_class:
 split: 0.8
 
 slices:
-  - 0.1 
+  - 0.1
   - 0.2
   - 0.3
   - 0.4
   - 0.5
-  - 0.6 
-  - 0.7 
+  - 0.6
+  - 0.7
   - 0.8
   - 0.9
   - 1.

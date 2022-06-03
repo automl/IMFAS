@@ -116,7 +116,8 @@ def pipe_train(cfg: DictConfig) -> None:
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
     # update the input dims adn number of algos based on the sampled stuff
-    if 'n_algos' not in cfg.dataset_raw.keys():  # todo refactor this if statement
+    if 'n_algos' not in cfg.dataset_raw.keys() and cfg.dataset.name != 'LCBench':
+        # todo refactor this if statement
         input_dim = len(train_set.meta_dataset.df.index)
         n_algos = len(train_set.lc.index)  # fixme: instead calculate from joint dataset or
         # directly in config! (number of algorithms! careful with train/test split!)
@@ -143,6 +144,11 @@ def pipe_train(cfg: DictConfig) -> None:
     elif cfg.model._target_.split('.')[-1] == 'HalvingGridSearchCV':
         # fixme: refactor this if
         #  branch, that is specificaly targeting the HalvingGridSearchCV.
+
+        if cfg.dataset.name == 'LCBench':
+            # dynamic computation of the number of algorithms depending ont the ensembling
+            # (we cannot know this in advance for LCBench raw)
+            cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))
 
         # explicitly required since it is an experimental feature
 
@@ -172,7 +178,15 @@ def pipe_train(cfg: DictConfig) -> None:
             spears[d] = spear_halve_loss(valid_score, final_performances).numpy()
 
         # fixme: spearman is a constant for all test datasets.
-        pd.DataFrame.from_dict(spears, orient='index').to_csv('halving_test_spear.csv')
+        d = pd.DataFrame.from_dict(spears, orient='index')
+        print(d)
+
+        if cfg.dataset.name == 'LCBench':
+            name = 'LCBench_raw'
+        else:
+            name = cfg.dataset_raw.bench
+
+        d.to_csv(f'halving_test_spear_{name}_{cfg.seed}.csv')
 
     # TODO trainsize config incl rescaled 100
     return valid_score  # needed for smac

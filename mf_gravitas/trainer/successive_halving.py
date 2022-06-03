@@ -19,10 +19,12 @@ def train_evaluate(model: HalvingGridSearchCV, **kwargs):
 
     relevant_runhistory = runhistory[['iter', 'param_algo_id', 'mean_test_score']]
 
-    # compute at which level the algorithm was terminated
-    survivors = relevant_runhistory.groupby('iter').agg({'param_algo_id': set})[
-        'param_algo_id'].tolist()
+    # compute at which level the algorithm was terminated ----------------------
+    # compute which algos where evaluated at that level
+    survivors = relevant_runhistory.groupby('iter').agg(
+        {'param_algo_id': set})['param_algo_id'].tolist()
 
+    # compute the number of algos that survived at each level
     surv = list(reversed(survivors))
     for i, s in enumerate(surv):
         for j, s2 in enumerate(surv[i + 1:]):
