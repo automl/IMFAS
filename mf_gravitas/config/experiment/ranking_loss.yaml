@@ -1,8 +1,0 @@
-# @package _global_
-defaults:
-  - override /training: rank
-  
-wandb:
-  group: rank_mlp
-  notes: 'This is a run for mlp ranking'
-  mode: 'online'
