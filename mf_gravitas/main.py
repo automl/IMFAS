@@ -9,9 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 # A logger for this file
 log = logging.getLogger(__name__)
 
-from mf_gravitas.data import Dataset_Join_Dmajor
 from mf_gravitas.util import seed_everything, train_test_split, print_cfg
-from torch.utils.data import DataLoader
 
 import wandb
 import os
@@ -19,7 +17,8 @@ import sys
 
 import string
 import random
-import torch
+
+from tqdm import tqdm
 
 from hydra.utils import get_original_cwd
 
@@ -83,6 +82,10 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
+        # FIXME: check if anything (LHD, nalgos, dataset slices, ...) changed,
+        #   and trigger a recalculation automatically - so we need to write out the
+        #   config alongside the dataset, that generated the dataset - and compare
+        #   the current against it.
         call(cfg.dataset_raw, _recursive_=False)
 
         # log.info(f'\n{"!" * 30}\nTerminating after generating raw data. To continue, override your '
@@ -90,72 +93,103 @@ def pipe_train(cfg: DictConfig) -> None:
         #
         # return None
 
+    # move this definition into the config file of dataset_join_dmajor
     # read in the data
     # algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
-    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
-    lc_dataset = instantiate(cfg.dataset.lc_meta)
+    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)  # fixme this is still required
+    # lc_dataset = instantiate(cfg.dataset.lc_meta)
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
-        len(dataset_meta_features),
+        len(dataset_meta_features),  # todo refactor - needs to be aware of dropped meta features
         cfg.dataset.split
     )
 
     # dataset_major
     # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
     #  algo meta features & dataset
-    train_set = Dataset_Join_Dmajor(
-        meta_dataset=dataset_meta_features,
-        lc=lc_dataset,
-        split=train_split
-    )
 
-    test_set = Dataset_Join_Dmajor(
-        meta_dataset=dataset_meta_features,
-        lc=lc_dataset,
-        split=test_split
-    )
+    train_set = instantiate(cfg.dataset.dataset_class, split=train_split)
+    test_set = instantiate(cfg.dataset.dataset_class, split=test_split)
 
-    # wrap with Dataloaders
-    train_loader = DataLoader(
-        train_set,
-        batch_size=cfg.train_batch_size,
-        shuffle=cfg.shuffle,
-        num_workers=cfg.num_workers
-    )
-
-    test_loader = DataLoader(
-        test_set,
-        batch_size=cfg.test_batch_size,
-        shuffle=False,
-        num_workers=cfg.num_workers
-    )
+    train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set)
+    test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
     # update the input dims adn number of algos based on the sampled stuff
-    input_dim = dataset_meta_features.df.columns.size
-    n_algos = 50
+    if 'n_algos' not in cfg.dataset_raw.keys() and cfg.dataset.name != 'LCBench':
+        # todo refactor this if statement
+        input_dim = len(train_set.meta_dataset.df.index)
+        n_algos = len(train_set.lc.index)  # fixme: instead calculate from joint dataset or
+        # directly in config! (number of algorithms! careful with train/test split!)
 
-    wandb.config.update({
-        'n_algos': n_algos,
-        'input_dim': input_dim
-    })
+        wandb.config.update({
+            'n_algos': n_algos,
+            'input_dim': input_dim
+        })
 
-    model = instantiate(
-        cfg.model,
-        input_dim=input_dim,
-        algo_dim=n_algos
-    )
+        model = instantiate(
+            cfg.model,
+            input_dim=input_dim,
+            algo_dim=n_algos
+        )
 
+        valid_score = call(
+            cfg.training,
+            model,
+            train_dataloader=train_loader,
+            test_dataloader=test_loader,
+            _recursive_=False
+        )
 
+    elif cfg.model._target_.split('.')[-1] == 'HalvingGridSearchCV':
+        # fixme: refactor this if
+        #  branch, that is specificaly targeting the HalvingGridSearchCV.
 
-    # fixme: validation score should not be computed during run !
-    valid_score = call(
-        cfg.training,
-        model,
-        train_dataloader=train_loader,
-        test_dataloader=test_loader,
-        _recursive_=False
-    )
+        if cfg.dataset.name == 'LCBench':
+            # dynamic computation of the number of algorithms depending ont the ensembling
+            # (we cannot know this in advance for LCBench raw)
+            cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))
+
+        # explicitly required since it is an experimental feature
+
+        from mf_gravitas.losses.ranking_loss import spear_halve_loss
+        from sklearn.experimental import enable_halving_search_cv
+        import pandas as pd
+        enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
+
+        # model.estimator.slices.split == test_split --this way datasets are parallel in seeds
+        spears = {}
+        for d in tqdm(test_split):
+            # indexed with 0 and slices.split holds the relevant data id already!
+            cfg.model.estimator.slices.split = [d]
+            model = instantiate(cfg.model, _convert_='partial')
+
+            # fixme: validation score should not be computed during training!
+            valid_score = call(
+                cfg.training,
+                model,
+                train_dataloader=train_loader,
+                test_dataloader=test_loader,
+                _recursive_=False
+            )
+
+            final_performances = test_set.lc.transformed_df[d][-1]
+
+            spears[d] = spear_halve_loss(valid_score, final_performances).numpy()
+
+        # fixme: spearman is a constant for all test datasets.
+        d = pd.DataFrame.from_dict(spears, orient='index')
+        print(d)
+
+        if cfg.dataset.name == 'LCBench':
+            name = 'LCBench_raw'
+        else:
+            name = cfg.dataset_raw.bench
+
+        d.to_csv(f'halving_test_spear_{name}_{cfg.seed}.csv')
+
+    # TODO trainsize config incl rescaled 100
+    return valid_score  # needed for smac
 
 
 if __name__ == '__main__':

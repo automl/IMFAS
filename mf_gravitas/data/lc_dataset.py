@@ -40,6 +40,10 @@ class Dataset_LC(Dataset):
                 self.index = last_time_slice.index
 
     def __getitem__(self, item: int):
+        """
+        :param item: index of dataset to be queried
+        :returns: tensor of shape (n_fidelities, n_algorithms)
+        """
         # fixme: this won't be applicable no more when transform has ToTensor
         # return single learning curve:
         # self.df.loc[item, :]  # item:tuple e.g. ('APSFailure', '0')
