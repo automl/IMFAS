@@ -16,8 +16,11 @@ on:
       - main
       - development
 
+permissions:
+  contents: write
+
 env:
-  name: AlgoSelectionMF
+  name: IMFAS
 
 jobs:
   build-and-deploy:

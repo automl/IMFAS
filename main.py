@@ -28,10 +28,10 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 base_dir = os.getcwd()
 
 
-@hydra.main(config_path="config", config_name="base")
+@hydra.main(config_path="configs", config_name="base")
 def pipe_train(cfg: DictConfig) -> None:
-    sys.path.append(os.getcwd())
-    sys.path.append("..")
+    # sys.path.append(os.getcwd())
+    # sys.path.append("..")
     print("base_dir: ", base_dir)
 
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)

@@ -35,6 +35,13 @@ repos:
         files: imfas
         additional_dependencies: ["toml"] # Needed to parse pyproject.toml
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.930
+    hooks:
+      - id: mypy
+        name: mypy imfas
+        files: imfas
+
   - repo: https://gitlab.com/pycqa/flake8
     rev: 4.0.1
     hooks:

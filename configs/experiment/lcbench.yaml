@@ -12,7 +12,6 @@ wandb:
   notes: 'This is a run for lstm ensemble'
   mode: 'online'
 
-
 train_batch_size: 8
 test_batch_size: 8
 

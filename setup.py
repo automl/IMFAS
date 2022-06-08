@@ -44,10 +44,12 @@ extras_require = {
         # Docs
         "automl_sphinx_theme",
         # Others
+        "mypy",
         "isort",
         "black",
         "pydocstyle",
         "flake8",
+        "pre-commit",
     ]
 }
 
@@ -64,7 +66,18 @@ setuptools.setup(
     version=version,
     packages=setuptools.find_packages(exclude=["tests"]),
     python_requires=">=3.8",
-    install_requires=read_file(os.path.join(HERE, "requirements.txt")).split("\n"),
+    install_requires=[
+        "wandb",
+        "tqdm",
+        "absl-py",
+        "networkx",
+        "sklearn",
+        "torch",
+        "torchsort",
+        "hydra-core",
+        "pandas",
+        "omegaconf",
+    ],
     extras_require=extras_require,
     test_suite="pytest",
     platforms=["Linux"],

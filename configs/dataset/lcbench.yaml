@@ -1,6 +1,6 @@
 # FIXME: make this dependent on the output from the raw transformation
 name: LCBench
-preprocessed_path: ../../../../data/raw/${dataset.name}  # fixme: is raw what we are going for?
+preprocessed_path: ./data/raw/${dataset.name}  # fixme: is raw what we are going for?
 
 path:
   algo_meta: ${dataset.preprocessed_path}/config_subset.csv

@@ -9,7 +9,7 @@ options = {
     "version": version,
     "name": name,
     "html_theme_options": {
-        "github_url": "https://github.com/automl-private/AlgoSelectionMF/AlgoSelectionMF",
+        "github_url": "https://github.com/automl/IMFAS",
         "twitter_url": "https://twitter.com/automl_org?lang=de",
     }
 }

@@ -64,3 +64,20 @@ add-ignore = [ # http://www.pydocstyle.org/en/stable/error_codes.html
     "D415", # First line should end with a period, question mark, or exclamation point
 ]
 
+[tool.mypy]
+python_version = "3.8"
+show_error_codes = true
+warn_unused_configs = true         # warn about unused [tool.mypy] lines
+follow_imports = "normal"          # Type check top level api code we use from imports
+ignore_missing_imports = false     # prefer explicit ignores
+disallow_untyped_defs = true       # All functions must have types
+disallow_untyped_decorators = true # ... even decorators
+disallow_incomplete_defs = true    # ... all types
+
+[[tool.mypy.overrides]]
+module = ["setuptools.*"]     # Add modules that give import errors here
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]                # pytest uses decorators which are not typed in 3.8
+disallow_untyped_decorators = false # decorators in testing are not all annotated
