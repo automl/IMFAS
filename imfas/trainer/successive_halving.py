@@ -21,9 +21,7 @@ def train_evaluate(model: HalvingGridSearchCV, **kwargs):
 
     # compute at which level the algorithm was terminated ----------------------
     # compute which algos where evaluated at that level
-    survivors = (
-        relevant_runhistory.groupby("iter").agg({"param_algo_id": set})["param_algo_id"].tolist()
-    )
+    survivors = relevant_runhistory.groupby("iter").agg({"param_algo_id": set})["param_algo_id"].tolist()
 
     # compute the number of algos that survived at each level
     surv = list(reversed(survivors))
@@ -40,8 +38,7 @@ def train_evaluate(model: HalvingGridSearchCV, **kwargs):
     # get ordinal ranking based on termination
     # keep only survivors at respective level
     level_dfs = [
-        df.loc[df["param_algo_id"].isin(s)]
-        for (_, df), s in zip(relevant_runhistory.groupby("iter"), survivors)
+        df.loc[df["param_algo_id"].isin(s)] for (_, df), s in zip(relevant_runhistory.groupby("iter"), survivors)
     ]
     terminated = pd.concat(level_dfs)
 
@@ -53,9 +50,7 @@ def train_evaluate(model: HalvingGridSearchCV, **kwargs):
     terminated.sort_values(["iter", "mean_test_score"], ascending=False, inplace=True)
     terminated.reset_index(drop=True, inplace=True)
 
-    rank = pd.DataFrame.from_dict(
-        {"rank": terminated.index, "algo_id": terminated["param_algo_id"]}
-    )
+    rank = pd.DataFrame.from_dict({"rank": terminated.index, "algo_id": terminated["param_algo_id"]})
 
     rank.sort_values(["algo_id"], inplace=True)
     return torch.tensor(rank["rank"])  # 0 entry has the highest ranking

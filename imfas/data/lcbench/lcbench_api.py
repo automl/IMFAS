@@ -37,9 +37,7 @@ class LCBench_API:
         if tag == "config_raw":
             return self.data[dataset_name][config_id]["config_raw"]
 
-        raise ValueError(
-            "Tag %s not found for config_raw %s for dataset %s" % (tag, config_id, dataset_name)
-        )
+        raise ValueError("Tag %s not found for config_raw %s for dataset %s" % (tag, config_id, dataset_name))
 
     def get_queriable_tags(self, dataset_name=None, config_id=None):
         """Returns a list of all queriable tags"""
@@ -59,11 +57,7 @@ class LCBench_API:
         names_algos = self.data[self.names_datasets[0]].keys()
 
         # logs = {(d, a): v for (d, a), v in data_algo.items()}
-        logs = {
-            (d, a, logged): v
-            for (d, a), data in data_algo.items()
-            for logged, v in data["log"].items()
-        }
+        logs = {(d, a, logged): v for (d, a), data in data_algo.items() for logged, v in data["log"].items()}
 
         configs = {k: data["config"] for k, data in data_algo.items()}
         results = {k: data["results"] for k, data in data_algo.items()}

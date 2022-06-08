@@ -46,9 +46,7 @@ class Trainer_Ensemble_lstm:
                 D0_rank = self.readout.forward(shared_D0.detach())
 
                 # Get the loss for lstm output
-                shared_loss = self.loss_fn(
-                    pred=D0_rank.detach(), target=data[1][:, -1, :], **self.loss_kwargs
-                )
+                shared_loss = self.loss_fn(pred=D0_rank.detach(), target=data[1][:, -1, :], **self.loss_kwargs)
 
                 test_lstm_losses.append(lstm_loss)
                 test_shared_losses.append(shared_loss)

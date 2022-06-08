@@ -869,11 +869,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     # config_space.pop(cfg.selection.fidelity_type)
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameters(
-        [
-            HP
-            for k, HP in config_space.items()
-            if k not in ["task_id", *bench.config.fidelity_params]
-        ]
+        [HP for k, HP in config_space.items() if k not in ["task_id", *bench.config.fidelity_params]]
     )
     # cs.add_hyperparameters(config_space.values())
     cs.add_conditions(bench.config_space.get_conditions())
@@ -898,11 +894,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
                 # add in the changing fidelity parameter!
                 cfg.selection.fidelity_type: s,
                 # add in the other fidelity parameters
-                **{
-                    k: hp.upper
-                    for k, hp in bench.get_fidelity_space().items()
-                    if k != cfg.selection.fidelity_type
-                },
+                **{k: hp.upper for k, hp in bench.get_fidelity_space().items() if k != cfg.selection.fidelity_type},
             }
 
             [c.update(d) for c in conf]
@@ -917,9 +909,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
     lc.columns.set_names("Fidelity")
 
     # Algorithm Meta Features
-    algo_meta_features = pd.DataFrame.from_dict(
-        {i: c.get_dictionary() for i, c in enumerate(configs)}
-    )
+    algo_meta_features = pd.DataFrame.from_dict({i: c.get_dictionary() for i, c in enumerate(configs)})
     algo_meta_features.columns.set_names("AlgoID")
     algo_meta_features.drop(index=["OpenML_task_id", cfg.selection.fidelity_type], inplace=True)
     algo_meta_features = algo_meta_features.T

@@ -30,9 +30,7 @@ class Dataset_LC(Dataset):
             # self.transformed_df = self.transformed_df
 
             # for getitem;
-            last_time_slice = [
-                trans for trans in self.transforms if isinstance(trans, LC_TimeSlices)
-            ][-1]
+            last_time_slice = [trans for trans in self.transforms if isinstance(trans, LC_TimeSlices)][-1]
 
             if last_time_slice:
                 # time slices create a new dataframe, whose indicies must be known
