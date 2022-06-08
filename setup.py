@@ -67,12 +67,12 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests"]),
     python_requires=">=3.8",
     install_requires=[
+        "torch",
         "wandb",
         "tqdm",
         "absl-py",
         "networkx",
         "sklearn",
-        "torch",
         "torchsort",
         "hydra-core",
         "pandas",
