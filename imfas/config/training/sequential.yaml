@@ -1,0 +1,3 @@
+_target_: imfas.trainer.schedules.train_schedule
+epochs: [ 50, 50, 50 ]
+lr: ${lr}

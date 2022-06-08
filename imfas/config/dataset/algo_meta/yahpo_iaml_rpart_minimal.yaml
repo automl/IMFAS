@@ -1,0 +1,12 @@
+_target_: imfas.data.AlgorithmMetaFeatures
+path: ${dataset.path.algo_meta}
+index_col: 0 # pd.read argument
+
+# the important part!
+transforms:
+  _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+  # path: some/path - we might want to automate and structure it
+  modulelist:
+    - _target_: imfas.data.preprocessings.nan_transforms.Zero_fill
+    - _target_: imfas.data.preprocessings.table_transforms.ToTensor
+    - _target_: imfas.data.preprocessings.tensor_transforms.ScaleStd

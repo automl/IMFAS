@@ -1,6 +1,6 @@
 import automl_sphinx_theme
 
-from mf_gravitas import copyright, author, version, name
+from imfas import copyright, author, version, name
 
 
 options = {

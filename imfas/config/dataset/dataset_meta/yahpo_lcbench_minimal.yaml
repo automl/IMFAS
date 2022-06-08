@@ -1,0 +1,12 @@
+_target_: imfas.data.DatasetMetaFeatures
+path: ${dataset.path.data_meta}
+index_col: 0
+
+# the important part!
+transforms:
+  _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+  modulelist:
+    - _target_: imfas.data.preprocessings.nan_transforms.Zero_fill
+    #- _target_: imfas.data.preprocessings.table_transforms.Scalar
+    - _target_: imfas.data.preprocessings.table_transforms.ToTensor
+    - _target_: imfas.data.preprocessings.tensor_transforms.ScaleStd

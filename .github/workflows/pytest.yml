@@ -20,7 +20,7 @@ on:
 
 env:
 
-  package-name: mf_gravitas
+  package-name: imfas
   test-dir: tests
   extra-requires: "[dev]"  # "" for no extra_requires
 

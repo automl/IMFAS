@@ -1,0 +1,3 @@
+_target_: imfas.trainer.rank_trainer.train_rank
+epochs: 1000
+lr: ${lr}

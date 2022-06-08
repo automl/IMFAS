@@ -1,0 +1,15 @@
+_target_: imfas.data.Dataset_LC
+path: ${dataset.path.lc_meta}
+
+#slices: [ 20, 30, 51 ]
+
+# the important part!
+transforms:
+  _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+  modulelist:
+    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean
+    # - _target_: imfas.data.preprocessings.table_transforms.Scalar
+    - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+      slices: ${dataset.slices}
+
+metric: ${dataset.lc_metric}

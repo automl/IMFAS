@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-from mf_gravitas import (
+from imfas import (
     author,
     author_email,
     description,
@@ -48,7 +48,7 @@ extras_require = {
         "black",
         "pydocstyle",
         "flake8",
-        ]
+    ]
 }
 
 setuptools.setup(

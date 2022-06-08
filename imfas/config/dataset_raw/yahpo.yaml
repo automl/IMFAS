@@ -1,0 +1,53 @@
+_target_: imfas.data.yahpo.raw_pipe.raw_pipe
+dataset_name: yahpo
+enable: True  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
+dir_data: ../../../data/
+fidelity_type: trainsize
+
+selection:
+  bench: rbv2_${dataset_raw.bench}
+  # options:
+  # lcbench, rbv2_svm, rbv2_ranger, rbv2_rpart, rbv2_glmnet, rbv2_xgboost, rbv2_aknn, rbv2_super,
+
+  # carefull, iaml_* do not have a proper openmlid and are therefor not available:
+  # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,
+
+  fidelity_type: ${dataset_raw.fidelity_type}
+  # options: 'trainsize', 'repl' for iaml_* & rbv2_*
+  # 'epoch' for lcbench
+
+  noisy: false # whether the benchmark should produce noisy observations (see yahpo benchmark)
+
+  n_algos: 50 # number of algorithms to draw! (same config across all datasets of bench)
+  algo: # selection procedure of configs in surrogate benchmarks
+    _target_: smac.initial_design.latin_hypercube_design.LHDesign
+    # smac.initial_design.sobol_design.SobolDesign
+    rng:
+      _target_: numpy.random.RandomState
+      seed: ${seed}
+
+    # unimportant parameters!
+    ta_run_limit: 9999
+    init_budget: ${dataset_raw.selection.n_algos}
+
+  # fidelity depends on fidelity type & ranges for respective benchmark
+  slices: ${dataset.slices}
+
+  metric: ${dataset.metric}
+  # lcbench options:
+  # time , val_accuracy , val_cross_entropy , val_balanced_accuracy ,
+  # test_cross_entropy , test_balanced_accuracy
+
+  # rbv2_svm options:
+  #  'acc', 'bac', 'auc', 'brier', 'f1', 'logloss', 'timetrain',
+  #  'timepredict', 'memory'
+
+  # iaml_ranger options:
+#  [ 'mmce', 'f1', 'auc', 'logloss', 'ramtrain', 'rammodel', 'rampredict',
+#    'timetrain', 'timepredict', 'mec', 'ias', 'nf' ],
+
+
+
+
+
+

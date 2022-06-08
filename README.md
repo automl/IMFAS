@@ -5,8 +5,8 @@
 ```
 git clone https://github.com/automl-private/AlgoSelectionMF/AlgoSelectionMF.git
 cd AlgoSelectionMF
-conda create -n mf_gravitas python=3.8
-conda activate mf_gravitas
+conda create -n imfas python=3.8
+conda activate imfas
 
 # Install for usage
 pip install .

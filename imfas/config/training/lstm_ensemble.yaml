@@ -1,0 +1,6 @@
+_target_: imfas.trainer.rank_trainer.train_lstm
+epochs: 500
+test_lim: 1
+log_freq: 3
+
+lr: ${lr} 

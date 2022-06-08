@@ -2,7 +2,7 @@
 # are usually completed in github actions.
 
 NAME := AlgoSelectionMF
-PACKAGE_NAME := mf_gravitas
+PACKAGE_NAME := imfas
 
 DIR := "${CURDIR}"
 SOURCE_DIR := ${PACKAGE_NAME}

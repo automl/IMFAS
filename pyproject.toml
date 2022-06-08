@@ -4,13 +4,13 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]             # path to the test directory
 minversion = "3.8"
-addopts = "--cov=mf_gravitas" # Should be package name
+addopts = "--cov=imfas" # Should be package name
 
 [tool.coverage.run]
 branch = true
-context = "mf_gravitas" # Should be package name
+context = "imfas" # Should be package name
 omit = [
-    "mf_gravitas/__init__.py", # Has variables only needed for setup.py
+    "imfas/__init__.py", # Has variables only needed for setup.py
 ]
 
 [tool.coverage.report]
@@ -30,10 +30,10 @@ line-length = 100
 [tool.isort]
 py_version = "38"
 profile = "black" # Play nicely with black
-src_paths = ["mf_gravitas", "tests"]
+src_paths = ["imfas", "tests"]
 known_types = ["typing", "abc"] # We put these in their own section "types"
 known_test = ["tests"]
-known_first_party = ["mf_gravitas"]
+known_first_party = ["imfas"]
 sections = [
     "FUTURE",
     "TYPES",

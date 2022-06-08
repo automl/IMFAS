@@ -1,0 +1,18 @@
+_target_: sklearn.model_selection.HalvingGridSearchCV
+estimator:
+  _target_: imfas.models.successive_halving.AlgoSurrogateLookup
+  slices:
+    _target_: imfas.data.Dataset_Join_Dmajor
+
+    meta_dataset: ${dataset.dataset_meta}
+    lc: ${dataset.lc_meta}
+    split: ${ model.estimator.dataset_id } # datasets can be explicitly specified here, but should be computed based on
+    #      train/test split function's seeding such that baseline uses same datasets!
+
+param_grid:
+  algo_id: [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49 ]
+
+resource: 'budget'
+max_resources: 51 # last entry of dataset.slices
+min_resources: 10 # first entry of dataset.slices
+factor: 2

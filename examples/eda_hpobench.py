@@ -37,7 +37,7 @@ df = pd.read_csv(StringIO(dataset_table), sep=" ")
 # the displayed folders are the task ids!
 
 # download the "tasks"
-models = ['nn', 'rf', 'svm', 'xgb', 'lr']
+models = ["nn", "rf", "svm", "xgb", "lr"]
 for model in models:
     TabularBenchmark(model=model, task_id=146821)
 
@@ -45,31 +45,29 @@ for model in models:
 path = "/home/ruhkopf/.local/share/hpobench/TabularData/{model}/[0-9]*"
 dataset_ids = {}
 for model in models:
-    s = set(int(path.split('/')[-1]) for path in glob.glob(path.format(model=model)))
+    s = set(int(path.split("/")[-1]) for path in glob.glob(path.format(model=model)))
     dataset_ids[model] = s
 
-dataset_ids_nn = dataset_ids['nn']
+dataset_ids_nn = dataset_ids["nn"]
 
 # find the joint set of datasets used for all but the nn algo
-dataset_ids = list(set.intersection(
-    *[dataset_ids[model] for model in ['rf', 'svm', 'xgb', 'lr']]
-))
+dataset_ids = list(set.intersection(*[dataset_ids[model] for model in ["rf", "svm", "xgb", "lr"]]))
 
-model = 'lr'
+model = "lr"
 dataset = dataset_ids[2]
 seed = [8916, 1319, 7222, 7541, 665][0]
 subsample = 1.0
 
 tab = TabularBenchmark(model=model, task_id=dataset)
-print('available fidelities: \n', tab.get_fidelity_space())
+print("available fidelities: \n", tab.get_fidelity_space())
 
 config = tab.get_configuration_space(seed=seed).sample_configuration()  # fixme: kill sample_config
 result = tab.objective_function(configuration=config, fidelity={"subsample": subsample}, rng=seed)
 
 # available seeds: (which are identical across datasets & algos
-result['info'].keys()  # [8916, 1319, 7222, 7541, 665]
+result["info"].keys()  # [8916, 1319, 7222, 7541, 665]
 
-for model in ['rf', 'svm', 'xgb', 'lr']:
+for model in ["rf", "svm", "xgb", "lr"]:
     for dataset in dataset_ids:
         tab = TabularBenchmark(model=model, task_id=dataset)
         fid = tab.get_fidelity_space()
