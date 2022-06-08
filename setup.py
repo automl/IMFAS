@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-from mf_gravitas import (
+from imfas import (
     author,
     author_email,
     description,
@@ -44,11 +44,13 @@ extras_require = {
         # Docs
         "automl_sphinx_theme",
         # Others
+        "mypy",
         "isort",
         "black",
         "pydocstyle",
         "flake8",
-        ]
+        "pre-commit",
+    ]
 }
 
 setuptools.setup(
