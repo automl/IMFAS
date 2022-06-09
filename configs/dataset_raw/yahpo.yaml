@@ -5,9 +5,9 @@ dir_data: ../../../data/
 fidelity_type: trainsize
 
 selection:
-  bench: rbv2_${dataset_raw.bench}
+  bench: rbv2_glmnet
   # options:
-  # lcbench, rbv2_svm, rbv2_ranger, rbv2_rpart, rbv2_glmnet, rbv2_xgboost, rbv2_aknn, rbv2_super,
+  # lcbench, rbv2_svm, rbv2_ranger, rbv2_rpart, rbv2_glmnet, rbv2_xgboost, rbv2_aknn, rbv2_super
 
   # carefull, iaml_* do not have a proper openmlid and are therefor not available:
   # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,

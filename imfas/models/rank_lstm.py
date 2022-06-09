@@ -1,13 +1,48 @@
 from typing import List
 
-import pdb
-
 import torch
 import torch.nn as nn
 import torchsort
 from torch.nn import LSTM, Linear
 
-from imfas.models.rank_mlp import AlgoRankMLP
+
+class AlgoRankMLP(nn.Module):
+    def __init__(
+            self,
+            input_dim: int = 107,
+            algo_dim: int = 58,
+            hidden_dims: List[int] = [300, 200, 100],
+            device: torch.device = torch.device("cpu"),
+    ):
+        super(AlgoRankMLP, self).__init__()
+        self.meta_features_dim = input_dim
+        self.algo_dim = algo_dim
+        self.hidden_dims = hidden_dims
+        self.device = device
+
+        self.rank = torchsort.soft_rank
+
+        self._build_network()
+
+    def _build_network(self):
+        """
+        Build the network based on the initialized hyperparameters
+        """
+        modules = []
+
+        hidden_dims = self.hidden_dims
+        input_dim = self.meta_features_dim
+
+        for h_dim in hidden_dims:
+            modules.append(nn.Linear(input_dim, h_dim))
+            modules.append(nn.ReLU())
+            input_dim = h_dim
+
+        modules.append(nn.Linear(input_dim, self.algo_dim))
+        modules.append(nn.ReLU())
+
+        self.network = torch.nn.Sequential(*modules)
+
 
 
 class RankLSTM(nn.Module):
