@@ -1,5 +1,6 @@
 import torch
 
+import pdb
 
 class Trainer_Ensemble_lstm:
     def __init__(self, model, loss_fn, ranking_fn, optimizer, test_lim=5):
@@ -62,6 +63,10 @@ class Trainer_Ensemble_lstm:
         for _, data in enumerate(train_dataloader):
             self.optimizer.zero_grad()
             # Dataset meta features and final  slice labels
+            
+            print(data[0].shape)
+            pdb.set_trace()
+            
             D0 = data[0].to(self.model.device)
 
             labels = data[1][:, :-1, :]
@@ -70,7 +75,6 @@ class Trainer_Ensemble_lstm:
             shared_D0, lstm_D0 = self.model.forward(dataset_meta_features=D0, fidelities=labels)
 
             lstm_loss = self.loss_fn(pred=lstm_D0, target=data[1][:, -1, :], **self.loss_kwargs)
-
             lstm_loss.backward()
 
             self.optimizer.step()

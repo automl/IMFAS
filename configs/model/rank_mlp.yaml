@@ -1,3 +1,0 @@
-_target_: imfas.models.rank_mlp.AlgoRankMLP
-hidden_dims: [ 300, 200, 100 ]
-device: 'cpu'

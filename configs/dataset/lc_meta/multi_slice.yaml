@@ -1,8 +1,6 @@
 _target_: imfas.data.Dataset_LC
 path: ${dataset.path.lc_meta}
 
-#slices: [ 20, 30, 51 ]
-
 # the important part!
 transforms:
   _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline

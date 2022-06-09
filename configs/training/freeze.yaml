@@ -1,3 +1,0 @@
-_target_: imfas.trainer.schedules.train_freeze_schedule
-epochs: [ 1, 1, 1 ]
-lr: ${lr}

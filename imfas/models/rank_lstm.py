@@ -3,7 +3,8 @@ from typing import List
 import torch
 import torch.nn as nn
 import torchsort
-from torch.nn import LSTM, Linear
+
+import pdb
 
 
 class AlgoRankMLP(nn.Module):
@@ -43,6 +44,17 @@ class AlgoRankMLP(nn.Module):
 
         self.network = torch.nn.Sequential(*modules)
 
+    def forward(self, D):
+        """
+        Forward path through the meta-feature ranker
+        
+        Args:
+            D: input tensor
+        Returns:
+            algorithm values tensor
+        
+        """
+        return self.network(D)
 
 
 class RankLSTM(nn.Module):
@@ -149,7 +161,6 @@ class RankLSTM_Ensemble(nn.Module):
         super(RankLSTM_Ensemble, self).__init__()
         self.meta_features_dim = input_dim
         self.algo_dim = algo_dim
-        # self.lstm_hidden_dims = lstm_hidden_dims
         self.lstm_layers = lstm_layers
         self.shared_hidden_dims = shared_hidden_dims
         self.device = torch.device(device)
@@ -178,6 +189,9 @@ class RankLSTM_Ensemble(nn.Module):
             readout=None,
         )
 
+
+
+
     def forward(self, dataset_meta_features, fidelities):
         """
         Forward path through the meta-feature ranker
@@ -193,7 +207,10 @@ class RankLSTM_Ensemble(nn.Module):
         shared_D = self.shared_network(dataset_meta_features)
 
         # Forward through the lstm networks to get the readouts
-        lstm_D = self.lstm_network(init_hidden=shared_D, context=fidelities)
+        lstm_D = self.lstm_network(
+                            init_hidden=shared_D, 
+                            context=fidelities
+                        )
 
         return shared_D, lstm_D
 
@@ -205,4 +222,3 @@ if __name__ == "__main__":
 
     print("shared network", network.shared_network)
     print("lstm_net", network.lstm_network)
-    # print('final', network.final_network)

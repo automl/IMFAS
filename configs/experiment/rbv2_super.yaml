@@ -10,7 +10,7 @@ defaults:
 wandb:
   group: rbv2_super
   notes: 'This is a run for lstm ensemble'
-  mode: 'online'
+  mode: 'offline'
 
 
 train_batch_size: 10

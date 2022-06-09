@@ -14,12 +14,17 @@ import random
 import string
 import sys
 
+import pdb
+
 import wandb
 from hydra.utils import get_original_cwd
 from tqdm import tqdm
 
 from imfas.util import print_cfg, seed_everything, train_test_split
 
+import pandas as pd
+from sklearn.experimental import enable_halving_search_cv
+from imfas.losses.ranking_loss import spear_halve_loss
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return "".join(random.choice(chars) for _ in range(size))
@@ -43,7 +48,6 @@ def pipe_train(cfg: DictConfig) -> None:
         + os.path.basename(HydraConfig.get().run.dir)
     )
 
-    # fixme: remove temporary quickfix to change pass smac config into the hydra config
     hydra_config = HydraConfig.get()
     log.info(get_original_cwd())
 
@@ -74,22 +78,11 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # optionally download / resubset the dataset
     if cfg.dataset_raw.enable:
-        # FIXME: check if anything (LHD, nalgos, dataset slices, ...) changed,
-        #   and trigger a recalculation automatically - so we need to write out the
-        #   config alongside the dataset, that generated the dataset - and compare
-        #   the current against it.
         call(cfg.dataset_raw, _recursive_=False)
 
-        # log.info(f'\n{"!" * 30}\nTerminating after generating raw data. To continue, override your '
-        #          'config with "dataset_raw.enable=false" ')
-        #
-        # return None
-
-    # move this definition into the config file of dataset_join_dmajor
-    # read in the data
-    # algorithm_meta_features = instantiate(cfg.dataset.algo_meta)
-    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)  # fixme this is still required
-    # lc_dataset = instantiate(cfg.dataset.lc_meta)
+   
+    dataset_meta_features = instantiate(cfg.dataset.dataset_meta) 
+   
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
@@ -97,26 +90,24 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.dataset.split,
     )
 
-    # dataset_major
-    # fixme: refactor this into a configurable class! - either dmajor or multidex (the latter for
-    #  algo meta features & dataset
-
+    # Create the dataloaders
     train_set = instantiate(cfg.dataset.dataset_class, split=train_split)
     test_set = instantiate(cfg.dataset.dataset_class, split=test_split)
 
     train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set)
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
-    # update the input dims adn number of algos based on the sampled stuff
+    # update the input dims and number of algos based on the sampled stuff
     if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
-        # todo refactor this if statement
         input_dim = len(train_set.meta_dataset.df.index)
-        n_algos = len(train_set.lc.index)  # fixme: instead calculate from joint dataset or
-        # directly in config! (number of algorithms! careful with train/test split!)
+        n_algos = len(train_set.lc.index)  
 
         wandb.config.update({"n_algos": n_algos, "input_dim": input_dim})
-
-        model = instantiate(cfg.model, input_dim=input_dim, algo_dim=n_algos)
+        model = instantiate(
+                    cfg.model, 
+                    input_dim=input_dim, 
+                    algo_dim=n_algos
+                )
 
         valid_score = call(
             cfg.training,
@@ -127,20 +118,11 @@ def pipe_train(cfg: DictConfig) -> None:
         )
 
     elif cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
-        # fixme: refactor this if
-        #  branch, that is specificaly targeting the HalvingGridSearchCV.
 
         if cfg.dataset.name == "LCBench":
-            # dynamic computation of the number of algorithms depending ont the ensembling
-            # (we cannot know this in advance for LCBench raw)
             cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))
 
-        # explicitly required since it is an experimental feature
-
-        import pandas as pd
-        from sklearn.experimental import enable_halving_search_cv
-
-        from imfas.losses.ranking_loss import spear_halve_loss
+       
 
         enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
 
@@ -174,9 +156,6 @@ def pipe_train(cfg: DictConfig) -> None:
             name = cfg.dataset_raw.bench
 
         d.to_csv(f"halving_test_spear_{name}_{cfg.seed}.csv")
-
-    # TODO trainsize config incl rescaled 100
-    return valid_score  # needed for smac
 
 
 if __name__ == "__main__":

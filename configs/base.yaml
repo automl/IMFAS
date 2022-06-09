@@ -8,16 +8,9 @@ defaults:
   - dataset/lc_meta: multi_slice
   - model: rank_ensemble
   - training: freeze_ensemble # ensemble
-  - evaluation: optimal_rankings
-  #  - override hydra/sweeper: SMAC
-  #  - override hydra/launcher: submitit_smac_slurm
-
-  # - slurm # FIXME disabled this for smac sweeper: todo move smac sweeper config to experiments!
 
   - _self_ # at the end means overriding values of lower yaml here!
 
-#  - override hydra/job_logging: colorlog
-#  - override hydra/hydra_logging: colorlog
 
 seed: 0
 output_dir: ./tmp
@@ -45,8 +38,6 @@ wandb:
   resume: 'allow'
 
 hydra:
-  #  searchpath:  # to find another folder (next to config) https://hydra.cc/docs/advanced/search_path/
-  #    - pkg://additonal_conf
   run:
     dir: ${output_dir}/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:

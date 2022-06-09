@@ -9,11 +9,11 @@ from tqdm import tqdm
 
 from imfas.losses.ranking_loss import spearman, weighted_spearman
 from imfas.trainer.lstm_trainer import Trainer_Ensemble_lstm
-from imfas.trainer.rank_trainer_class import Trainer_Rank
 
 # A logger for this file
 log = logging.getLogger(__name__)
 
+import pdb
 
 def train_lstm(
     model,
@@ -31,12 +31,13 @@ def train_lstm(
     optimizer = optimizer_cls(model.parameters(), lr)
 
     trainer_kwargs = {
-        "model": model,
-        "loss_fn": spearman,
+        "model"     : model,
+        "loss_fn"   : spearman,
         "ranking_fn": ranking_fn,
-        "optimizer": optimizer,
-        "test_lim": test_lim,
+        "optimizer" : optimizer,
+        "test_lim"  : test_lim,
     }
+
 
     # Initialize the trainer
     trainer = Trainer_Ensemble_lstm(**trainer_kwargs)
@@ -47,7 +48,10 @@ def train_lstm(
 
     for e in tqdm(range(epochs)):
         # Train the model
+
         trainer.train(train_dataloader)
+
+        pdb.set_trace()
 
         # Evaluate the model
         trainer.evaluate(test_dataloader)
@@ -73,5 +77,6 @@ def train_lstm(
 
             for key in trainer.losses:
                 losses[key] = []
+        
 
     # return score

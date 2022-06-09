@@ -1,7 +1,0 @@
-_target_: imfas.models.rank_mlp.AlgoRankMLP_Ensemble
-shared_hidden_dims:
-  - 300
-  - 200 # todo ${ model.hidden2_dim } interpolation for smac?
-multi_head_dims:
-  - 100
-join: avg

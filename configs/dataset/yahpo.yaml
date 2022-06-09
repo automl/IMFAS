@@ -6,13 +6,12 @@ path:
   data_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/meta_features.csv
   lc_meta: ${dataset.preprocessed_path}/${dataset_raw.selection.bench}/logs_subset.h5
 
-#
 dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   lc: ${dataset.lc_meta}
-  #      meta_algo: dataset.algo_meta
 
+  
 # fixme: refactor this to be separately configurable at will for train/test
 dataloader_class:
   _target_: torch.utils.data.DataLoader
@@ -20,31 +19,11 @@ dataloader_class:
   shuffle: False
   num_workers: ${num_workers}
 
-
 split: 0.8
 
-slices:
-  - 0.1
-  - 0.2
-  - 0.3
-  - 0.4
-  - 0.5
-  - 0.6
-  - 0.7
-  - 0.8
-  - 0.9
-  - 1.
-  # - 5
-  # - 10
-  # - 15
-  # - 20
-  # - 25
-  # - 30
-  # - 35
-  # - 40
-  # - 45
-  # - 50
-  # - 51
+slices: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+
+# For LC Bench, use the slices [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
 
 
 metric: f1
