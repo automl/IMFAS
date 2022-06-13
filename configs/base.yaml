@@ -25,8 +25,8 @@ shuffle: True
 
 wandb:
   id: null
-  entity: tnt
-  project: gravitas
+  # entity: tnt
+  # project: gravitas
   mode: 'offline'    # Change to offline or debug mode
   job_type: train
   tags: [ ]
