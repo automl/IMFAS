@@ -8,7 +8,7 @@ do
         do
                 for s in 0 1 2 3 4
                 do
-                  python main.py +experiment=$dataset seed=$s training.test_lim=$lim
+                  python main.py +experiment=$dataset.yaml seed=$s training.test_lim=$lim dataset_raw.selection.bench=$dataset
                 done
         done
 done

@@ -23,6 +23,8 @@ selection:
     _target_: imfas.data.ensemble.topk.ensemble
     k: 3
 
+  bench: lcbench
+
 learning_curves:
   metrics:
     - Train/loss
