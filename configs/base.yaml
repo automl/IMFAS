@@ -6,10 +6,9 @@ defaults:
   # - dataset/algo_meta: lcbench_minimal
   - dataset/dataset_meta: lcbench_minimal
   - dataset/lc_meta: multi_slice
-  - model: rank_ensemble
-  - training: freeze_ensemble # ensemble
-
-  - _self_ # at the end means overriding values of lower yaml here!
+  - model: rank_lstm
+  - training: lstm_ensemble 
+  - _self_ 
 
 
 seed: 0

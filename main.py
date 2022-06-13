@@ -98,10 +98,11 @@ def pipe_train(cfg: DictConfig) -> None:
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
     # update the input dims and number of algos based on the sampled stuff
-    if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
+    #if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
+    if not cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
         input_dim = dataset_meta_features.df.columns.size
         n_algos = len(train_set.lc.index)  
-
+        
         wandb.config.update({"n_algos": n_algos, "input_dim": input_dim})
         model = instantiate(
                     cfg.model, 
@@ -117,7 +118,7 @@ def pipe_train(cfg: DictConfig) -> None:
             _recursive_=False,
         )
 
-    elif cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
+    else:
 
         if cfg.dataset.name == "LCBench":
             cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))

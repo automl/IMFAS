@@ -37,7 +37,7 @@ dataset_raw:
   # select the benchmark to use from yahpo or lcbench
   bench: ranger  # make sure it is aligned with above's defaults!
   fidelity_type: trainsize
-  noise: false
+  noise: False
   n_algos: 50
   algo: # selection procedure of configs in surrogate benchmarks
     _target_: smac.initial_design.latin_hypercube_design.LHDesign

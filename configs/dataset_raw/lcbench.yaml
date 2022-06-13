@@ -2,13 +2,11 @@ _target_: imfas.data.lcbench.raw_pipe.raw_pipe
 dataset_name: LCBench
 
 #TODO Change to relative
-dir_data: ./data/
+dir_data: ../../../data/
 extract: data_2k  # json file
-enable: True # whether to override the preprocessing
+enable: False # whether to override the preprocessing
 re_download: False
 reload_from_downloads: False # will override the '*subset' files
-
-
 
 
 selection:

@@ -9,7 +9,7 @@ defaults:
 wandb:
   group: lcbench_vanilla_10
   notes: 'This is a run for lstm ensemble'
-  mode: 'online'
+  mode: 'offline'
 
 train_batch_size: 8
 test_batch_size: 8
