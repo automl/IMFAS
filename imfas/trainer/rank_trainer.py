@@ -13,7 +13,6 @@ from imfas.trainer.lstm_trainer import Trainer_Ensemble_lstm
 # A logger for this file
 log = logging.getLogger(__name__)
 
-import pdb
 
 def train_lstm(
     model,
@@ -50,8 +49,6 @@ def train_lstm(
         # Train the model
 
         trainer.train(train_dataloader)
-
-        pdb.set_trace()
 
         # Evaluate the model
         trainer.evaluate(test_dataloader)

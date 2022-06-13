@@ -99,7 +99,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # update the input dims and number of algos based on the sampled stuff
     if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
-        input_dim = len(train_set.meta_dataset.df.index)
+        input_dim = dataset_meta_features.df.columns.size
         n_algos = len(train_set.lc.index)  
 
         wandb.config.update({"n_algos": n_algos, "input_dim": input_dim})
