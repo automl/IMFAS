@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 class Transform(nn.Module):
-    # Fixme: nn.Module inheritance is required by nn.Sequential
+    # FIXME: nn.Module inheritance is required by nn.Sequential
     """
     For table based data.
 

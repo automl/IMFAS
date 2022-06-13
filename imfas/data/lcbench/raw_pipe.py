@@ -39,7 +39,7 @@ def raw_pipe(*args, **kwargs):
 
     if cfg.reload_from_downloads:
         log.info("Starting to load jsons from path")
-        # fixme: move LCBench parsing into separate path (to make parsing dataset specific!
+        # FIXME: move LCBench parsing into separate path (to make parsing dataset specific!
         # (0) get meta features
         with open(dir_downloads / cfg.dataset_name / "meta_features.json", "r") as file:
             df = pd.read_json(file, orient="index")
@@ -60,7 +60,7 @@ def raw_pipe(*args, **kwargs):
 
         log.info("Writing out parsed full sized h5-files")
         logs.to_hdf(dir_raw_dataset / "logs.h5", key="dataset", mode="w")
-        results.to_hdf(dir_raw_dataset / "results.h5", key="dataset", mode="w")  # fixme
+        results.to_hdf(dir_raw_dataset / "results.h5", key="dataset", mode="w")  # FIXME
         config.to_csv(dir_raw_dataset / "config.csv")
 
     else:
@@ -80,7 +80,7 @@ def raw_pipe(*args, **kwargs):
     candidates, candidate_performances = call(cfg.selection.algo, df)
     candidates = list(sorted(candidates))
 
-    # select the index rows # fixme: this is inefficient
+    # select the index rows # FIXME: this is inefficient
     config = pd.DataFrame([config.loc[int(element)] for element in candidates])
     df.index = df.index.astype(str)
     config.to_csv(dir_raw_dataset / "config_subset.csv")
@@ -92,6 +92,6 @@ def raw_pipe(*args, **kwargs):
     # subset(logs, 'logged', cfg.learning_curves.metrics)
 
     logs.to_hdf(dir_raw_dataset / "logs_subset.h5", key="dataset", mode="w")
-    results.to_hdf(dir_raw_dataset / "results_subset.h5", key="dataset", mode="w")  # fixme
+    results.to_hdf(dir_raw_dataset / "results_subset.h5", key="dataset", mode="w")  # FIXME
 
     log.debug("Written out all files to raw dir.")

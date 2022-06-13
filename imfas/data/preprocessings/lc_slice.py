@@ -18,15 +18,15 @@ class LC_TimeSlices(Transform):
 
     def fit(self, X):
         """
-        :param X: is an Array, where the time dimension is #fixme ???
+        :param X: is an Array, where the time dimension is #FIXME ???
         :return: torch.Tensor: (n_slices, n_datasets n_algorithms)
-        # fixme: downstream must be tensor!
+        # FIXME: downstream must be tensor!
         """
         # X[self.slices]
         format = X[self.slices[-1]].unstack().T
         self.columns = format.columns
         self.index = format.index  # dataset row major
 
-        # fixme: .T is depreciated for more than two dimensions
+        # FIXME: .T is depreciated for more than two dimensions
         sliced = torch.tensor(np.array([X[sl].unstack().T.values for sl in self.slices]))
         return torch.swapaxes(sliced, 0, 1)

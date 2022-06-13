@@ -1,5 +1,3 @@
-# fixme: move this entire file's wandb logging into the trainer classes, where they'd belong
-
 import logging
 
 import torch

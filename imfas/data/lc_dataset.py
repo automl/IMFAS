@@ -21,10 +21,10 @@ class Dataset_LC(Dataset):
 
         if transforms is not None:
             if transforms.fitted:
-                # fixme: .T is depreciated for more than two dimensions
+                # FIXME: .T is depreciated for more than two dimensions
                 self.transformed_df = self.transforms.transform(self.df).T
             else:
-                # fixme: .T is depreciated for more than two dimensions
+                # FIXME: .T is depreciated for more than two dimensions
                 self.transformed_df = self.transforms.fit(self.df).T
             self.df = self.df[self.df.columns[-1]].unstack().T  # transform the df appropriately
             # self.transformed_df = self.transformed_df
@@ -43,7 +43,7 @@ class Dataset_LC(Dataset):
         :param item: index of dataset to be queried
         :returns: tensor of shape (n_fidelities, n_algorithms)
         """
-        # fixme: this won't be applicable no more when transform has ToTensor
+        # FIXME: this won't be applicable no more when transform has ToTensor
         # return single learning curve:
         # self.df.loc[item, :]  # item:tuple e.g. ('APSFailure', '0')
 

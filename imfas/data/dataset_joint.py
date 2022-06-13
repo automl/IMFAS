@@ -12,9 +12,9 @@ class Dataset_Join_Gravity(Dataset):
 
         self.competitors = competitors
 
-        # Fixme: add consistency checks on rows & columns!
+        # FIXME: add consistency checks on rows & columns!
 
-        # fixme: this is brittle and depends on the lc.transformed_df format after the pipe!
+        # FIXME: this is brittle and depends on the lc.transformed_df format after the pipe!
         # it also assumes that meta_dataset & meta_algo have the exact same ordering
         self.dataset_names, self.algo_names = self.lc.columns, self.lc.index
 
@@ -45,13 +45,13 @@ class Dataset_Join_Gravity(Dataset):
         if self.competitors > 0:
             competitors = self.__get_competitors__(item)
 
-            return (D_m, a_p), competitors  # fixme: algo meta features are disabled
+            return (D_m, a_p), competitors  # FIXME: algo meta features are disabled
         else:
             return (D_m, a_p), (None, None)
 
     def __get_single__(self, item):
         d, a = self.multidex[item]
-        # fixme: indexing depends on the transformations applied
+        # FIXME: indexing depends on the transformations applied
         #  in particularly troubling is lc, since it is a time slice!
         return self.meta_dataset[d], self.meta_algo[a], self.lc[a]
 
@@ -70,9 +70,9 @@ class Dataset_Join_Gravity(Dataset):
         # d, a = zip(*self.multidex[items])
 
         d, a = list(d), list(a)
-        # fixme: indexing depends on the transformations applied
+        # FIXME: indexing depends on the transformations applied
         #  in particularly troubling is lc, since it is a time slice!
-        return self.meta_dataset[d], self.lc[d]  # self.meta_algo[a], # fixme add in algo meta
+        return self.meta_dataset[d], self.lc[d]  # self.meta_algo[a], # FIXME add in algo meta
 
     def __get_competitors__(self, item):
         # Consider: Creating the competitor set might be the bottleneck
@@ -119,7 +119,7 @@ class Dataset_Join_Split(Dataset_Join_Gravity):
 class Dataset_Join_Dmajor(Dataset):
     def __init__(self, meta_dataset, lc, meta_algo=None, split=None):
         self.meta_dataset = meta_dataset
-        self.meta_algo = meta_algo  # fixme not required yet
+        self.meta_algo = meta_algo  # FIXME not required yet
         self.lc = lc
 
         if split is not None:
@@ -136,7 +136,7 @@ class Dataset_Join_Dmajor(Dataset):
          algorithms (second dim: columns)
         """
         it = self.split[item]
-        return self.meta_dataset[it], self.lc[it]  # fixme: activate, self.meta_algo[a],
+        return self.meta_dataset[it], self.lc[it]  # FIXME: activate, self.meta_algo[a],
 
     def __len__(self):
         return len(self.split)

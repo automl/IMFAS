@@ -779,23 +779,7 @@ OPENML_IDS = {
 }
 
 
-# iaml = set.intersection(*[set(v) for k, v in OPENML_IDS.items() if k.startswith('iaml')])
-# rbv2 = set.intersection(*[set(v) for k, v in OPENML_IDS.items() if k.startswith('rbv2')])
-# rbv2_k = [k for k in OPENML_IDS.keys() if k.startswith('rbv2')]
-# iaml_k = [k for k in OPENML_IDS.keys() if k.startswith('iaml')]
-#
-# rbv2_iaml = set.intersection(*[set(v) for k, v in OPENML_IDS.items() if k != 'lcbench'])
-# rbv2_iaml_k = [*rbv2_k, *iaml_k]
-#
-# lcbench = {'models': ['lcbench'], 'ids': OPENML_IDS['lcbench'], 'fidelity_name': 'epochs'}
-# iaml = {'models': iaml_k, 'ids': list(iaml), 'fidelity_name': 'trainsize'}
-# rbv2 = {'models': rbv2_k, 'ids': list(rbv2), 'fidelity_name': 'trainsize'}
-# rbv2_iaml = {'models': rbv2_iaml_k, 'ids': list(rbv2_iaml), 'fidelity_name': 'trainsize'}
-#
-# BENCHS = {'lcbench': lcbench, 'iaml': iaml, 'rbv2': rbv2, 'rbv2_iaml': rbv2_iaml}
-
-
-def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd explicitly
+def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd explicitly
     cfg = DictConfig(kwargs)
 
     # directory paths
@@ -916,7 +900,7 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # fixme: pass_orig_cwd e
 
     log.info("writing out to files")
 
-    # fixme: rename these file names (& lcbench's as well connsistently)
+    # FIXME: rename these file names (& lcbench's as well connsistently)
     algo_meta_features.to_csv(dir_raw_dataset_bench / "config_subset.csv")
     dataset_meta_features.to_csv(dir_raw_dataset_bench / "meta_features.csv")
     lc.to_hdf(dir_raw_dataset_bench / "logs_subset.h5", key="dataset", mode="w")

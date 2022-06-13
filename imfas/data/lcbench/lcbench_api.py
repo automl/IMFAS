@@ -72,7 +72,7 @@ class LCBench_API:
         # logs.loc['time']  # conveniently select the tracked feature
         # logged, datasets, algos = logs.index.levels # conveniently get the available options
 
-        # Fixme: make this a debug flag and raise on difference in slices!
+        # FIXME: make this a debug flag and raise on difference in slices!
         if False:
             # to validate that across datasets the config is always the same
             # --> we only need one config per algorithm!

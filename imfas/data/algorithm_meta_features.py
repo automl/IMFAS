@@ -1,6 +1,6 @@
 from imfas.data.dataset_meta_features import DatasetMetaFeatures
 from imfas.data.preprocessings.transformpipeline import TransformPipeline
-
+from imfas.data.preprocessings.table_transforms import *
 
 class AlgorithmMetaFeatures(DatasetMetaFeatures):
     def __init__(self, path, transforms: TransformPipeline = None, *args, **kwargs):
@@ -9,8 +9,6 @@ class AlgorithmMetaFeatures(DatasetMetaFeatures):
 
 if __name__ == "__main__":
     # TODO Make exactly this config into a config file!
-    from imfas.data.preprocessings.table_transforms import *
-
     path = "/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/LCBench/config.csv"
     metafeatures = AlgorithmMetaFeatures(path, index_col=0)
 
