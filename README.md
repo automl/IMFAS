@@ -21,12 +21,11 @@ If you want to use LCBench, you have to download the dataset first:
 bash scripts/download_lcbench.sh
 ```
 
-
 ## Installation
 ```bash
 git clone https://github.com/automl/IMFAS.git
 cd IMFAS
-conda create -n imfas python=3.8
+conda create -n imfas python=3.9.7
 conda activate imfas
 
 # Install for usage
@@ -40,6 +39,16 @@ Documentation at https://automl.github.io/IMFAS/main.
 
 
 ## Start experiments
+
+An example command is fiven below
 ```bash
 python main.py '+experiment=lcbench'
+```
+
+The project extensively uses [hydra](https://hydra.cc/docs/intro/) for configurations and [Weights and Biases](https://wandb.ai/site) for tracking experiments. Please set-up the project and account on this and then update ```configs/base.yaml``` with the ```entity``` and ```project_name``` fields for running full tests. 
+
+The complete tests can be run using
+
+```bash
+bash scripts/imfas_tests.sh
 ```
