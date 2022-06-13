@@ -26,6 +26,7 @@ import pandas as pd
 from sklearn.experimental import enable_halving_search_cv
 from imfas.losses.ranking_loss import spear_halve_loss
 
+
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return "".join(random.choice(chars) for _ in range(size))
 
@@ -80,9 +81,7 @@ def pipe_train(cfg: DictConfig) -> None:
     if cfg.dataset_raw.enable:
         call(cfg.dataset_raw, _recursive_=False)
 
-   
-    dataset_meta_features = instantiate(cfg.dataset.dataset_meta) 
-   
+    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
@@ -98,17 +97,13 @@ def pipe_train(cfg: DictConfig) -> None:
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
     # update the input dims and number of algos based on the sampled stuff
-    #if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
+    # if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
     if not cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
         input_dim = dataset_meta_features.df.columns.size
-        n_algos = len(train_set.lc.index)  
-        
+        n_algos = len(train_set.lc.index)
+
         wandb.config.update({"n_algos": n_algos, "input_dim": input_dim})
-        model = instantiate(
-                    cfg.model, 
-                    input_dim=input_dim, 
-                    algo_dim=n_algos
-                )
+        model = instantiate(cfg.model, input_dim=input_dim, algo_dim=n_algos)
 
         valid_score = call(
             cfg.training,
@@ -122,8 +117,6 @@ def pipe_train(cfg: DictConfig) -> None:
 
         if cfg.dataset.name == "LCBench":
             cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))
-
-       
 
         enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
 

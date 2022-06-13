@@ -1,5 +1,6 @@
 import torch
 
+
 class Trainer_Ensemble_lstm:
     def __init__(self, model, loss_fn, ranking_fn, optimizer, test_lim=5):
         self.step = 0
@@ -61,7 +62,7 @@ class Trainer_Ensemble_lstm:
         for _, data in enumerate(train_dataloader):
             self.optimizer.zero_grad()
             # Dataset meta features and final  slice labels
-            
+
             D0 = data[0].to(self.model.device)
 
             labels = data[1][:, :-1, :]

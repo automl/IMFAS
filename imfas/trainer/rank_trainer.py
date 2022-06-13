@@ -30,13 +30,12 @@ def train_lstm(
     optimizer = optimizer_cls(model.parameters(), lr)
 
     trainer_kwargs = {
-        "model"     : model,
-        "loss_fn"   : spearman,
+        "model": model,
+        "loss_fn": spearman,
         "ranking_fn": ranking_fn,
-        "optimizer" : optimizer,
-        "test_lim"  : test_lim,
+        "optimizer": optimizer,
+        "test_lim": test_lim,
     }
-
 
     # Initialize the trainer
     trainer = Trainer_Ensemble_lstm(**trainer_kwargs)
@@ -74,6 +73,5 @@ def train_lstm(
 
             for key in trainer.losses:
                 losses[key] = []
-        
 
     # return score

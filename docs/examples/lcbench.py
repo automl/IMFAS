@@ -21,9 +21,7 @@ bench = Benchmark("/home/ruhkopf/.local/share/LCBench/fashion_mnist.json")
 names = bench.dataset_names
 tags = bench.get_queriable_tags()  # has probably the same as below
 
-configs0 = {
-    i: bench.query(dataset_name="Fashion-MNIST", tag="config_raw", config_id=i) for i in range(2000)
-}
+configs0 = {i: bench.query(dataset_name="Fashion-MNIST", tag="config_raw", config_id=i) for i in range(2000)}
 
 configs_df0 = pd.DataFrame.from_dict(configs0, orient="index")
 
@@ -80,16 +78,12 @@ bench.query(dataset_name="APSFailure", tag="config_raw", config_id=20)
 # ! configs across datasets seem to be consistent!
 dataset_name = "APSFailure"
 
-configs = {
-    i: bench.query(dataset_name=dataset_name, tag="config_raw", config_id=i) for i in range(2000)
-}
+configs = {i: bench.query(dataset_name=dataset_name, tag="config_raw", config_id=i) for i in range(2000)}
 
 configs_df = pd.DataFrame.from_dict(configs, orient="index")
 
 dataset_name = "Amazon_employee_access"
-configs1 = {
-    i: bench.query(dataset_name=dataset_name, tag="config_raw", config_id=i) for i in range(2000)
-}
+configs1 = {i: bench.query(dataset_name=dataset_name, tag="config_raw", config_id=i) for i in range(2000)}
 
 configs_df1 = pd.DataFrame.from_dict(configs1, orient="index")
 assert all(configs_df1 == configs_df)

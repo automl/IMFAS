@@ -9,11 +9,11 @@ import pdb
 
 class AlgoRankMLP(nn.Module):
     def __init__(
-            self,
-            input_dim: int = 107,
-            algo_dim: int = 58,
-            hidden_dims: List[int] = [300, 200, 100],
-            device: torch.device = torch.device("cpu"),
+        self,
+        input_dim: int = 107,
+        algo_dim: int = 58,
+        hidden_dims: List[int] = [300, 200, 100],
+        device: torch.device = torch.device("cpu"),
     ):
         super(AlgoRankMLP, self).__init__()
         self.meta_features_dim = input_dim
@@ -47,12 +47,12 @@ class AlgoRankMLP(nn.Module):
     def forward(self, D):
         """
         Forward path through the meta-feature ranker
-        
+
         Args:
             D: input tensor
         Returns:
             algorithm values tensor
-        
+
         """
         return self.network(D)
 
@@ -189,9 +189,6 @@ class RankLSTM_Ensemble(nn.Module):
             readout=None,
         )
 
-
-
-
     def forward(self, dataset_meta_features, fidelities):
         """
         Forward path through the meta-feature ranker
@@ -207,10 +204,7 @@ class RankLSTM_Ensemble(nn.Module):
         shared_D = self.shared_network(dataset_meta_features)
 
         # Forward through the lstm networks to get the readouts
-        lstm_D = self.lstm_network(
-                            init_hidden=shared_D, 
-                            context=fidelities
-                        )
+        lstm_D = self.lstm_network(init_hidden=shared_D, context=fidelities)
 
         return shared_D, lstm_D
 
