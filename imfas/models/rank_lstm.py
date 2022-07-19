@@ -181,7 +181,7 @@ class RankLSTM_Ensemble(nn.Module):
         )
 
         # Build the lstms
-        self.lstm_network = RankLSTM(
+        self.seq_network = RankLSTM(
             input_dim=self.algo_dim,
             hidden_dim=self.shared_hidden_dims[-1],
             layer_dim=self.lstm_layers,
@@ -204,7 +204,7 @@ class RankLSTM_Ensemble(nn.Module):
         shared_D = self.shared_network(dataset_meta_features)
 
         # Forward through the lstm networks to get the readouts
-        lstm_D = self.lstm_network(init_hidden=shared_D, context=fidelities)
+        lstm_D = self.seq_network(init_hidden=shared_D, context=fidelities)
 
         return shared_D, lstm_D
 
@@ -215,4 +215,4 @@ if __name__ == "__main__":
     # print the network
 
     print("shared network", network.shared_network)
-    print("lstm_net", network.lstm_network)
+    print("lstm_net", network.seq_network)

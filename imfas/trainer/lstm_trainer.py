@@ -42,7 +42,7 @@ class Trainer_Ensemble_lstm:
                 # Get the loss for lstm output
                 lstm_loss = self.loss_fn(pred=lstm_D0, target=data[1][:, -1, :], **self.loss_kwargs)
 
-                self.readout.load_state_dict(self.model.lstm_network.readout.state_dict())
+                self.readout.load_state_dict(self.model.seq_network.readout.state_dict())
                 D0_rank = self.readout.forward(shared_D0.detach())
 
                 # Get the loss for lstm output

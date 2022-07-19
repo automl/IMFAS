@@ -58,6 +58,8 @@ setuptools.setup(
         "tqdm",
         "absl-py",
         "networkx",
+        "matplotlib",
+        "tables",
         "sklearn",
         "torchsort",
         "hydra-core",

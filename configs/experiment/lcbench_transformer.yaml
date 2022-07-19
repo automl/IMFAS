@@ -1,0 +1,17 @@
+# @package _global_
+defaults:
+  - override /dataset_raw: lcbench
+  - override /dataset: lcbench
+  - override /dataset/dataset_meta: lcbench_minimal
+  - override /training: lstm_ensemble
+  - override /model: rank_transformer
+
+wandb:
+  group: lcbench_vanilla_10
+  notes: 'This is a run for lstm ensemble'
+  mode: 'offline'
+
+train_batch_size: 8
+test_batch_size: 8
+
+lr: 0.0005

@@ -1,8 +1,12 @@
 from itertools import chain
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    PACKAGE_FOUND = True
+except ModuleNotFoundError:
+    PACKAGE_FOUND = False
 
 
 def ensemble(df, k, plot_regret_distribution=False):
@@ -24,6 +28,8 @@ def ensemble(df, k, plot_regret_distribution=False):
     candidate_performances = df.iloc[list(candidates)]
 
     if plot_regret_distribution:
+        if not PACKAGE_FOUND:
+            raise ModuleNotFoundError("Packages matplotlib and seaborn must be installed")
         # mean regret on taking this algo against the dataset-respective best algorithm
         regret = candidate_performances.max() - candidate_performances
         # regret.mean(axis=1)
