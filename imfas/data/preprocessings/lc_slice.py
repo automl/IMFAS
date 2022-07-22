@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 
 from imfas.data.preprocessings.table_transforms import Transform
@@ -16,7 +17,7 @@ class LC_TimeSlices(Transform):
         super().__init__(None)
         self.slices = slices
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         """
         :param X: is an Array, where the time dimension is #FIXME ???
         :return: torch.Tensor: (n_slices, n_datasets n_algorithms)

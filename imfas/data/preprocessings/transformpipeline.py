@@ -6,7 +6,7 @@ class TransformPipeline(nn.Sequential):
         super(TransformPipeline, self).__init__(*modulelist)
         self.fitted = False
 
-    def fit(self, input):
+    def fit(self, input) -> "TransformPipeline":
         """
         first time around fit & transform on training data. In the
         second run, simply use the nn.Sequentials forward method (is also its call
@@ -16,7 +16,7 @@ class TransformPipeline(nn.Sequential):
             input = module.fit(input)
 
         self.fitted = True
-        return input
+        return self
 
     def transform(self, input):
         for module in self:

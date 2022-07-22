@@ -18,15 +18,15 @@ class Transform(nn.Module):
         super().__init__()
         self.columns = columns
 
-    def fit(self, X):
+    def fit(self, X: pd.DataFrame):
         # get all the necessary statistics, that will be used in both the train and
         # test set - to ensure that the same scales are used for the transforms.
-        return
+        return self
 
-    def transform(self, X):
+    def transform(self, X: pd.DataFrame):
         # once the transformer is fit,
         # this method can be called to actually transform
-        return self.fit(X)
+        return X
 
 
 class Scalar(StandardScaler, Transform):
@@ -34,12 +34,11 @@ class Scalar(StandardScaler, Transform):
         StandardScaler.__init__(self, copy=copy, with_mean=with_mean, with_std=with_std)
         self.columns = columns
 
-    def fit(self, X):
+    def fit(self, X: pd.DataFrame):
         StandardScaler.fit(self, X[self.columns])
-        X[self.columns] = StandardScaler.transform(self, X[self.columns])
-        return X
+        return self
 
-    def transform(self, X):
+    def transform(self, X: pd.DataFrame):
         X[self.columns] = StandardScaler.transform(self, X[self.columns])
         return X
 
@@ -53,7 +52,7 @@ class ToTensor(Transform):
         super(ToTensor, self).__init__()
         self.columns = columns
 
-    def fit(self, X, dtype=torch.float32):
+    def transform(self, X: pd.DataFrame, dtype=torch.float32):
 
         # print(X.values)
         # pdb.set_trace()
@@ -68,7 +67,7 @@ class Nan_zero(Transform):
         """
         super(Nan_zero, self).__init__()
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         X.fillna(0.0, inplace=True)
 
         return X
@@ -81,7 +80,7 @@ class Nan_mean(Transform):
         """
         super(Nan_zero, self).__init__()
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         X.fillna(0.0, inplace=True)
 
         return X
@@ -96,7 +95,7 @@ class Drop(Transform):
 
         self.columns = columns
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         return X.drop(columns=self.columns)
 
 
@@ -107,7 +106,7 @@ class Convert(Transform):
         self.columns = columns
         self.dtype = dtype
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         for col in self.columns:
             if self.dtype == "int":
                 X[col] = X[col].astype(int)
@@ -123,7 +122,7 @@ class Replace(Transform):
         self.columns = columns
         self.replacedict = replacedict
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         for col in self.columns:
             X[col].replace(self.replacedict, inplace=True)
         return X

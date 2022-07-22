@@ -16,7 +16,7 @@ class ScaleStd(Transform):
         """
         super(ScaleStd, self).__init__()
 
-    def fit(self, X, dtype=torch.float32):
+    def transform(self, X, dtype=torch.float32):
 
         y = X - X.mean()
         y = y / y.norm()

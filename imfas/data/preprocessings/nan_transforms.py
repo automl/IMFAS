@@ -12,7 +12,7 @@ class Zero_fill(Transform):
         """
         super(Zero_fill, self).__init__()
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         X.fillna(0.0, inplace=True)
 
         return X
@@ -25,7 +25,7 @@ class Df_Mean(Transform):
         """
         super(Df_Mean, self).__init__()
 
-    def fit(self, X):
+    def transform(self, X: pd.DataFrame):
         X.fillna(X.mean(), inplace=True)
 
         return X
@@ -38,7 +38,7 @@ class Column_Mean(Transform):
         """
         super(Column_Mean, self).__init__()
 
-    def fit(self, X):
+    def transform(self, X:pd.DataFrame):
 
         for col in X.columns:
             X[col].fillna(X[col].mean(), inplace=True)

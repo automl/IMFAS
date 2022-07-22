@@ -17,7 +17,8 @@ class DatasetMetaFeatures(Dataset):
             if transforms.fitted:
                 self.transformed_df = self.transform.transform(self.df)
             else:
-                self.transformed_df = self.transform.fit(self.df)
+                self.transform = self.transform.fit(self.df)
+                self.transformed_df = self.transform.transform(self.df)
 
     def __len__(self):
         return len(self.transformed_df)
@@ -28,5 +29,5 @@ class DatasetMetaFeatures(Dataset):
         it is of length n_meta_features.
         """
         if not isinstance(self.transformed_df, torch.Tensor):
-            raise ValueError("You are trying to index a dataframe not tensor!")
+            raise ValueError(f"You are trying to index a {type(self.transformed_df)} not tensor!")
         return self.transformed_df[idx]
