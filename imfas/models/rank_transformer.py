@@ -72,7 +72,10 @@ class RankTransfromer(nn.Module):
                  output_dim: int,
                  dropout: float,
                  norm_first=False,
-                 readout=None):
+                 use_src_mask: bool = False,
+                 use_src_key_padding_mask: bool = False,
+                 readout=None,
+                 device: torch.device = torch.device('cpu')):
         """
         Basic implementation of a Transformer Network
 
@@ -101,6 +104,10 @@ class RankTransfromer(nn.Module):
         else:
             self.readout = readout
 
+        self.use_src_mask = use_src_mask
+        self.use_src_key_padding_mask = use_src_key_padding_mask
+
+        self.device = device
         self.double()
 
     def forward(self, init_features: torch.Tensor, context: torch.Tensor):
@@ -118,7 +125,23 @@ class RankTransfromer(nn.Module):
         context = self.positional_encoder(self.embedding_layer(context))
         # net input is located as the first element in the sequence
         net_input = torch.concat([torch.unsqueeze(init_features, 1), context], dim=1)
-        out = self.encoder.forward(net_input)
+
+        src_mask = None
+        src_key_padding_mask = None
+        if self.training:
+            if self.use_src_mask:
+                src_mask = nn.Transformer.generate_square_subsequent_mask(net_input.shape[1]).double().to(self.device)
+            if self.use_src_key_padding_mask:
+                # masked out part of the learning curves. This will force the network to do the prediction without
+                # observing the full learing curve.
+                input_shape = net_input.shape
+                batch_size = input_shape[0]
+                seq_length = input_shape[1]
+                n_reserved_data = torch.randint(1, seq_length, (batch_size, 1))
+                all_steps = torch.arange(0, seq_length)
+                src_key_padding_mask = all_steps >= n_reserved_data
+                src_key_padding_mask = src_key_padding_mask.to(self.device)
+        out = self.encoder.forward(net_input, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
 
         # Convert the last element of the lstm into values that
         # can be ranked
@@ -139,6 +162,8 @@ class RankTransformer_Ensemble(nn.Module):
             dim_feedforward: int = 256,
             dropout: float = 0.2,
             norm_first: bool = False,
+            use_src_mask: bool = False,
+            use_src_key_padding_mask: bool = True,
             device: str = "cpu",
     ):
         """
@@ -168,7 +193,11 @@ class RankTransformer_Ensemble(nn.Module):
         self.dropout = dropout
         self.norm_first = norm_first
 
+        self.use_src_mask = use_src_mask
+        self.use_src_key_padding_mask = use_src_key_padding_mask
+
         self._build_network()
+
 
     def _build_network(self):
         """
@@ -194,6 +223,9 @@ class RankTransformer_Ensemble(nn.Module):
             layer_dim=self.transformer_layers,
             output_dim=self.algo_dim,
             readout=None,
+            use_src_mask=self.use_src_mask,
+            use_src_key_padding_mask=self.use_src_key_padding_mask,
+            device=self.device
         )
 
     def forward(self, dataset_meta_features, fidelities):

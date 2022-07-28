@@ -3,6 +3,7 @@ defaults:
   - override /dataset_raw: lcbench
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
+  - override /dataset/algo_meta: lcbench_minimal
   - override /training: lstm_ensemble
   - override /model: rank_transformer
 

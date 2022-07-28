@@ -2,7 +2,7 @@ import torch
 
 
 class Trainer_Ensemble_lstm:
-    def __init__(self, model, loss_fn, ranking_fn, optimizer, test_lim=5):
+    def __init__(self, model, loss_fn, optimizer, test_lim=5):
         self.step = 0
         self.losses = {
             # 'ranking_loss': 0
@@ -10,16 +10,11 @@ class Trainer_Ensemble_lstm:
 
         self.model = model
         self.loss_fn = loss_fn
-        self.ranking_fn = ranking_fn
         self.optimizer = optimizer
         self.test_lim = test_lim
         self.readout = torch.nn.Linear(model.shared_hidden_dims[-1], model.algo_dim)
 
         # self.n_slices = self.model.n_fidelities
-
-        self.loss_kwargs = {
-            "ranking_fn": self.ranking_fn,
-        }
 
     def evaluate(self, test_dataloader):
         test_lstm_losses = []
@@ -40,13 +35,13 @@ class Trainer_Ensemble_lstm:
                 shared_D0, lstm_D0 = self.model.forward(dataset_meta_features=D0, fidelities=labels)
 
                 # Get the loss for lstm output
-                lstm_loss = self.loss_fn(pred=lstm_D0, target=data[1][:, -1, :], **self.loss_kwargs)
+                lstm_loss = self.loss_fn(input=lstm_D0, target=data[1][:, -1, :])
 
                 self.readout.load_state_dict(self.model.seq_network.readout.state_dict())
                 D0_rank = self.readout.forward(shared_D0.detach())
 
                 # Get the loss for lstm output
-                shared_loss = self.loss_fn(pred=D0_rank.detach(), target=data[1][:, -1, :], **self.loss_kwargs)
+                shared_loss = self.loss_fn(input=D0_rank.detach(), target=data[1][:, -1, :])
 
                 test_lstm_losses.append(lstm_loss)
                 test_shared_losses.append(shared_loss)
@@ -70,7 +65,7 @@ class Trainer_Ensemble_lstm:
             # calculate embedding
             shared_D0, lstm_D0 = self.model.forward(dataset_meta_features=D0, fidelities=labels)
 
-            lstm_loss = self.loss_fn(pred=lstm_D0, target=data[1][:, -1, :], **self.loss_kwargs)
+            lstm_loss = self.loss_fn(input=lstm_D0, target=data[1][:, -1, :])
             lstm_loss.backward()
 
             self.optimizer.step()

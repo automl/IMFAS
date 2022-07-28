@@ -1,11 +1,12 @@
 import pandas as pd
 from torch.utils.data import Dataset
 
+from imfas.data.preprocessings.transformpipeline import TransformPipeline
 from imfas.data.preprocessings.lc_slice import LC_TimeSlices
 
 
 class Dataset_LC(Dataset):
-    def __init__(self, path, transforms, metric: str = "None"):
+    def __init__(self, path, transforms: TransformPipeline, metric: str = "None"):
         """
         :param metric: Lcbench needs another specifier to subset the dataset.
         """
@@ -38,6 +39,7 @@ class Dataset_LC(Dataset):
                 # to get some sensible indexing going
                 self.columns = last_time_slice.columns
                 self.index = last_time_slice.index
+
 
     def __getitem__(self, item: int):
         """

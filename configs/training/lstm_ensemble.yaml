@@ -3,4 +3,5 @@ epochs: 500
 test_lim: 1
 log_freq: 3
 
+
 lr: ${lr} 

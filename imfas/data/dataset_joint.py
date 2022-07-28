@@ -1,9 +1,11 @@
+from typing import Optional
 from random import randint
 
 from torch.utils.data import Dataset
 
 from imfas.data.dataset_meta_features import DatasetMetaFeatures
 from imfas.data.lc_dataset import Dataset_LC
+from imfas.data.algorithm_meta_features import AlgorithmMetaFeatures
 
 
 # FIXME: Refactor joint - gravity, multiindex & compettitor sampling
@@ -120,7 +122,8 @@ class Dataset_Join_Split(Dataset_Join_Gravity):
 
 
 class Dataset_Join_Dmajor(Dataset):
-    def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC, meta_algo=None, split=None):
+    def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
+                 meta_algo: Optional[AlgorithmMetaFeatures]=None, split=None):
         """
         joint major dataset?
         Args:

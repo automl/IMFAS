@@ -5,7 +5,7 @@ import torchsort
 import wandb
 from tqdm import tqdm
 
-from imfas.losses.ranking_loss import spearman, weighted_spearman
+from imfas.losses.ranking_loss import SpearmanLoss, WeightedSpearman
 from imfas.trainer.lstm_trainer import Trainer_Ensemble_lstm
 
 # A logger for this file
@@ -18,19 +18,27 @@ def train_lstm(
     test_dataloader,
     epochs,
     lr,
+    loss_type='spearman',
     ranking_fn=torchsort.soft_rank,
     optimizer_cls=torch.optim.Adam,
     test_lim=5,
     log_freq=10,
 ):
     """ """
+    if loss_type == 'spearman':
+        loss_fn = SpearmanLoss(ranking_fn=ranking_fn)
+    elif loss_type == 'mse':
+        loss_fn = torch.nn.MSELoss()
+    elif loss_type == 'l1':
+        loss_fn = torch.nn.L1Loss()
+    else:
+        raise NotImplementedError(f'Unknown loss type {loss_type}')
 
     optimizer = optimizer_cls(model.parameters(), lr)
 
     trainer_kwargs = {
         "model": model,
-        "loss_fn": spearman,
-        "ranking_fn": ranking_fn,
+        "loss_fn": loss_fn,
         "optimizer": optimizer,
         "test_lim": test_lim,
     }

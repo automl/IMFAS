@@ -9,5 +9,6 @@ transforms:
     # - _target_: imfas.data.preprocessings.table_transforms.Scalar
     - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
       slices: [ 51 ]
+    # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
 
 metric: ${dataset.lc_metric}
