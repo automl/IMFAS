@@ -58,7 +58,6 @@ class PositionalEncoding(nn.Module):
             x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]  # type: ignore[misc]
         return self.dropout(x)
 
-
 from imfas.models.rank_lstm import AlgoRankMLP, RankLSTM, RankLSTM_Ensemble
 
 
@@ -133,7 +132,7 @@ class RankTransfromer(nn.Module):
                 src_mask = nn.Transformer.generate_square_subsequent_mask(net_input.shape[1]).double().to(self.device)
             if self.use_src_key_padding_mask:
                 # masked out part of the learning curves. This will force the network to do the prediction without
-                # observing the full learing curve.
+                # observing the full learning curve.
                 input_shape = net_input.shape
                 batch_size = input_shape[0]
                 seq_length = input_shape[1]
@@ -141,11 +140,12 @@ class RankTransfromer(nn.Module):
                 all_steps = torch.arange(0, seq_length)
                 src_key_padding_mask = all_steps >= n_reserved_data
                 src_key_padding_mask = src_key_padding_mask.to(self.device)
-        out = self.encoder.forward(net_input, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
+        out = self.encoder(net_input, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
 
         # Convert the last element of the lstm into values that
         # can be ranked
-        out = self.readout(out[:, -1, :])
+        # Similar to ViT, readout tout the meta-feature related data
+        out = self.readout(out[:, 0, :])
 
         return out
 

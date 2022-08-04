@@ -1,6 +1,8 @@
 from typing import Optional
 from random import randint
 
+import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 from imfas.data.dataset_meta_features import DatasetMetaFeatures
@@ -123,7 +125,7 @@ class Dataset_Join_Split(Dataset_Join_Gravity):
 
 class Dataset_Join_Dmajor(Dataset):
     def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
-                 meta_algo: Optional[AlgorithmMetaFeatures]=None, split=None):
+                 meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None):
         """
         joint major dataset?
         Args:
@@ -154,3 +156,88 @@ class Dataset_Join_Dmajor(Dataset):
 
     def __len__(self):
         return len(self.split)
+
+
+class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
+    def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
+                 meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None, is_test_set: bool = False):
+        super(Dataset_Joint_Taskswise, self).__init__()
+        lc_dims = self.lc.transformed_df.shape
+        meta_algos_dims = self.meta_algo.transformed_df.shape
+        meta_dataset_dims = self.meta_dataset.transformed_df.shape
+
+        assert lc_dims[0] == meta_dataset_dims[0], f'Number of datasets from lc and meta_dataset must equal,' \
+                                                   f'However, they are {lc_dims[0]} and {meta_algos_dims[0]}' \
+                                                   f'respectively.'
+        assert lc_dims[-1] == meta_algos_dims[0], f'Number of algorihms from lc and meta_algos_dims must equal,' \
+                                                  f'However, they are {lc_dims[0]} and {meta_algos_dims[0]}' \
+                                                  f'respectively.'
+        self.num_datasets = len(self.split)
+        self.num_algos = lc_dims[-1]
+
+        self.is_test_set = is_test_set
+        if self.is_test_set and split is None:
+            raise ValueError('If the dataset is test set, it must contain the information training sets')
+        if self.is_test_set and split is not None:
+            self.training_sets = np.setdiff1d(np.arange(lc_dims[0]), self.split)
+            if len(self.training_sets) == 0:
+                raise ValueError('If the dataset is test set, it must contain the information training sets')
+
+    """
+    A Dataset
+    """
+
+    def __getitem__(self, item):
+        """
+        This dataset returns the following items:
+        X_lc: torch.Tensor
+            learning curve of the algorithm configuration on all the meta datasets with shape [N_dataset, L, N_feature]
+        X_meta_features: torch.Tensor
+            meta features of the meta dataset with shape [N_dataset, N_metafeatures]
+        algo_features: torch.Tensor
+            algorithm features with shape [N]
+        y_meta_features: torch.Tensor
+            meta features of the test set with shape [N_dataset, N_metafeatures]
+        y_lc: torch.Tensor
+            learning curves on the test datasets with shape [N_algo, L, N_features]
+        """
+        idx_dataset = item // len(self.split)
+        algo = item % self.num_algos
+
+        if not self.is_test_set:
+            dataset_y = self.split[idx_dataset]
+            dataset_X = self.split[torch.arange(len(self.split)) != idx_dataset]
+
+        else:
+            dataset_y = self.split[idx_dataset]
+            dataset_X = self.training_sets
+
+        tgt_meta_features = self.meta_dataset.transformed_df[dataset_y]
+
+        X_meta_features = self.meta_dataset.transformed_df[dataset_X]
+        X_lc = self.lc.transformed_df[dataset_X]
+
+        query_algo_idx = torch.arange(self.num_algos) != algo
+
+        tgt_algo_feature = self.meta_algo.transformed_df[algo]
+        query_algo_features = self.meta_algo.transformed_df[query_algo_idx]
+
+        y_lc = self.lc.transformed_df[dataset_y]
+
+        tgt_algo_lc = y_lc[:, [algo]]
+        query_algo_lc = y_lc[:, query_algo_idx]
+
+        X = {'X_lc': X_lc,
+             'X_meta_features': X_meta_features,
+             'tgt_algo_feature': tgt_algo_feature,
+             'query_algo_features': query_algo_features,
+             'tgt_meta_features': tgt_meta_features,
+             'query_algo_lc': query_algo_lc
+             }
+
+        y = {'tgt_algo_lc': tgt_algo_lc}
+
+        return X, y
+
+    def __len__(self):
+        return len(self.split) * len(self.num_algos)
