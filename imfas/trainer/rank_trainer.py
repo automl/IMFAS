@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from imfas.losses.ranking_loss import SpearmanLoss, WeightedSpearman
 from imfas.trainer.lstm_trainer import Trainer_Ensemble_lstm
+from imfas.trainer.hierarchical_transformer_trainer import Trainer_Hierarchical_Transformer
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ def train_lstm(
     test_dataloader,
     epochs,
     lr,
+    trainer_type='rank_lstm',
     loss_type='spearman',
     ranking_fn=torchsort.soft_rank,
     optimizer_cls=torch.optim.Adam,
@@ -44,7 +46,12 @@ def train_lstm(
     }
 
     # Initialize the trainer
-    trainer = Trainer_Ensemble_lstm(**trainer_kwargs)
+    if trainer_type == 'rank_lstm':
+        trainer = Trainer_Ensemble_lstm(**trainer_kwargs)
+    elif trainer_type == 'hierarchical_transformer':
+        trainer = Trainer_Hierarchical_Transformer(**trainer_kwargs)
+    else:
+        raise NotImplementedError(f"Unknown trainer {trainer_type}")
 
     losses = {}
 

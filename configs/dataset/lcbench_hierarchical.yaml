@@ -1,0 +1,24 @@
+name: LCBench
+preprocessed_path: ../../../data/raw/${dataset.name}
+
+path:
+  algo_meta: ${dataset.preprocessed_path}/config_subset.csv
+  data_meta: ${dataset.preprocessed_path}/meta_features.csv
+  lc_meta: ${dataset.preprocessed_path}/logs_subset.h5
+
+lc_metric: Train/val_accuracy # to be extracted & used (see dataset_raw/lcbench for options)
+split: 0.8
+
+dataset_class:
+  _target_: imfas.data.Dataset_Joint_Taskswise
+  meta_dataset: ${dataset.dataset_meta}
+  lc: ${dataset.lc_meta}
+  meta_algo: ${dataset.algo_meta}
+
+dataloader_class:
+  _target_: torch.utils.data.DataLoader
+  batch_size: ${test_batch_size}
+  shuffle: False
+  num_workers: ${num_workers}
+
+slices: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]

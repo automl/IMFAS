@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - override /dataset_raw: lcbench
+  - override /dataset: lcbench_hierarchical
+  - override /dataset/dataset_meta: lcbench_minimal
+  - override /dataset/algo_meta: lcbench_minimal
+  - override /training: hierarchy_transformer
+  - override /model: hierarchical_transformer
+
+wandb:
+  group: lcbench_vanilla_10
+  notes: 'This is a run for lstm ensemble'
+  mode: 'offline'
+
+train_batch_size: 8
+test_batch_size: 8
+
+lr: 0.0005

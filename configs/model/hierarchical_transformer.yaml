@@ -1,0 +1,10 @@
+_target_: imfas.models.hierarchical_transformer.HierarchicalTransformer
+
+d_model: 128
+n_head: 4
+dim_feedforward: 256
+n_layers_lc: 2
+n_layers_meta: 2
+dropout: 0.2
+output_dim: 1
+norm_first: False

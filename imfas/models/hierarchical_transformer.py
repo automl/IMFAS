@@ -18,9 +18,9 @@ class HierarchicalTransformer(nn.Module):
                  dim_feedforward: int,
                  n_layers_lc: int,
                  n_layers_meta: int,
-                 output_dim: int,
                  dropout: float,
-                 norm_first: bool,
+                 output_dim: int = 1,
+                 norm_first: bool = False,
                  readout=None,
                  device: torch.device = torch.device('cpu')
                  ):
@@ -38,7 +38,7 @@ class HierarchicalTransformer(nn.Module):
 
         # Follow the implementation from pytroch-forecasting but we simplify the architectures. Given that hidden
         # embeddings might be requery by different models
-        self.flattened_grn = GatedResidualNetwork(2 * d_model, d_model, 2 * d_model, dropout, False)
+        self.flattened_grn = GatedResidualNetwork(2 * d_model, 2, 2, dropout, False)
         self.softmax = nn.Softmax(dim=-1)
 
         self.positional_encoder = PositionalEncoding(d_model=d_model, dropout=dropout)
@@ -50,6 +50,7 @@ class HierarchicalTransformer(nn.Module):
                                                    norm_first=norm_first)
 
         decoder_layer = nn.TransformerDecoderLayer(d_model=d_model,
+                                                   nhead=n_head,
                                                    dropout=dropout,
                                                    dim_feedforward=dim_feedforward,
                                                    batch_first=True,
@@ -121,13 +122,11 @@ class HierarchicalTransformer(nn.Module):
         en_feat_embeddings = en_feat_embeddings.view(batch_size * n_datasets_encoder, -1)  # [B * N_datasets, d_model]
 
         en_algo_embeddings: torch.Tensor = self.project_layer_algo_feat(tgt_algo_features)  # [B, d_model]
-        en_algo_embeddings_repeat = en_algo_embeddings.repeat(n_datasets_encoder, -1)
+        en_algo_embeddings_repeat = en_algo_embeddings.repeat(1, n_datasets_encoder)
+        en_algo_embeddings_repeat = en_algo_embeddings_repeat.view(batch_size * n_datasets_encoder, -1)
 
-        en_combined_feat = self.flattened_grn(torch.cat([en_feat_embeddings, en_algo_embeddings_repeat], dim=-1))
-        en_sparse_weights = self.softmax(en_combined_feat).unsqueeze(-2)
-
-        en_meta_embedding = (en_sparse_weights * en_combined_feat)
-        en_meta_embedding = en_meta_embedding.view(-1, 1, self.d_model)  # [B * N_datasets,1, d_model]
+        en_meta_embedding = self.select_variable(en_feat_embeddings,
+                                                 en_algo_embeddings_repeat)  # [B * N_datasets,1, d_model]
 
         X_lc = self.project_layer_lc(X_lc.view(batch_size * n_datasets_encoder, lc_length, n_lc_feat))
         X_lc = self.positional_encoder(X_lc)  # [B * N_datasets,L, d_model]
@@ -135,32 +134,27 @@ class HierarchicalTransformer(nn.Module):
         encoder_input = torch.cat([en_meta_embedding, X_lc], dim=1)
 
         # we only take the first item (meta-item) from each feature
-        encoder_output = self.lc_encoder(encoder_input).view(batch_size, n_datasets_encoder, lc_length, -1)[:, :, 0, :]
+        encoder_output = self.lc_encoder(encoder_input)
+        encoder_output = encoder_output.view(batch_size, n_datasets_encoder, 1 + lc_length, -1)[:, :, 0, :]
         encoder_output = self.meta_encoder(encoder_output)  # [batch_size, n_datasets_encoder,d_model]
 
         de_feat_embedding = self.project_layer_meta_feat(tgt_meta_features)
-        de_feat_embedding_repeat = torch.cat(
-            [de_feat_embedding[i] for i, n_algo in zip(n_query_algo)], dim=0
-        )
+        de_feat_embedding_repeat = [
+            de_f_emb.repeat(n_algo, 1) for de_f_emb, n_algo in zip(de_feat_embedding, n_query_algo)
+        ]
+        de_feat_embedding_repeat = torch.cat(de_feat_embedding_repeat, dim=0)
 
         de_algo_embeddings = self.project_layer_algo_feat(torch.cat(query_algo_features, dim=0))
-        de_combined_feat = self.flattened_grn(
-            torch.cat([de_feat_embedding_repeat, de_algo_embeddings], dim=-1))
 
-        de_sparse_weights = self.softmax(de_combined_feat).unsqueeze(-2)
-
-        de_meta_embedding = (de_sparse_weights * de_combined_feat)
-
-        de_meta_embedding = de_meta_embedding.view(-1, 1, self.d_model)  # [sum(n_algo_test_set),1, d_model]
+        de_meta_embedding = self.select_variable(de_feat_embedding_repeat,
+                                                 de_algo_embeddings)  # [sum(n_algo_test_set),1, d_model]
 
         query_algo_lc = self.project_layer_lc(torch.cat(query_algo_lc, dim=0))
         query_algo_lc = self.positional_encoder(query_algo_lc)  # [sum(n_algo_test_set),L_de, d_model]
 
         query_algo_lc = torch.cat([de_meta_embedding, query_algo_lc], dim=1)
 
-        tgt_meta_embedding = self.flattened_grn(torch.cat([de_feat_embedding, en_algo_embeddings]))
-        tgt_embedding_sparse_weights = self.softmax(tgt_meta_embedding).unsqueeze(-2)
-        tgt_meta_embedding = (tgt_embedding_sparse_weights * tgt_meta_embedding)
+        tgt_meta_embedding = self.select_variable(de_feat_embedding, en_algo_embeddings)
 
         tgt_algo_lc = self.project_layer_lc(tgt_algo_lc)
         tgt_algo_lc = self.positional_encoder(tgt_algo_lc)  # [B, L_max_lc, d_model]
@@ -169,10 +163,17 @@ class HierarchicalTransformer(nn.Module):
 
         decoder_input = torch.cat([query_algo_lc, tgt_algo_lc], dim=0)  # [sum(n_algo_test_set)+ B, L_max, d_model]
         tgt_padding_masking = torch.cat([*query_algo_padding_mask, tgt_algo_padding_mask], dim=0)
+        tgt_padding_masking = torch.cat(
+            [torch.zeros([len(tgt_padding_masking), 1], dtype=torch.bool), tgt_padding_masking], dim=1
+        )
+        encoder_output_repeat = [
+            en_o.repeat(n_algo, 1, 1) for en_o, n_algo in zip(encoder_output, n_query_algo)
+        ]
+        encoder_output_repeat = torch.cat([*encoder_output_repeat, encoder_output], dim=0)  # query + targets
 
         # [sum(n_algo_test_set) + batch_size, d_model]
         decoder_out = self.lc_decoder(tgt=decoder_input,
-                                      memory=encoder_output,
+                                      memory=encoder_output_repeat,
                                       tgt_key_padding_mask=tgt_padding_masking)[:, 0]
 
         decoder_out_query_algos = torch.split(decoder_out[:-batch_size], n_query_algo.tolist())
@@ -180,8 +181,7 @@ class HierarchicalTransformer(nn.Module):
 
         n_algo_max = torch.max(n_query_algo) + 1  # maximal number of algorithm + test algo
         # pads decoder output
-        decoder_out_padded = decoder_out_test.full_like((batch_size, n_algo_max, self.d_model),
-                                                        fill_value=0)
+        decoder_out_padded = decoder_out_test.new_full((batch_size, n_algo_max, self.d_model), fill_value=0)
         # Finally, we only read the output of the last embedding value. Thus, we pad the zero values at the beginning
         # of each sequence.
         for i, decoder_query_algos in enumerate(decoder_out_query_algos):
@@ -195,7 +195,16 @@ class HierarchicalTransformer(nn.Module):
                                                    memory=encoder_output,
                                                    tgt_key_padding_mask=tgt_mask_decoder_meta)[:, -1, :]
         prediction = self.readout(decoder_output)
-
         return prediction
+
+    def select_variable(self, feat_embedding: torch.Tensor, algo_embedding: torch.Tensor):
+        combined_feat = torch.stack([feat_embedding, algo_embedding], dim=-1)
+
+        sparse_weights = self.flattened_grn(torch.cat([feat_embedding, algo_embedding], dim=-1))
+        sparse_weights = self.softmax(sparse_weights).unsqueeze(-2)
+        meta_embedding = torch.sum(sparse_weights * combined_feat, -1)
+
+        meta_embedding = meta_embedding.view(-1, 1, self.d_model)
+        return meta_embedding
 
 

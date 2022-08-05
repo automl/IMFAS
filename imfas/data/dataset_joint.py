@@ -161,7 +161,8 @@ class Dataset_Join_Dmajor(Dataset):
 class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
     def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
                  meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None, is_test_set: bool = False):
-        super(Dataset_Joint_Taskswise, self).__init__()
+        super(Dataset_Joint_Taskswise, self).__init__(meta_dataset, lc, meta_algo)
+        self.split = np.asarray(self.split)
         lc_dims = self.lc.transformed_df.shape
         meta_algos_dims = self.meta_algo.transformed_df.shape
         meta_dataset_dims = self.meta_dataset.transformed_df.shape
@@ -207,7 +208,6 @@ class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
         if not self.is_test_set:
             dataset_y = self.split[idx_dataset]
             dataset_X = self.split[torch.arange(len(self.split)) != idx_dataset]
-
         else:
             dataset_y = self.split[idx_dataset]
             dataset_X = self.training_sets
@@ -215,11 +215,11 @@ class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
         tgt_meta_features = self.meta_dataset.transformed_df[dataset_y]
 
         X_meta_features = self.meta_dataset.transformed_df[dataset_X]
-        X_lc = self.lc.transformed_df[dataset_X]
+        X_lc = self.lc.transformed_df[dataset_X][:, :, [algo]]
 
         query_algo_idx = torch.arange(self.num_algos) != algo
 
-        tgt_algo_feature = self.meta_algo.transformed_df[algo]
+        tgt_algo_features = self.meta_algo.transformed_df[algo]
         query_algo_features = self.meta_algo.transformed_df[query_algo_idx]
 
         y_lc = self.lc.transformed_df[dataset_y]
@@ -229,7 +229,7 @@ class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
 
         X = {'X_lc': X_lc,
              'X_meta_features': X_meta_features,
-             'tgt_algo_feature': tgt_algo_feature,
+             'tgt_algo_features': tgt_algo_features,
              'query_algo_features': query_algo_features,
              'tgt_meta_features': tgt_meta_features,
              'query_algo_lc': query_algo_lc
@@ -240,4 +240,4 @@ class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
         return X, y
 
     def __len__(self):
-        return len(self.split) * len(self.num_algos)
+        return self.num_datasets * self.num_algos

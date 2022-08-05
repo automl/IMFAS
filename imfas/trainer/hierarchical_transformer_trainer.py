@@ -13,8 +13,6 @@ class Trainer_Hierarchical_Transformer:
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         self.test_lim = test_lim
-        self.readout = torch.nn.Linear(model.shared_hidden_dims[-1], model.algo_dim)
-
         # self.n_slices = self.model.n_fidelities
 
     def evaluate(self, test_dataloader):
@@ -30,16 +28,16 @@ class Trainer_Hierarchical_Transformer:
 
     def train(self, train_dataloader):
 
-        for X, y in enumerate(train_dataloader):
-            X_lc = X['X_lc']
-            X_meta_features = X['X_meta_features']
-            tgt_algo_features = X['tgt_algo_features']
-            tgt_meta_features = X['tgt_meta_features']
+        for X, y in train_dataloader:
+            X_lc = X['X_lc'].float()
+            X_meta_features = X['X_meta_features'].float()
+            tgt_algo_features = X['tgt_algo_features'].float()
+            tgt_meta_features = X['tgt_meta_features'].float()
 
-            query_algo_features = X['query_algo_features']  # [batch_size, n_query_algo], n_algo_feat
-            query_algo_lc = X['query_algo_lc']
+            query_algo_features = X['query_algo_features'].float()  # [batch_size, n_query_algo], n_algo_feat
+            query_algo_lc = X['query_algo_lc'].float()
 
-            tgt_algo_lc = y['tgt_algo_lc']  # [batch_size, L, n_query_algo]
+            tgt_algo_lc = y['tgt_algo_lc'].float()  # [batch_size, L, n_query_algo, 1]
 
             labels = tgt_algo_lc[:, -1]
 
@@ -68,19 +66,18 @@ class Trainer_Hierarchical_Transformer:
             n_reserved_lc_query = torch.randint(1, lc_length + 1, (n_query_lc, 1))
             query_algo_padding_mask = torch.arange(0, lc_length) >= n_reserved_lc_query
 
-            query_algo_lc = ~query_algo_padding_mask * query_algo_lc
+            query_algo_lc = ~query_algo_padding_mask.unsqueeze(-1) * query_algo_lc
 
             n_query_algos_all_list = n_query_algos.tolist()
             query_algo_features = torch.split(query_algo_features, n_query_algos_all_list)
             query_algo_lc = torch.split(query_algo_lc, n_query_algos_all_list)
-
-            tgt_algo_lc: torch.Tensor = tgt_algo_lc.unsqueeze(-1)  # [batch_size, L, 1]
+            query_algo_padding_mask = torch.split(query_algo_padding_mask, n_query_algos_all_list)
 
             # same as above, mask the learning curve of the target algorithm. However, we allow zero evaluations while
             # the full fidelity value should not be presented here
             n_reserved_lc_target = torch.randint(0, lc_length, (batch_size, 1))
             tgt_algo_padding_mask = torch.arange(0, lc_length) >= n_reserved_lc_target
-            tgt_algo_lc = ~tgt_algo_padding_mask * tgt_algo_lc
+            tgt_algo_lc = ~tgt_algo_padding_mask.unsqueeze(-1) * tgt_algo_lc
 
             self.optimizer.zero_grad()
             # Dataset meta features and final  slice labels

@@ -99,11 +99,17 @@ def pipe_train(cfg: DictConfig) -> None:
     # update the input dims and number of algos based on the sampled stuff
     # if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
     if not cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
-        input_dim = dataset_meta_features.df.columns.size
+        n_meta_feature = dataset_meta_features.df.columns.size
         n_algos = len(train_set.lc.index)
-
-        wandb.config.update({"n_algos": n_algos, "input_dim": input_dim})
-        model = instantiate(cfg.model, input_dim=input_dim, algo_dim=n_algos)
+        wandb.config.update({"n_algos": n_algos, "n_meta_feature": n_meta_feature})
+        if cfg.model._target_ == 'imfas.models.hierarchical_transformer.HierarchicalTransformer':
+            n_algo_features = train_set.meta_algo.transformed_df.shape[-1]
+            model = instantiate(cfg.model,
+                                input_dim_meta_feat=n_meta_feature,
+                                input_dim_algo_feat=n_algo_features,
+                                input_dim_lc=1)
+        else:
+            model = instantiate(cfg.model, input_dim=n_meta_feature, algo_dim=n_algos)
 
         valid_score = call(
             cfg.training,
