@@ -206,5 +206,3 @@ class HierarchicalTransformer(nn.Module):
 
         meta_embedding = meta_embedding.view(-1, 1, self.d_model)
         return meta_embedding
-
-

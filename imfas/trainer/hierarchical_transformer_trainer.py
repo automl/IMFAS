@@ -27,7 +27,6 @@ class Trainer_Hierarchical_Transformer:
         self.step += 1
 
     def train(self, train_dataloader):
-
         for X, y in train_dataloader:
             X_lc = X['X_lc'].float()
             X_meta_features = X['X_meta_features'].float()

@@ -202,8 +202,8 @@ class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
         y_lc: torch.Tensor
             learning curves on the test datasets with shape [N_algo, L, N_features]
         """
-        idx_dataset = item // len(self.split)
-        algo = item % self.num_algos
+        idx_dataset = item % self.num_datasets
+        algo = item // self.num_datasets
 
         if not self.is_test_set:
             dataset_y = self.split[idx_dataset]

@@ -93,7 +93,7 @@ def pipe_train(cfg: DictConfig) -> None:
     train_set = instantiate(cfg.dataset.dataset_class, split=train_split)
     test_set = instantiate(cfg.dataset.dataset_class, split=test_split)
 
-    train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set)
+    train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set, shuffle=True)
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
     # update the input dims and number of algos based on the sampled stuff
