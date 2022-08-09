@@ -16,10 +16,12 @@ class ScaleStd(Transform):
         """
         super(ScaleStd, self).__init__()
 
-    def transform(self, X, dtype=torch.float32):
-        y = X - X.mean()
-        y = y / y.norm()
-
+    def transform(self, X: torch.Tensor, dtype=torch.float32):
+        x_mean = torch.mean(X, dim=0)
+        x_std = torch.std(X, dim=0)
+        x_std = torch.where(x_std == 0, x_mean, x_std)
+        x_std[x_std < 1e-12] = 1.
+        y = (X - x_mean) / x_std
         return y
 
 
