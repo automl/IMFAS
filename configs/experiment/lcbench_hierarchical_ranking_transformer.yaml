@@ -1,10 +1,10 @@
 # @package _global_
 defaults:
   - override /dataset_raw: lcbench
-  - override /dataset: lcbench_hierarchical
+  - override /dataset: lcbench_hierarchical_ranking
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
-  - override /training: hierarchical_transformer
+  - override /training: hierarchical_transformer_ranking
   - override /model: hierarchical_transformer
 
 wandb:

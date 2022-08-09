@@ -44,3 +44,10 @@ class Column_Mean(Transform):
             X[col].fillna(X[col].mean(), inplace=True)
 
         return X
+
+
+class Column_Ffill(Transform):
+    def transform(self, X:pd.DataFrame):
+        X_t = X.T.fillna(method='ffill', inplace=True)
+        X_t = X_t.fillna(method='bfill', inplace=True)
+        return X_t.T

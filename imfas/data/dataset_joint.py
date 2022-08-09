@@ -241,3 +241,53 @@ class Dataset_Joint_Taskswise(Dataset_Join_Dmajor):
 
     def __len__(self):
         return self.num_datasets * self.num_algos
+
+
+class Dataset_Joint_TaskswiseRanking(Dataset_Joint_Taskswise):
+    """
+    A Dataset for computing the ranking losses. This dataset is quite similar to the vanilla Taskswise Dataset. however,
+    each of its item contain the learning curves of all the algorithms
+    """
+
+    def __getitem__(self, item):
+        """
+        This dataset returns the following items:
+        X_lc: torch.Tensor
+            learning curve of all the algorithm configuration on all the meta datasets with shape
+            [N_dataset, L, N_algos]
+        X_meta_features: torch.Tensor
+            meta features of the meta dataset with shape [N_dataset, N_metafeatures]
+        algo_features: torch.Tensor
+            algorithm features with shape [N_algo, N_algofeatures]
+        y_meta_features: torch.Tensor
+            meta features of the test set with shape [N_dataset, N_metafeatures]
+        y_lc: torch.Tensor
+            learning curves on the test datasets with shape [N_algo, L, N_features]
+        """
+        if not self.is_test_set:
+            dataset_y = self.split[item]
+            dataset_X = self.split[torch.arange(len(self.split)) != item]
+        else:
+            dataset_y = self.split[item]
+            dataset_X = self.training_sets
+
+        tgt_meta_features = self.meta_dataset.transformed_df[dataset_y]
+
+        X_meta_features = self.meta_dataset.transformed_df[dataset_X]
+        X_lc = self.lc.transformed_df[dataset_X]
+
+        algo_features = self.meta_algo.transformed_df
+        y_lc = self.lc.transformed_df[dataset_y]
+
+        X = {'X_lc': X_lc,
+             'X_meta_features': X_meta_features,
+             'algo_features': algo_features,
+             'tgt_meta_features': tgt_meta_features,
+             }
+
+        y = {'y_lc': y_lc}
+
+        return X, y
+
+    def __len__(self):
+        return self.num_datasets

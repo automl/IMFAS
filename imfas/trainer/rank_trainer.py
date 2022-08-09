@@ -7,7 +7,10 @@ from tqdm import tqdm
 
 from imfas.losses.ranking_loss import SpearmanLoss, WeightedSpearman
 from imfas.trainer.lstm_trainer import Trainer_Ensemble_lstm
-from imfas.trainer.hierarchical_transformer_trainer import Trainer_Hierarchical_Transformer
+from imfas.trainer.hierarchical_transformer_trainer import (
+    Trainer_Hierarchical_Transformer,
+    Trainer_Hierarchical_TransformerRankingLoss
+)
 
 # A logger for this file
 log = logging.getLogger(__name__)
@@ -49,7 +52,10 @@ def train_lstm(
     if trainer_type == 'rank_lstm':
         trainer = Trainer_Ensemble_lstm(**trainer_kwargs)
     elif trainer_type == 'hierarchical_transformer':
-        trainer = Trainer_Hierarchical_Transformer(**trainer_kwargs)
+        if loss_type == 'spearman':
+            trainer = Trainer_Hierarchical_TransformerRankingLoss(**trainer_kwargs)
+        else:
+            trainer = Trainer_Hierarchical_Transformer(**trainer_kwargs)
     else:
         raise NotImplementedError(f"Unknown trainer {trainer_type}")
 
