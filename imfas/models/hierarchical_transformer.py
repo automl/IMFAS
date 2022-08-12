@@ -22,7 +22,7 @@ class HierarchicalTransformer(nn.Module):
                  norm_first: bool = False,
                  mask_uncorrelated_lcs: bool = True,
                  readout=None,
-                 device: torch.device = torch.device('cuda')
+                 device: str = 'cuda'
                  ):
         """
         Hierarchical Transformer. both encoder layers and decoder layers are composed of two parts:
@@ -36,7 +36,9 @@ class HierarchicalTransformer(nn.Module):
         super(HierarchicalTransformer, self).__init__()
         self.d_model = d_model
         self.output_dim = output_dim
-        self.device = device
+        if device == 'cuda' and not torch.cuda.is_available():
+            device = 'cpu'
+        self.device = torch.device(device)
         self.readout = readout if readout is not None else nn.Linear(d_model, output_dim)
 
         self.project_layer_meta_feat = nn.Identity() \

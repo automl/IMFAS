@@ -13,8 +13,11 @@ import os
 import random
 import string
 import sys
+import getpass
+from pathlib import Path
+import shutil
 
-import pdb
+import torch
 
 import wandb
 from hydra.utils import get_original_cwd
@@ -39,6 +42,8 @@ def pipe_train(cfg: DictConfig) -> None:
     sys.path.append(os.getcwd())
     sys.path.append("..")
     print("base_dir: ", base_dir)
+
+    save_trained_models = True
 
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
     print_cfg(cfg)
@@ -96,6 +101,13 @@ def pipe_train(cfg: DictConfig) -> None:
     train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set, shuffle=True)
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
 
+    dataset_name = cfg.dataset.name
+    model_name = cfg.model._target_.split('.')[-1]
+
+    if save_trained_models:
+        model_path = Path('/home') / getpass.getuser() / 'tmp' / 'IFMAS' / 'models' / \
+                     dataset_name / model_name / cfg.training.loss_type / str(cfg.seed)
+
     # update the input dims and number of algos based on the sampled stuff
     # if "n_algos" not in cfg.dataset_raw.keys() and cfg.dataset.name != "LCBench":
     if not cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
@@ -119,6 +131,12 @@ def pipe_train(cfg: DictConfig) -> None:
             _recursive_=False,
         )
 
+        if save_trained_models:
+            if not model_path.exists():
+                os.makedirs(str(model_path), exist_ok=True)
+            torch.save(model.state_dict(), str(model_path / 'model_weights.pt'))
+        exit()
+
     else:
 
         if cfg.dataset.name == "LCBench":
@@ -131,7 +149,7 @@ def pipe_train(cfg: DictConfig) -> None:
         for d in tqdm(test_split):
             # indexed with 0 and slices.split holds the relevant data id already!
             cfg.model.estimator.slices.split = [d]
-            model = instantiate(cfg.model, _convert_="partial")
+            model: torch.nn.Module = instantiate(cfg.model, _convert_="partial")
 
             # fixme: validation score should not be computed during training!
             valid_score = call(
