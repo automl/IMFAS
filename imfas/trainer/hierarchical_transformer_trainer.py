@@ -18,6 +18,7 @@ class Trainer_Hierarchical_Transformer:
         self.optimizer = optimizer
         self.test_lim = test_lim
         # self.n_slices = self.model.n_fidelities
+        self.model.to(self.model.device)
 
     def evaluate(self, test_dataloader):
         test_lstm_losses = []
@@ -85,13 +86,19 @@ class Trainer_Hierarchical_Transformer:
             self.optimizer.zero_grad()
             # Dataset meta features and final  slice labels
 
-            predict = self.model(X_lc, X_meta_features, tgt_algo_features=tgt_algo_features,
-                                 tgt_meta_features=tgt_meta_features, query_algo_features=query_algo_features,
-                                 n_query_algo=n_query_algos, query_algo_lc=query_algo_lc,
-                                 query_algo_padding_mask=query_algo_padding_mask, tgt_algo_lc=tgt_algo_lc,
-                                 tgt_algo_padding_mask=tgt_algo_padding_mask)
+            device = self.model.device
 
-            lstm_loss = self.loss_fn(input=predict, target=labels)
+            predict = self.model(X_lc.to(device), X_meta_features.to(device),
+                                 tgt_algo_features=tgt_algo_features.to(device),
+                                 tgt_meta_features=tgt_meta_features.to(device),
+                                 query_algo_features=query_algo_features.to(device),
+                                 n_query_algo=n_query_algos,
+                                 query_algo_lc=query_algo_lc.to(device),
+                                 query_algo_padding_mask=query_algo_padding_mask.to(device),
+                                 tgt_algo_lc=tgt_algo_lc.to(device),
+                                 tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
+
+            lstm_loss = self.loss_fn(input=predict, target=labels.to(device))
             lstm_loss.backward()
 
             self.optimizer.step()
@@ -237,12 +244,16 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
 
             self.optimizer.zero_grad()
             # Dataset meta features and final  slice labels
+            device = self.model.device
 
-            predict = self.model(X_lc, X_meta_features, tgt_algo_features=tgt_algo_features,
-                                 tgt_meta_features=tgt_meta_features, query_algo_features=query_algo_features,
-                                 n_query_algo=n_query_algos, query_algo_lc=query_algo_lc,
-                                 query_algo_padding_mask=query_algo_padding_mask, tgt_algo_lc=tgt_algo_lc,
-                                 tgt_algo_padding_mask=tgt_algo_padding_mask)
+            predict = self.model(X_lc.to(device), X_meta_features.to(device),
+                                 tgt_algo_features=tgt_algo_features.to(device),
+                                 tgt_meta_features=tgt_meta_features.to(device),
+                                 query_algo_features=query_algo_features.to(device),
+                                 n_query_algo=n_query_algos,
+                                 query_algo_lc=query_algo_lc.to(device),
+                                 query_algo_padding_mask=query_algo_padding_mask.to(device), tgt_algo_lc=tgt_algo_lc.to(device),
+                                 tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
 
             lstm_loss = self.loss_fn(input=predict.view(batch_size, n_algos), target=target)
             lstm_loss.backward()

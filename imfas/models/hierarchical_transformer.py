@@ -20,9 +20,19 @@ class HierarchicalTransformer(nn.Module):
                  dropout: float,
                  output_dim: int = 1,
                  norm_first: bool = False,
+                 mask_uncorrelated_lcs: bool = True,
                  readout=None,
-                 device: torch.device = torch.device('cpu')
+                 device: torch.device = torch.device('cuda')
                  ):
+        """
+        Hierarchical Transformer. both encoder layers and decoder layers are composed of two parts:
+        the first part only do attention for each individual learning curves. Then the second part do attention across
+        the embedded information across different datasets/ algos combination
+        Args:
+            mask_uncorrelated_lcs: bool, if we want to mask the uncorrelated learning curves between encoders and
+                decoders. This could be set as True if we don't want the attention correlation on the learning curves
+                that come from different algorithms and datasets
+        """
         super(HierarchicalTransformer, self).__init__()
         self.d_model = d_model
         self.output_dim = output_dim
@@ -54,6 +64,7 @@ class HierarchicalTransformer(nn.Module):
                                                    dim_feedforward=dim_feedforward,
                                                    batch_first=True,
                                                    )
+        self.mask_uncorrelated_lcs = mask_uncorrelated_lcs
 
         self.lc_encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers_lc)
         self.meta_encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers_meta)
@@ -115,10 +126,10 @@ class HierarchicalTransformer(nn.Module):
         lc_length = data_shape[2]
         n_lc_feat = data_shape[3]
 
-        if isinstance(query_algo_lc, list):
-            assert len(query_algo_lc) == batch_size
-        else:
-            assert len(query_algo_lc) == sum(n_query_algo)
+        #if isinstance(query_algo_lc, list):
+        #    assert len(query_algo_lc) == batch_size
+        #else:
+        #    assert len(query_algo_lc) == sum(n_query_algo)
 
         en_feat_embeddings = self.project_layer_meta_feat(X_meta_features)
         en_feat_embeddings = en_feat_embeddings.view(batch_size * n_datasets_encoder, -1)  # [B * N_datasets, d_model]
@@ -183,12 +194,25 @@ class HierarchicalTransformer(nn.Module):
         else:
             tgt_padding_masking = torch.cat([query_algo_padding_mask, tgt_algo_padding_mask], dim=0)
         tgt_padding_masking = torch.cat(
-            [torch.zeros([len(tgt_padding_masking), 1], dtype=torch.bool), tgt_padding_masking], dim=1
+            [torch.zeros([len(tgt_padding_masking), 1], dtype=torch.bool, device=self.device), tgt_padding_masking], dim=1
         )
-        encoder_output_repeat = [
-            en_o.repeat(n_algo, 1, 1) for en_o, n_algo in zip(encoder_output, n_query_algo)
-        ]
-        encoder_output_repeat = torch.cat([*encoder_output_repeat, encoder_output], dim=0)  # query + targets
+
+        if self.mask_uncorrelated_lcs:
+            n_query_algos_total = torch.sum(n_query_algo)
+            encoder_output_repeat = encoder_output.new_full((n_query_algos_total, *encoder_output.shape[1:]),
+                                                            fill_value=0)
+            encoder_output_repeat = torch.cat([encoder_output_repeat, encoder_output], dim=0)  # query + targets
+            memory_key_padding_mask = torch.cat(
+                [torch.ones(n_query_algos_total, encoder_output.shape[1], dtype=torch.bool),
+                 torch.zeros(encoder_output.shape[0], encoder_output.shape[1], dtype=torch.bool)],
+                dim=0,
+            ).to(self.device)
+        else:
+            encoder_output_repeat = [
+                en_o.repeat(n_algo, 1, 1) for en_o, n_algo in zip(encoder_output, n_query_algo)
+            ]
+            encoder_output_repeat = torch.cat([*encoder_output_repeat, encoder_output], dim=0)  # query + targets
+            memory_key_padding_mask = None
 
         # assert torch.all(encoder_output_repeat[0] == encoder_output_repeat[1])
         # assert torch.any(encoder_output_repeat[0] != encoder_output_repeat[n_query_algo[0]])
@@ -196,6 +220,7 @@ class HierarchicalTransformer(nn.Module):
         # [sum(n_algo_test_set) + batch_size, d_model]
         decoder_out = self.lc_decoder(tgt=decoder_input,
                                       memory=encoder_output_repeat,
+                                      memory_key_padding_mask=memory_key_padding_mask,
                                       tgt_key_padding_mask=tgt_padding_masking)[:, 0]
 
         decoder_out_query_algos = torch.split(decoder_out[:-batch_size], n_query_algo.tolist())
@@ -212,10 +237,21 @@ class HierarchicalTransformer(nn.Module):
 
         tgt_mask_decoder_meta = torch.arange(0, n_algo_max)
         tgt_mask_decoder_meta = tgt_mask_decoder_meta < (n_algo_max - n_query_algo.unsqueeze(-1) - 1)
+        tgt_mask_decoder_meta = tgt_mask_decoder_meta.to(self.device)
+        if self.mask_uncorrelated_lcs:
+            l_encoder = encoder_output.shape[1]
+            l_decoder = decoder_out_padded.shape[1]
+            memory_mask = torch.cat(
+                [torch.ones(l_decoder - 1, l_encoder, dtype=torch.bool),
+                 torch.zeros(1, l_encoder, dtype=torch.bool)],
+                dim=0).to(self.device)
+        else:
+            memory_mask = None
 
-        decoder_output = self.meta_decoder.forward(decoder_out_padded,
-                                                   memory=encoder_output,
-                                                   tgt_key_padding_mask=tgt_mask_decoder_meta)[:, -1, :]
+        decoder_output = self.meta_decoder(decoder_out_padded,
+                                           memory=encoder_output,
+                                           memory_mask=memory_mask,
+                                           tgt_key_padding_mask=tgt_mask_decoder_meta)[:, -1, :]
         prediction = self.readout(decoder_output)
         return prediction
 
