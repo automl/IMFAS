@@ -136,12 +136,12 @@ class HierarchicalTransformer(nn.Module):
             n_query_algo: torch.IntTensor,
                 number of algorithm configurations that are evaluated on the test set (which contain the learning
                 curve information)
-            query_algo_lc: Optional[List[torch.Tensor]]
+            query_algo_lc: Union[List[torch.Tensor], torch.Tensor]
                 learning curves of query algorithms on the target datasets,a list of tensors. Each element in the list
                 contains the learning curve of the query algorithms on the target dataset. The learning curves is a
                 tensor of shape [n_algo_i, L_max_lc, N_lcfeat]. n_algo_i is the number of evaluated configurations on
                 task i. L_max_lc is the maximal length of the learning curves evaluated that will be fed to the decoder
-            query_algo_padding_mask: Optional[List[torch.Tensor]]
+            query_algo_padding_mask: Union[List[torch.Tensor], torch.Tensor]
                 padding masks of query algorithms on the target datasets to indicate the incomplete learning curves
             tgt_algo_lc: torch.Tensor,
                 learning curve of the target HP setting on test set with shape [B, L_max_lc, N_features]
