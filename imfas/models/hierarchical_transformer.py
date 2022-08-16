@@ -1,3 +1,4 @@
+import pdb
 from typing import Optional, List, Union
 
 import torch
@@ -22,16 +23,29 @@ class HierarchicalTransformer(nn.Module):
                  norm_first: bool = False,
                  mask_uncorrelated_lcs: bool = True,
                  readout=None,
-                 device: str = 'cuda'
+                 incorporate_tgt_length_to_encoder: bool = False,
+                 incorporate_tgt_meta_features_to_encoder: bool = False,
+                 device: str = 'cpu'
                  ):
         """
         Hierarchical Transformer. both encoder layers and decoder layers are composed of two parts:
         the first part only do attention for each individual learning curves. Then the second part do attention across
         the embedded information across different datasets/ algos combination
         Args:
-            mask_uncorrelated_lcs: bool, if we want to mask the uncorrelated learning curves between encoders and
-                decoders. This could be set as True if we don't want the attention correlation on the learning curves
-                that come from different algorithms and datasets
+            mask_uncorrelated_lcs: bool,
+                if we want to mask the uncorrelated learning curves between encoders and decoders. This could be set as
+                True if we don't want the attention correlation on the learning curves that come from different
+                algorithms and datasets
+            incorporate_tgt_length_to_encoder: bool,
+                if we want to incorporate the information of the target length to the encoder (to variable selection
+                network)
+            incorporate_tgt_meta_features_to_encoder: bool,
+                if we want to incorporate the information of the target algorithms features to the encoder
+                TODO There are two ways of implementing this:
+                  the first one is to feed it to the variable selection network
+                  the second one is to compute the difference of the embedded meta features between the target datasets
+                  and the meta dataset
+                  as a first step, we select the first approach
         """
         super(HierarchicalTransformer, self).__init__()
         self.d_model = d_model
@@ -49,7 +63,19 @@ class HierarchicalTransformer(nn.Module):
 
         # Follow the implementation from pytroch-forecasting but we simplify the architectures. Given that hidden
         # embeddings might be requery by different models
-        self.flattened_grn = GatedResidualNetwork(2 * d_model, 2, 2, dropout, False)
+        self.incorporate_tgt_length_to_encoder = incorporate_tgt_length_to_encoder
+        self.incorporate_tgt_meta_features_to_encoder = incorporate_tgt_meta_features_to_encoder
+
+        n_var_encoder = 2
+        if self.incorporate_tgt_length_to_encoder:
+            self.project_layer_length = nn.Linear(1, d_model)
+            n_var_encoder += 1
+        if self.incorporate_tgt_meta_features_to_encoder:
+            n_var_encoder += 1
+
+        self.flattened_grn_encoder = GatedResidualNetwork(n_var_encoder * d_model, n_var_encoder, n_var_encoder,
+                                                          dropout, False)
+        self.flattened_grn_decoder = GatedResidualNetwork(2 * d_model, 2, 2, dropout, False)
         self.softmax = nn.Softmax(dim=-1)
 
         self.positional_encoder = PositionalEncoding(d_model=d_model, dropout=dropout)
@@ -146,8 +172,19 @@ class HierarchicalTransformer(nn.Module):
         # assert torch.all(en_algo_embeddings_repeat[0] == en_algo_embeddings_repeat[1])
         # assert torch.any(en_algo_embeddings_repeat[0] != en_algo_embeddings_repeat[n_datasets_encoder])
 
-        en_meta_embedding = self.select_variable(en_feat_embeddings,
-                                                 en_algo_embeddings_repeat)  # [B * N_datasets,1, d_model]
+        de_feat_embedding = self.project_layer_meta_feat(tgt_meta_features)
+
+        encoder_meta_variables = [en_feat_embeddings, en_algo_embeddings_repeat]
+        if self.incorporate_tgt_meta_features_to_encoder:
+            encoder_meta_variables.append(de_feat_embedding.repeat(n_datasets_encoder, 1))
+        if self.incorporate_tgt_length_to_encoder:
+            tgt_lc_length = torch.sum(~tgt_algo_padding_mask, dim=1, keepdim=True) / lc_length  # to scale them back to [0,1]
+
+            tgt_lc_length_embedding = self.project_layer_length(tgt_lc_length)
+            encoder_meta_variables.append(tgt_lc_length_embedding.repeat(n_datasets_encoder, 1))
+
+        en_meta_embedding = self.select_variable(encoder_meta_variables,
+                                                 self.flattened_grn_encoder)  # [B * N_datasets,1, d_model]
 
         X_lc = self.project_layer_lc(X_lc.view(batch_size * n_datasets_encoder, lc_length, n_lc_feat))
         X_lc = self.positional_encoder(X_lc)  # [B * N_datasets,L, d_model]
@@ -159,7 +196,6 @@ class HierarchicalTransformer(nn.Module):
         encoder_output = encoder_output.view(batch_size, n_datasets_encoder, 1 + lc_length, -1)[:, :, 0, :]
         encoder_output = self.meta_encoder(encoder_output)  # [batch_size, n_datasets_encoder,d_model]
 
-        de_feat_embedding = self.project_layer_meta_feat(tgt_meta_features)
         de_feat_embedding_repeat = [
             de_f_emb.repeat(n_algo, 1) for de_f_emb, n_algo in zip(de_feat_embedding, n_query_algo)
         ]
@@ -172,8 +208,8 @@ class HierarchicalTransformer(nn.Module):
             query_algo_features = torch.cat(query_algo_features, dim=0)
         de_algo_embeddings = self.project_layer_algo_feat(query_algo_features)
 
-        de_meta_embedding = self.select_variable(de_feat_embedding_repeat,
-                                                 de_algo_embeddings)  # [sum(n_algo_test_set),1, d_model]
+        de_meta_embedding = self.select_variable([de_feat_embedding_repeat, de_algo_embeddings],
+                                                 self.flattened_grn_decoder)  # [sum(n_algo_test_set),1, d_model]
 
         if isinstance(query_algo_lc, list):
             query_algo_lc = torch.cat(query_algo_lc, dim=0)
@@ -183,7 +219,7 @@ class HierarchicalTransformer(nn.Module):
 
         query_algo_lc = torch.cat([de_meta_embedding, query_algo_lc], dim=1)
 
-        tgt_meta_embedding = self.select_variable(de_feat_embedding, en_algo_embeddings)
+        tgt_meta_embedding = self.select_variable([de_feat_embedding, en_algo_embeddings], self.flattened_grn_decoder)
 
         tgt_algo_lc = self.project_layer_lc(tgt_algo_lc)
         tgt_algo_lc = self.positional_encoder(tgt_algo_lc)  # [B, L_max_lc, d_model]
@@ -257,10 +293,10 @@ class HierarchicalTransformer(nn.Module):
         prediction = self.readout(decoder_output)
         return prediction
 
-    def select_variable(self, feat_embedding: torch.Tensor, algo_embedding: torch.Tensor):
-        combined_feat = torch.stack([feat_embedding, algo_embedding], dim=-1)
+    def select_variable(self, input_variables: List[torch.Tensor], flattened_grn: nn.Module):
+        combined_feat = torch.stack(input_variables, dim=-1)
 
-        sparse_weights = self.flattened_grn(torch.cat([feat_embedding, algo_embedding], dim=-1))
+        sparse_weights = flattened_grn(torch.cat(input_variables, dim=-1))
         sparse_weights = self.softmax(sparse_weights).unsqueeze(-2)
         meta_embedding = torch.sum(sparse_weights * combined_feat, -1)
 
