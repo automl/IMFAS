@@ -20,12 +20,14 @@ class Trainer_Hierarchical_Transformer:
         # self.n_slices = self.model.n_fidelities
         self.model.to(self.model.device)
 
-    def evaluate(self, test_dataloader):
+    @staticmethod
+    def evaluate(model, loss_fn,test_dataloader, test_lim):
         test_lstm_losses = []
         test_shared_losses = []
 
         for X, y in enumerate(test_dataloader):
             # TODO write the evaluation parts
+
             pass
 
     def step_next(self):
@@ -108,7 +110,7 @@ class Trainer_Hierarchical_Transformer:
                              n_lc: int,
                              lc_length: int,
                              lower: int,
-                             upper: int,) -> Tuple[torch.Tensor, torch.BoolTensor]:
+                             upper: int, ) -> Tuple[torch.Tensor, torch.BoolTensor]:
         """
         mask the learning curves with 0. The masked learning curve has length between [lower, uppper)
         Args:
@@ -139,6 +141,7 @@ class Trainer_Hierarchical_Transformer:
 
 class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transformer):
     """Hierarchical Transformer to be trained with Ranking Loss"""
+
     def __init__(self, model: HierarchicalTransformer, loss_fn, optimizer, test_lim=5):
         super(Trainer_Hierarchical_TransformerRankingLoss, self).__init__(model, loss_fn, optimizer, test_lim)
         assert isinstance(loss_fn, (imfas.losses.ranking_loss.SpearmanLoss,
@@ -148,7 +151,7 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
         for X, y in train_dataloader:
             X_lc = X['X_lc'].float()  # [batch_size, n_dataset, lc_length, n_algos]
             X_meta_features = X['X_meta_features'].float()  # [batch_size, n_dataset, n_meta_features]
-            algo_features = X['algo_features'].float()   # [batch_size, n_algos, n_algo_features]
+            algo_features = X['algo_features'].float()  # [batch_size, n_algos, n_algo_features]
             tgt_meta_features = X['tgt_meta_features'].float()  # [batch_size, n_meta_features]
             y_lc = y['y_lc'].float()
 
@@ -252,10 +255,83 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
                                  query_algo_features=query_algo_features.to(device),
                                  n_query_algo=n_query_algos,
                                  query_algo_lc=query_algo_lc.to(device),
-                                 query_algo_padding_mask=query_algo_padding_mask.to(device), tgt_algo_lc=tgt_algo_lc.to(device),
+                                 query_algo_padding_mask=query_algo_padding_mask.to(device),
+                                 tgt_algo_lc=tgt_algo_lc.to(device),
                                  tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
 
             lstm_loss = self.loss_fn(input=predict.view(batch_size, n_algos), target=target)
             lstm_loss.backward()
 
             self.optimizer.step()
+
+    @staticmethod
+    def evaluate(model, loss_fn,test_dataloader, test_lim):
+        test_lstm_losses = []
+        test_shared_losses = []
+
+        for X, y in test_dataloader:
+            # TODO write the evaluation parts
+            X_lc = X['X_lc'].float()  # [batch_size, n_dataset, lc_length, n_algos]
+            X_meta_features = X['X_meta_features'].float()  # [batch_size, n_dataset, n_meta_features]
+            algo_features = X['algo_features'].float()  # [batch_size, n_algos, n_algo_features]
+            tgt_meta_features = X['tgt_meta_features'].float()  # [batch_size, n_meta_features]
+            y_lc = y['y_lc'].float()
+
+            target = y_lc[:, -1, :]
+
+            encoder_input_shape = X_lc.shape
+
+            batch_size = encoder_input_shape[0]
+            n_datasets = encoder_input_shape[1]
+            lc_length = encoder_input_shape[2]
+            n_algos = encoder_input_shape[3]
+
+            X_lc = torch.permute(X_lc, (0, 3, 1, 2)).reshape([batch_size * n_algos, n_datasets, lc_length, 1])
+
+            X_meta_features = X_meta_features.repeat_interleave(n_algos, dim=0).view(batch_size * n_algos,
+                                                                                     n_datasets, -1)
+            tgt_meta_features = tgt_meta_features.repeat_interleave(n_algos, dim=0)
+            tgt_algo_features = algo_features.reshape([batch_size * n_algos, -1])
+
+            y_lc = torch.permute(y_lc, (0, 2, 1)).reshape([batch_size, n_algos, lc_length, 1])
+
+            # first step: same setting as IMFAS pure rank correlation: all the test sets have the same length
+            y_algo_features = algo_features.view(batch_size * n_algos, -1)
+
+            y_lc_padding_masks = torch.arange(0, lc_length) >= test_lim
+            y_lc = ~y_lc_padding_masks.unsqueeze(-1) * y_lc
+
+            n_query_algos = torch.Tensor([n_algos - 1] * batch_size, )
+
+            n_query_tgt_lcs = n_algos * n_algos
+
+            lc_query_tgt = y_lc.repeat(1, n_algos, 1, 1).view(batch_size, n_query_tgt_lcs, lc_length, 1)
+            mask_query_tgt = y_lc_padding_masks.repeat(batch_size * n_query_tgt_lcs).view(batch_size, -1, lc_length)
+
+            tgt_index = torch.arange(n_algos) + torch.arange(n_algos) * n_algos
+            lc_from_query = torch.ones(n_query_tgt_lcs, dtype=torch.bool)
+            lc_from_query[tgt_index] = False
+            lc_from_tgt = ~lc_from_query
+
+            query_algo_lc = lc_query_tgt[:, lc_from_query].view(-1, lc_length, 1)
+            query_algo_padding_mask = mask_query_tgt[:, lc_from_query].view(-1, lc_length)
+
+            query_algo_features = algo_features.repeat(1, n_algos, 1)[:, lc_from_query].view(-1, )
+
+            tgt_algo_lc = lc_query_tgt[:, lc_from_tgt].view(-1, lc_length, 1)
+            tgt_algo_padding_mask = mask_query_tgt[:, lc_from_tgt].flatten(0, 1)
+
+            device = model.device
+
+            predict = model(X_lc.to(device), X_meta_features.to(device),
+                            tgt_algo_features=tgt_algo_features.to(device),
+                            tgt_meta_features=tgt_meta_features.to(device),
+                            query_algo_features=query_algo_features.to(device),
+                            n_query_algo=n_query_algos,
+                            query_algo_lc=query_algo_lc.to(device),
+                            query_algo_padding_mask=query_algo_padding_mask.to(device),
+                            tgt_algo_lc=tgt_algo_lc.to(device),
+                            tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
+            lstm_loss = loss_fn(input=predict.view(batch_size, n_algos), target=target)
+            test_lstm_losses.append(lstm_loss)
+        return test_lstm_losses
