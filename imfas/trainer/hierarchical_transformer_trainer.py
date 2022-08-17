@@ -21,7 +21,7 @@ class Trainer_Hierarchical_Transformer:
         self.model.to(self.model.device)
 
     @staticmethod
-    def evaluate(model, loss_fn,test_dataloader, test_lim):
+    def evaluate(model, loss_fn, test_dataloader, test_lim):
         test_lstm_losses = []
         test_shared_losses = []
 
@@ -258,17 +258,16 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
                                  query_algo_padding_mask=query_algo_padding_mask.to(device),
                                  tgt_algo_lc=tgt_algo_lc.to(device),
                                  tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
-
-            lstm_loss = self.loss_fn(input=predict.view(batch_size, n_algos), target=target)
+            lstm_loss = self.loss_fn(input=predict.view(batch_size, n_algos), target=target.to(device))
             lstm_loss.backward()
-
             self.optimizer.step()
 
     @staticmethod
-    def evaluate(model, loss_fn,test_dataloader, test_lim):
+    def evaluate(model, loss_fn: imfas.losses.ranking_loss.SpearmanLoss, test_dataloader, test_lim):
+        model = model.to(model.device)
+        model.eval()
         test_lstm_losses = []
         test_shared_losses = []
-
         for X, y in test_dataloader:
             # TODO write the evaluation parts
             X_lc = X['X_lc'].float()  # [batch_size, n_dataset, lc_length, n_algos]
@@ -301,9 +300,9 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
             y_lc_padding_masks = torch.arange(0, lc_length) >= test_lim
             y_lc = ~y_lc_padding_masks.unsqueeze(-1) * y_lc
 
-            n_query_algos = torch.Tensor([n_algos - 1] * batch_size, )
-
             n_query_tgt_lcs = n_algos * n_algos
+
+            n_query_algos = torch.IntTensor([n_algos - 1] * n_algos * batch_size)
 
             lc_query_tgt = y_lc.repeat(1, n_algos, 1, 1).view(batch_size, n_query_tgt_lcs, lc_length, 1)
             mask_query_tgt = y_lc_padding_masks.repeat(batch_size * n_query_tgt_lcs).view(batch_size, -1, lc_length)
@@ -316,7 +315,7 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
             query_algo_lc = lc_query_tgt[:, lc_from_query].view(-1, lc_length, 1)
             query_algo_padding_mask = mask_query_tgt[:, lc_from_query].view(-1, lc_length)
 
-            query_algo_features = algo_features.repeat(1, n_algos, 1)[:, lc_from_query].view(-1, )
+            query_algo_features = algo_features.repeat(1, n_algos, 1)[:, lc_from_query].flatten(0, 1)
 
             tgt_algo_lc = lc_query_tgt[:, lc_from_tgt].view(-1, lc_length, 1)
             tgt_algo_padding_mask = mask_query_tgt[:, lc_from_tgt].flatten(0, 1)
@@ -331,7 +330,9 @@ class Trainer_Hierarchical_TransformerRankingLoss(Trainer_Hierarchical_Transform
                             query_algo_lc=query_algo_lc.to(device),
                             query_algo_padding_mask=query_algo_padding_mask.to(device),
                             tgt_algo_lc=tgt_algo_lc.to(device),
-                            tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
-            lstm_loss = loss_fn(input=predict.view(batch_size, n_algos), target=target)
-            test_lstm_losses.append(lstm_loss)
+                            tgt_algo_padding_mask=tgt_algo_padding_mask.to(device)).view(batch_size, n_algos)
+
+            for p, t in zip(predict, target):
+                lstm_loss = 1 - loss_fn(input=p.unsqueeze(0), target=t.unsqueeze(0))
+                test_lstm_losses.append(lstm_loss)
         return test_lstm_losses

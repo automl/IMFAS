@@ -21,11 +21,11 @@ class HierarchicalTransformer(nn.Module):
                  dropout: float,
                  output_dim: int = 1,
                  norm_first: bool = False,
-                 mask_uncorrelated_lcs: bool = True,
+                 mask_uncorrelated_lcs: bool = False,
                  readout=None,
                  incorporate_tgt_length_to_encoder: bool = False,
                  incorporate_tgt_meta_features_to_encoder: bool = False,
-                 device: str = 'cpu'
+                 device: str = 'cuda'
                  ):
         """
         Hierarchical Transformer. both encoder layers and decoder layers are composed of two parts:
@@ -199,6 +199,7 @@ class HierarchicalTransformer(nn.Module):
         de_feat_embedding_repeat = [
             de_f_emb.repeat(n_algo, 1) for de_f_emb, n_algo in zip(de_feat_embedding, n_query_algo)
         ]
+
         de_feat_embedding_repeat = torch.cat(de_feat_embedding_repeat, dim=0)
 
         # assert torch.all(de_feat_embedding_repeat[0] == de_feat_embedding_repeat[1])
@@ -206,6 +207,7 @@ class HierarchicalTransformer(nn.Module):
 
         if isinstance(query_algo_features, list):
             query_algo_features = torch.cat(query_algo_features, dim=0)
+
         de_algo_embeddings = self.project_layer_algo_feat(query_algo_features)
 
         de_meta_embedding = self.select_variable([de_feat_embedding_repeat, de_algo_embeddings],
@@ -291,7 +293,8 @@ class HierarchicalTransformer(nn.Module):
                                            memory_mask=memory_mask,
                                            tgt_key_padding_mask=tgt_mask_decoder_meta)[:, -1, :]
         prediction = self.readout(decoder_output)
-        return prediction
+
+        return prediction.detach().cpu()
 
     def select_variable(self, input_variables: List[torch.Tensor], flattened_grn: nn.Module):
         combined_feat = torch.stack(input_variables, dim=-1)
