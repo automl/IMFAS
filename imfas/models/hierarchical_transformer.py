@@ -294,7 +294,7 @@ class HierarchicalTransformer(nn.Module):
                                            tgt_key_padding_mask=tgt_mask_decoder_meta)[:, -1, :]
         prediction = self.readout(decoder_output)
 
-        return prediction.detach().cpu()
+        return prediction
 
     def select_variable(self, input_variables: List[torch.Tensor], flattened_grn: nn.Module):
         combined_feat = torch.stack(input_variables, dim=-1)
