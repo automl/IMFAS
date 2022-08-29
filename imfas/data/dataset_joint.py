@@ -1,13 +1,13 @@
-from typing import Optional
 from random import randint
+from typing import Optional
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from imfas.data.algorithm_meta_features import AlgorithmMetaFeatures
 from imfas.data.dataset_meta_features import DatasetMetaFeatures
 from imfas.data.lc_dataset import Dataset_LC
-from imfas.data.algorithm_meta_features import AlgorithmMetaFeatures
 
 
 # FIXME: Refactor joint - gravity, multiindex & compettitor sampling
@@ -163,31 +163,38 @@ class Dataset_Joint_TaskswiseRanking(Dataset_Join_Dmajor):
     A Dataset for computing the ranking losses. This dataset is quite similar to the vanilla Taskswise Dataset. however,
     each of its item contain the learning curves of all the algorithms
     """
+
     def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
-                 meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None, is_test_set: bool = False):
-        super(Dataset_Joint_TaskswiseRanking, self).__init__(meta_dataset, lc, meta_algo, split=split)
+                 meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None,
+                 is_test_set: bool = False):
+        super(Dataset_Joint_TaskswiseRanking, self).__init__(meta_dataset, lc, meta_algo,
+                                                             split=split)
         self.split = np.asarray(self.split)
         lc_dims = self.lc.transformed_df.shape
         meta_algos_dims = self.meta_algo.transformed_df.shape
         meta_dataset_dims = self.meta_dataset.transformed_df.shape
 
-        assert lc_dims[0] == meta_dataset_dims[0], f'Number of datasets from lc and meta_dataset must equal,' \
-                                                   f'However, they are {lc_dims[0]} and {meta_algos_dims[0]}' \
-                                                   f'respectively.'
-        assert lc_dims[-1] == meta_algos_dims[0], f'Number of algorihms from lc and meta_algos_dims must equal,' \
-                                                  f'However, they are {lc_dims[0]} and {meta_algos_dims[0]}' \
-                                                  f'respectively.'
+        assert lc_dims[0] == meta_dataset_dims[
+            0], f'Number of datasets from lc and meta_dataset must equal,' \
+                f'However, they are {lc_dims[0]} and {meta_algos_dims[0]}' \
+                f'respectively.'
+        assert lc_dims[-1] == meta_algos_dims[
+            0], f'Number of algorihms from lc and meta_algos_dims must equal,' \
+                f'However, they are {lc_dims[0]} and {meta_algos_dims[0]}' \
+                f'respectively.'
         self.num_datasets = len(self.split)
         self.num_algos = lc_dims[-1]
 
         self.is_test_set = is_test_set
 
         if self.is_test_set and split is None:
-            raise ValueError('If the dataset is test set, it must contain the information of training sets')
+            raise ValueError(
+                'If the dataset is test set, it must contain the information of trainer sets')
         if self.is_test_set and split is not None:
             self.training_sets = np.setdiff1d(np.arange(lc_dims[0]), self.split)
             if len(self.training_sets) == 0:
-                raise ValueError('If the dataset is test set, it must contain the information of training sets')
+                raise ValueError(
+                    'If the dataset is test set, it must contain the information of trainer sets')
 
     def __getitem__(self, item):
         """
@@ -289,4 +296,3 @@ class Dataset_Joint_Taskswise(Dataset_Joint_TaskswiseRanking):
 
     def __len__(self):
         return self.num_datasets if self.is_test_set else self.num_datasets * self.num_algos
-

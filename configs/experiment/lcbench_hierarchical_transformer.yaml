@@ -1,11 +1,14 @@
 # @package _global_
 defaults:
-  - override /dataset_raw: lcbench
   - override /dataset: lcbench_hierarchical
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
-  - override /training: hierarchical_transformer
+  - override /trainer: hierarchical_transformer
   - override /model: hierarchical_transformer
+
+dataset:
+  dataset_class:
+    _target_: imfas.data.Dataset_Joint_Taskswise
 
 wandb:
   group: lcbench_vanilla_10

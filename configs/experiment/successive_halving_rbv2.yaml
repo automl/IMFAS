@@ -4,11 +4,10 @@
 #  a better way to do it would be to once get all the available fidelities in one df
 #  and then lazily load from there! This will reduce the burdon of recompute!
 defaults:
-  - override /dataset_raw: yahpo
   - override /dataset: yahpo
   - override /dataset/dataset_meta: yahpo_lcbench_minimal
   - override /model: successive_halving
-  - override /training: successive_halving
+  - override /trainer: successive_halving
 
 # actual experiment
 model:
@@ -32,16 +31,16 @@ dataset:
   slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ]
   metric: acc
 
-dataset_raw:
-  enable: True # FIXME: make a
-  # select the benchmark to use from yahpo or lcbench
-  bench: ranger  # make sure it is aligned with above's defaults!
-  fidelity_type: trainsize
-  noise: False
-  n_algos: 50
-  algo: # selection procedure of configs in surrogate benchmarks
-    _target_: smac.initial_design.latin_hypercube_design.LHDesign
-    # smac.initial_design.sobol_design.SobolDesign
+  dataset_raw:
+    enable: True
+    # select the benchmark to use from yahpo or lcbench
+    bench: ranger  # make sure it is aligned with above's defaults!
+    fidelity_type: trainsize
+    noise: False
+    n_algos: 50
+    algo: # selection procedure of configs in surrogate benchmarks
+      _target_: smac.initial_design.latin_hypercube_design.LHDesign
+      # smac.initial_design.sobol_design.SobolDesign
 
 wandb:
   group: gravity_full

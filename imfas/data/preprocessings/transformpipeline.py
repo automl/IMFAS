@@ -8,7 +8,7 @@ class TransformPipeline(nn.Sequential):
 
     def fit(self, input) -> "TransformPipeline":
         """
-        first time around fit & transform on training data. In the
+        first time around fit & transform on trainer data. In the
         second run, simply use the nn.Sequentials forward method (is also its call
         to transform a test set to the very same scale!
         """

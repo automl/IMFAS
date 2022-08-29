@@ -1,9 +1,8 @@
 # @package _global_
 defaults:
-  - override /dataset_raw: yahpo
   - override /dataset: yahpo
   - override /dataset/dataset_meta: yahpo_lcbench_minimal
-  - override /training: lstm_ensemble
+  - override /trainer: lstm_ensemble
   - override /model: rank_lstm
 
 wandb:

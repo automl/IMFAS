@@ -65,6 +65,7 @@ setuptools.setup(
         "hydra-core",
         "pandas",
         "omegaconf",
+        "pytorch_forecasting",
     ],
     extras_require=extras_require,
     test_suite="pytest",

@@ -4,11 +4,10 @@
 #  a better way to do it would be to once get all the available fidelities in one df
 #  and then lazily load from there! This will reduce the burdon of recompute!
 defaults:
-  - override /dataset_raw: lcbench
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   - override /model: successive_halving
-  - override /training: successive_halving
+  - override /trainer: successive_halving
 
 # actual experiment
 model:
@@ -32,8 +31,8 @@ dataset:
             45, 46, 47, 48, 49, 50, 51 ]
   metric: Train/val_accuracy
 
-dataset_raw:
-  enable: False
+  dataset_raw:
+    enable: False
 
 wandb:
   group: gravity_full

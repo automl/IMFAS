@@ -27,7 +27,7 @@ def raw_pipe(*args, **kwargs):
 
     # directory paths
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd())
-    dir_data = pathlib.Path(cfg.dir_data)
+    dir_data = pathlib.Path(orig_cwd).parent / cfg.dir_data
     dir_downloads = dir_data / "downloads"
     dir_raw_dataset = dir_data / "raw" / cfg.dataset_name
     # todcheck if already downloaded the data
@@ -81,7 +81,9 @@ def raw_pipe(*args, **kwargs):
     candidates = list(sorted(candidates))
 
     # select the index rows # FIXME: this is inefficient
-    config = pd.DataFrame([config.loc[int(element)] for element in candidates])
+    config = pd.DataFrame(
+        [config.loc[element] if config.index.dtype == str else config.loc[element] for element in
+         candidates])
     df.index = df.index.astype(str)
     config.to_csv(dir_raw_dataset / "config_subset.csv")
 
@@ -92,6 +94,6 @@ def raw_pipe(*args, **kwargs):
     # subset(logs, 'logged', cfg.learning_curves.metrics)
 
     logs.to_hdf(dir_raw_dataset / "logs_subset.h5", key="dataset", mode="w")
-    results.to_hdf(dir_raw_dataset / "results_subset.h5", key="dataset", mode="w")  # FIXME
+    results.to_hdf(dir_raw_dataset / "results_subset.h5", key="dataset", mode="w")
 
-    log.debug("Written out all files to raw dir.")
+    # log.debug("Written out all files to raw dir.")

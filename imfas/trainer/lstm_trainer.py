@@ -1,7 +1,9 @@
 import torch
 
+from imfas.trainer.base_trainer import BaseTrainer
 
-class Trainer_Ensemble_lstm:
+
+class Trainer_Ensemble_lstm(BaseTrainer):
     def __init__(self, model, loss_fn, optimizer, test_lim=5):
         self.step = 0
         self.losses = {
