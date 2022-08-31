@@ -2,6 +2,47 @@ from sklearn.base import BaseEstimator
 from sklearn.experimental import enable_halving_search_cv  # noqa
 
 
+# SUCCESSIVE HALVING BASELINE: -----------------------------------------------------------------
+# FIXME: Refactor SH to be a model & trainer defined via yaml
+# update the input dims and number of algos based on the sampled stuff
+# if "n_algos" not in cfg.dataset.dataset_raw.keys() and cfg.dataset.name != "LCBench":
+# if cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
+#     # LCBENCH: successive halving benchmark.
+#     if cfg.dataset.name == "LCBench":
+#         cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))
+#
+#     enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
+#
+#     # model.estimator.slices.split == test_split --this way datasets are parallel in seeds
+#     spears = {}
+#     for d in tqdm(test_split):
+#         # indexed with 0 and slices.split holds the relevant data id already!
+#         cfg.model.estimator.slices.split = [d]
+#         model: torch.nn.Module = instantiate(cfg.model, _convert_="partial")
+#
+#         # fixme: validation score should not be computed during trainer!
+#         valid_score = call(
+#             cfg.trainer,
+#             model,
+#             train_dataloader=train_loader,
+#             test_dataloader=test_loader,
+#             _recursive_=False,
+#         )
+#
+#         final_performances = test_set.lc.transformed_df[d][-1]
+#
+#         spears[d] = spear_halve_loss(valid_score, final_performances).numpy()
+#
+#     d = pd.DataFrame.from_dict(spears, orient="index")
+#     print(d)
+#
+#     if cfg.dataset.name == "LCBench":
+#         name = "LCBench_raw"
+#     else:
+#         name = cfg.dataset.dataset_raw.bench
+#
+#     d.to_csv(f"halving_test_spear_{name}_{cfg.seed}.csv")
+
 class AlgoSurrogateLookup(BaseEstimator):
     """sklearn estimator API for multi-fidelity lookup in HalvingGridSearchCV,
     an instance of this class serves as an algo surrogate. This way, HalvingGridSearchCV
