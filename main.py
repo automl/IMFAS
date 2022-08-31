@@ -8,6 +8,12 @@ from omegaconf import DictConfig, OmegaConf
 # A logger for this file
 log = logging.getLogger(__name__)
 
+import torch
+
+OmegaConf.register_new_resolver(
+    "device_ident", lambda _: torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+)
+
 import os
 import random
 import string
@@ -90,52 +96,13 @@ def pipe_train(cfg: DictConfig) -> None:
          "dynamically_computed.n_data_meta_features": dataset_meta_features.df.columns.size}
     )
 
-    # SUCCESSIVE HALVING BASELINE: -----------------------------------------------------------------
-    # FIXME: Refactor SH to be a model defined via yaml
-    # update the input dims and number of algos based on the sampled stuff
-    # if "n_algos" not in cfg.dataset.dataset_raw.keys() and cfg.dataset.name != "LCBench":
-    # if cfg.model._target_.split(".")[-1] == "HalvingGridSearchCV":
-    #     # LCBENCH: successive halving benchmark.
-    #     if cfg.dataset.name == "LCBench":
-    #         cfg.model.param_grid.algo_id = list(range(len(train_set.lc.index)))
-    #
-    #     enable_halving_search_cv  # ensures import is not removed in alt + L reformatting
-    #
-    #     # model.estimator.slices.split == test_split --this way datasets are parallel in seeds
-    #     spears = {}
-    #     for d in tqdm(test_split):
-    #         # indexed with 0 and slices.split holds the relevant data id already!
-    #         cfg.model.estimator.slices.split = [d]
-    #         model: torch.nn.Module = instantiate(cfg.model, _convert_="partial")
-    #
-    #         # fixme: validation score should not be computed during trainer!
-    #         valid_score = call(
-    #             cfg.trainer,
-    #             model,
-    #             train_dataloader=train_loader,
-    #             test_dataloader=test_loader,
-    #             _recursive_=False,
-    #         )
-    #
-    #         final_performances = test_set.lc.transformed_df[d][-1]
-    #
-    #         spears[d] = spear_halve_loss(valid_score, final_performances).numpy()
-    #
-    #     d = pd.DataFrame.from_dict(spears, orient="index")
-    #     print(d)
-    #
-    #     if cfg.dataset.name == "LCBench":
-    #         name = "LCBench_raw"
-    #     else:
-    #         name = cfg.dataset.dataset_raw.bench
-    #
-    #     d.to_csv(f"halving_test_spear_{name}_{cfg.seed}.csv")
-
     # CLASSICAL MODELS -----------------------------------------------------------------------------
     model = instantiate(cfg.model)
 
+    model.to(cfg.device)
+
     trainer = instantiate(cfg.trainer, model, train_loader, test_loader)
-    trainer.train(cfg.trainer.train_cfg)
+    trainer.run(cfg.trainer.run_cfg)
 
     # FIXME: move this to the trainer as a model.save call!
     # if cfg.save_models:
