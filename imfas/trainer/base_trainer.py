@@ -9,7 +9,7 @@ def wandb_callback(trainer, losses):
     #  why don't we let wandb let it do that for us?
     if trainer.step % trainer.log_freq == 0:
         for k, v in losses.items():
-            wandb.log({k: v}, step=trainer._step)
+            wandb.log({k: v}, step=trainer.step)
 
         if trainer.step % trainer.log_freq == 0:
 
@@ -22,7 +22,7 @@ def wandb_callback(trainer, losses):
                 losses[key] = []
 
 
-class Base_Trainer:
+class BaseTrainer:
     def __init__(
             self,
             model: torch.nn.Module,
