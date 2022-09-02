@@ -1,4 +1,5 @@
 from typing import Callable, Dict
+
 import torch
 import torchsort
 from torch.nn import Softmax
@@ -6,8 +7,12 @@ from torch.nn.modules.loss import _Loss as Loss
 
 
 class SpearmanLoss(Loss):
-    def __init__(self, reduction: str = 'mean',
-                 ranking_fn: Callable = torchsort.soft_rank, ts_kwargs: Dict = {}) -> None:
+    def __init__(
+            self,
+            reduction: str = 'mean',
+            ranking_fn: Callable = torchsort.soft_rank,
+            ts_kwargs: Dict = {}
+    ) -> None:
         super(SpearmanLoss, self).__init__(reduction=reduction)
         self.ranking_fn = ranking_fn
         self.ts_kwargs = ts_kwargs

@@ -106,6 +106,6 @@ dataset_class:
 
 dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: ${test_batch_size}
+  batch_size: 1
   shuffle: False
   num_workers: ${num_workers}

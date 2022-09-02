@@ -17,7 +17,7 @@ dataset_class:
 # fixme: refactor this to be separately configurable at will for train/test
 dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: ${test_batch_size}
+  batch_size: 1
   shuffle: False
   num_workers: ${num_workers}
 

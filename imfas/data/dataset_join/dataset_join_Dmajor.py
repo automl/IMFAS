@@ -43,7 +43,11 @@ class Dataset_Join_Dmajor(Dataset):
          algorithms (second dim: columns)
         """
         it = self.split[item]
-        return self.meta_dataset[it], self.lc[it]  # FIXME: activate: self.meta_algo[a],
+        return {
+            "dataset_meta_features": self.meta_dataset[it],
+            "learning_curve": self.lc[it]
+            # FIXME: activate: " "self.meta_algo[a],
+        }
 
     def __len__(self):
         return len(self.split)

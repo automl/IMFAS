@@ -21,8 +21,6 @@ output_dir: ./tmp
 
 num_workers: 2
 device: ${device_ident:None}
-train_batch_size: 1
-test_batch_size: 1
 
 lr: 0.001  # fixme: move learning rate of the train's optimizer
 shuffle: True

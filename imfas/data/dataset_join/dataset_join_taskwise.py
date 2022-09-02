@@ -45,13 +45,14 @@ class Dataset_Joint_Taskswise(Dataset_Joint_TaskswiseRanking):
         tgt_algo_lc = y_lc[:, [algo]]
         query_algo_lc = y_lc[:, query_algo_idx]
 
-        X = {'X_lc': X_lc,
-             'X_meta_features': X_meta_features,
-             'tgt_algo_features': tgt_algo_features,
-             'query_algo_features': query_algo_features,
-             'tgt_meta_features': tgt_meta_features,
-             'query_algo_lc': query_algo_lc
-             }
+        X = {
+            'X_lc': X_lc,
+            'X_meta_features': X_meta_features,
+            'tgt_algo_features': tgt_algo_features,
+            'query_algo_features': query_algo_features,
+            'tgt_meta_features': tgt_meta_features,
+            'query_algo_lc': query_algo_lc
+        }
 
         y = {'tgt_algo_lc': tgt_algo_lc}
 
