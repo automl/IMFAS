@@ -14,7 +14,7 @@ dataset_class:
   lc: ${dataset.lc_meta}
 
 
-# fixme: refactor this to be separately configurable at will for train/test
+# todo: refactor this to be separately configurable at will for train/test
 dataloader_class:
   _target_: torch.utils.data.DataLoader
   batch_size: 1
