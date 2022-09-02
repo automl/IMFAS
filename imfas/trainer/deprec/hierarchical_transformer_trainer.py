@@ -90,10 +90,12 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
 
             # same as above, mask the learning curve of the target algorithm. However, we allow zero evaluations while
             # the full fidelity value should not be presented here
-            tgt_algo_lc, tgt_algo_padding_mask = self.mask_learning_curves(tgt_algo_lc,
-                                                                           lc_length=lc_length,
-                                                                           lower=0, upper=lc_length,
-                                                                           n_lc=batch_size)
+            tgt_algo_lc, tgt_algo_padding_mask = self.mask_learning_curves(
+                tgt_algo_lc,
+                lc_length=lc_length,
+                lower=0, upper=lc_length,
+                n_lc=batch_size
+            )
 
             self.optimizer.zero_grad()
             # Dataset meta features and final  slice labels
@@ -101,15 +103,17 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             device = self.model.device
             # Fixme: @DIFAN unburden the forward call by specifying the data (including masking in
             #  the dataset_joint class (i am sure this is possible)
-            predict = self.model(X_lc.to(device), X_meta_features.to(device),
-                                 tgt_algo_features=tgt_algo_features.to(device),
-                                 tgt_meta_features=tgt_meta_features.to(device),
-                                 query_algo_features=query_algo_features.to(device),
-                                 n_query_algo=n_query_algos,
-                                 query_algo_lc=query_algo_lc.to(device),
-                                 query_algo_padding_mask=query_algo_padding_mask.to(device),
-                                 tgt_algo_lc=tgt_algo_lc.to(device),
-                                 tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
+            predict = self.model(
+                X_lc.to(device),
+                X_meta_features.to(device),
+                tgt_algo_features=tgt_algo_features.to(device),
+                tgt_meta_features=tgt_meta_features.to(device),
+                query_algo_features=query_algo_features.to(device),
+                n_query_algo=n_query_algos,
+                query_algo_lc=query_algo_lc.to(device),
+                query_algo_padding_mask=query_algo_padding_mask.to(device),
+                tgt_algo_lc=tgt_algo_lc.to(device),
+                tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
 
             # FIXME: @DIFAN: why is this an LSTM loss?
             lstm_loss = self.loss_fn(input=predict, target=labels.to(device))
@@ -117,12 +121,14 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
 
             self.optimizer.step()
 
-    def mask_learning_curves(self,
-                             lc: torch.Tensor,
-                             n_lc: int,
-                             lc_length: int,
-                             lower: int,
-                             upper: int, ) -> Tuple[torch.Tensor, torch.BoolTensor]:
+    def mask_learning_curves(
+            self,
+            lc: torch.Tensor,
+            n_lc: int,
+            lc_length: int,
+            lower: int,
+            upper: int,
+    ) -> Tuple[torch.Tensor, torch.BoolTensor]:
         """
         mask the learning curves with 0. The masked learning curve has length between [lower, uppper)
         Args:

@@ -4,22 +4,22 @@ import torch.optim
 import wandb
 
 
-def wandb_callback(trainer, losses):
+def wandb_callback(trainer, ):
     # FIXME: @Aditya, if we wanted to have a running mean,
     #  why don't we let wandb let it do that for us?
     if trainer.step % trainer.log_freq == 0:
-        for k, v in losses.items():
+        for k, v in trainer.losses.items():
             wandb.log({k: v}, step=trainer.step)
 
         if trainer.step % trainer.log_freq == 0:
 
             for key in trainer.losses:
-                losses[key] = torch.stack(losses[key]).mean()
+                trainer.losses[key] = torch.stack(trainer.losses[key]).mean()
 
-            wandb.log(losses, commit=False, step=trainer.step)
+            wandb.log(trainer.losses, commit=False, step=trainer.step)
 
             for key in trainer.losses:
-                losses[key] = []
+                trainer.losses[key] = []
 
 
 class BaseTrainer:

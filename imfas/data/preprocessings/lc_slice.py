@@ -1,8 +1,11 @@
+from typing import List
+
 import numpy as np
 import pandas as pd
 import torch
 
 from imfas.data.preprocessings.table_transforms import Transform
+
 
 # Since LC datasets are inherently pandas multi-index dataframes,
 # a short indexing tutorial can be found here:
@@ -10,7 +13,7 @@ from imfas.data.preprocessings.table_transforms import Transform
 
 
 class LC_TimeSlices(Transform):
-    def __init__(self, slices: list[int]):
+    def __init__(self, slices: List[int]):
         """
         :param slices: which time slices across algos & dataset you want to have.
         """

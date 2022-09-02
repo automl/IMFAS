@@ -15,11 +15,11 @@ from imfas.data import DatasetMetaFeatures
 
 class ZeroShotOptimalDistance:
     def __init__(
-        self,
-        model,
-        ranking_loss,
-        scaler=MinMaxScaler(),
-        batch: int = 20,
+            self,
+            model,
+            ranking_loss,
+            scaler=MinMaxScaler(),
+            batch: int = 20,
     ):
         self.model = model
         self.ranking_loss = ranking_loss
@@ -115,7 +115,7 @@ class ZeroShotOptimalDistance:
         _, true_rankings = torch.topk(A0, largest=True, k=self.n_algos)
 
         # now compare model rankings with true rankings so that we see how far
-        # we have gotten with training
+        # we have gotten with trainer
         # fixme: dependence on hydra call is bad if we do not pass a cfg value
 
         # call(self.ranking_loss, true_rankings, scores)  # overall loss
@@ -126,10 +126,10 @@ class ZeroShotOptimalDistance:
         # get the model ndcg values
         model_ndcg = torch.zeros(len(true_rankings))
         for i, (truth, predicted) in enumerate(
-            zip(
-                true_rankings.reshape(newshape).detach().numpy(),
-                model_scores.reshape(newshape_predicted),
-            )
+                zip(
+                    true_rankings.reshape(newshape).detach().numpy(),
+                    model_scores.reshape(newshape_predicted),
+                )
         ):
             model_ndcg[i] = call(self.ranking_loss, truth, predicted)
 

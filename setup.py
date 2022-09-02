@@ -54,18 +54,20 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=[
         "torch",
-        "wandb",
+        "wandb",  # fixme: does not install properly?
         "tqdm",
         "absl-py",
         "networkx",
         "matplotlib",
         "tables",
         "sklearn",
-        "torchsort",
+        "torchsort",  # fixme: import fails?
         "hydra-core",
         "pandas",
         "omegaconf",
+        "hydra-core"  # fixme might require an --upgrade
         "pytorch_forecasting",
+        "pytables",
     ],
     extras_require=extras_require,
     test_suite="pytest",

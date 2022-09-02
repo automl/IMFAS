@@ -6,7 +6,7 @@ defaults:
   - dataset/lc_meta: multi_slice
   - dataset/algo_meta: lcbench_minimal
   - model: rank_lstm
-  - trainer: lstm_ensemble
+  - trainer:
   - _self_
 
 # placeholder for attributes to be computed

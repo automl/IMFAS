@@ -8,8 +8,13 @@ from imfas.data.lc_dataset import Dataset_LC
 
 
 class Dataset_Join_Dmajor(Dataset):
-    def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
-                 meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None):
+    def __init__(
+            self,
+            meta_dataset: DatasetMetaFeatures,
+            lc: Dataset_LC,
+            meta_algo: Optional[AlgorithmMetaFeatures] = None,
+            split=None
+    ):
         """
         Dataset, joining Dataset Meta features, Algorithm Meta features and the
         Learning Curves. The resulting iterator presents instances by dataset major; i.e.
@@ -38,7 +43,7 @@ class Dataset_Join_Dmajor(Dataset):
          algorithms (second dim: columns)
         """
         it = self.split[item]
-        return self.meta_dataset[it], self.lc[it]  # FIXME: activate, self.meta_algo[a],
+        return self.meta_dataset[it], self.lc[it]  # FIXME: activate: self.meta_algo[a],
 
     def __len__(self):
         return len(self.split)

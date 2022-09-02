@@ -15,11 +15,20 @@ class Dataset_Joint_TaskswiseRanking(Dataset_Join_Dmajor):
     each of its item contain the learning curves of all the algorithms
     """
 
-    def __init__(self, meta_dataset: DatasetMetaFeatures, lc: Dataset_LC,
-                 meta_algo: Optional[AlgorithmMetaFeatures] = None, split=None,
-                 is_test_set: bool = False):
-        super(Dataset_Joint_TaskswiseRanking, self).__init__(meta_dataset, lc, meta_algo,
-                                                             split=split)
+    def __init__(
+            self,
+            meta_dataset: DatasetMetaFeatures,
+            lc: Dataset_LC,
+            meta_algo: Optional[AlgorithmMetaFeatures] = None,
+            split=None,
+            is_test_set: bool = False
+    ):
+
+        super(Dataset_Joint_TaskswiseRanking, self).__init__(
+            meta_dataset, lc, meta_algo, split=split
+        )
+
+        self.is_test_set = is_test_set
         self.split = np.asarray(self.split)
         lc_dims = self.lc.transformed_df.shape
         meta_algos_dims = self.meta_algo.transformed_df.shape
@@ -35,8 +44,6 @@ class Dataset_Joint_TaskswiseRanking(Dataset_Join_Dmajor):
                 f'respectively.'
         self.num_datasets = len(self.split)
         self.num_algos = lc_dims[-1]
-
-        self.is_test_set = is_test_set
 
         if self.is_test_set and split is None:
             raise ValueError(

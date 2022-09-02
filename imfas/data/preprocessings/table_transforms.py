@@ -1,4 +1,4 @@
-import pdb
+from typing import Tuple
 
 import pandas as pd
 import torch
@@ -14,7 +14,7 @@ class Transform(nn.Module):
     Piggy-bagging sklearn's and torchvision's pipeline classes
     """
 
-    def __init__(self, columns: tuple[str] = None):
+    def __init__(self, columns: Tuple[str] = None):
         super().__init__()
         self.columns = columns
 
@@ -53,7 +53,6 @@ class ToTensor(Transform):
         self.columns = columns
 
     def transform(self, X: pd.DataFrame, dtype=torch.float32):
-
         # print(X.values)
         # pdb.set_trace()
 
