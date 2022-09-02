@@ -6,7 +6,7 @@ defaults:
   - dataset/lc_meta: multi_slice
   - dataset/algo_meta: lcbench_minimal
   - model: rank_lstm
-  - trainer:
+  - trainer: basetrainer
   - _self_
 
 # placeholder for attributes to be computed
@@ -22,8 +22,15 @@ output_dir: ./tmp
 num_workers: 2
 device: ${device_ident:None}
 
-lr: 0.001  # fixme: move learning rate of the train's optimizer
-shuffle: True
+trainer:
+  trainerobj:
+    optimizer:
+      lr: 0.001  # actively mingeling with the learning rate of adam
+
+dataset:
+  dataloader_class:
+    shuffle: True
+    batch_size: 1
 
 wandb:
   id: null

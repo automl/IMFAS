@@ -69,6 +69,11 @@ class Dataset_Joint_TaskswiseRanking(Dataset_Join_Dmajor):
         y_lc: torch.Tensor
             learning curves on the test datasets with shape [N_algo, L, N_features]
         """
+
+        idx = self.split[item]
+        dataset_y = self.meta_dataset.transformed_df[idx]
+        dataset_x = self.meta_dataset.transformed_df[idx]
+
         if not self.is_test_set:
             dataset_y = self.split[item]
             dataset_X = self.split[torch.arange(len(self.split)) != item]
