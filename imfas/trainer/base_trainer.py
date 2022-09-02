@@ -28,22 +28,20 @@ class BaseTrainer:
     def __init__(
             self,
             model: torch.nn.Module,
-            optimizer: DictConfig,  # torch.optim.Optimizer,
+            optimizer: torch.optim.Optimizer,
             callbacks_end: List[Callable] = None
     ):
         """
-        Notice, how the optimizer is a DictConfig and requires instantiation.
-        This is due to the _recursive_=False flag in the main loop, which allows for a more
-        flexible configuration of the optimizer (e.g. freezing and unfreezing parameters).
 
         :param model: torch.nn.Module
-        :param optimizer: DictConfig.
+        :param optimizer:
         :param callbacks_end: list of functions to be called at the end of each epoch
         """
         self._step = 0  # FIXME: @Aditya: why exactly doesn't it suffice to have the epoch?
         self.model = model
         self.device = self.model.device
-        self.optimizer = instantiate(optimizer, self.model.parameters())
+
+        self.optimizer = optimizer(self.model.parameters())
         self.callbacks_end = callbacks_end
 
     @property

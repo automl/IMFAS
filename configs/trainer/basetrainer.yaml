@@ -1,6 +1,7 @@
 trainerobj:
   _target_: imfas.trainer.BaseTrainer
   optimizer:
+    _partial_: true
     _target_: torch.optim.Adam
     lr: 0.001
 

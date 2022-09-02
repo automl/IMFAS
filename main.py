@@ -100,7 +100,7 @@ def pipe_train(cfg: DictConfig) -> None:
     model = instantiate(cfg.model)
     model.to(cfg.device)
 
-    trainer = instantiate(cfg.trainer.trainerobj, model, _recursive_=False)
+    trainer = instantiate(cfg.trainer.trainerobj, model)
     trainer.run(
         train_loader=train_loader,
         test_loader=test_loader,
