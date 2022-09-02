@@ -3,25 +3,6 @@ from typing import Callable, List, Dict
 import torch.optim
 import wandb
 from hydra.utils import instantiate
-from omegaconf import DictConfig
-
-
-# def wandb_callback(trainer, ):
-#     # FIXME: @Aditya, if we wanted to have a running mean,
-#     #  why don't we let wandb let it do that for us?
-#     if trainer.step % trainer.log_freq == 0:
-#         for k, v in trainer.losses.items():
-#             wandb.log({k: v}, step=trainer.step)
-#
-#         if trainer.step % trainer.log_freq == 0:
-#
-#             for key in trainer.losses:
-#                 trainer.losses[key] = torch.stack(trainer.losses[key]).mean()
-#
-#             wandb.log(trainer.losses, commit=False, step=trainer.step)
-#
-#             for key in trainer.losses:
-#                 trainer.losses[key] = []
 
 
 class BaseTrainer:
@@ -103,17 +84,16 @@ class BaseTrainer:
 
         if valid_loss_fns is not None:
             assert aggregate_fn is not None
-            self.losses = {k: [] for k in valid_loss_fns}
+            # self.losses = {k: [] for k in valid_loss_fns}
 
         for epoch in range(epochs):
             self.train(train_loader, epoch, train_loss_fn)
-            wandb.log({k: loss}, step=self.step)
 
             if valid_loss_fns is not None:
                 # End of epoch validation loss tracked in wandb
                 for k, fn in valid_loss_fns.items():
                     loss = self.evaluate(test_loader, fn, aggregate_fn)
-                    self.losses[k].append(loss)
+                    # self.losses[k].append(loss)
                     wandb.log({k: loss}, step=self.step)
 
             # execute other callbacks on the end of each epoch
