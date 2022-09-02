@@ -1,19 +1,23 @@
+"""
+Main implementation of the Workshop version of IMFAS. AlgoRankMLP and RankLSTM
+are the core components of the RankLSTM_Ensemble model (which in fact is the Imfas model)
+"""
+
 from typing import List
 
 import torch
 import torch.nn as nn
 import torchsort
 
-import pdb
-
 
 class AlgoRankMLP(nn.Module):
+    # FIXME: @Aditya: What does this model do?
     def __init__(
-        self,
-        input_dim: int = 107,
-        algo_dim: int = 58,
-        hidden_dims: List[int] = [300, 200, 100],
-        device: torch.device = torch.device("cpu"),
+            self,
+            input_dim: int = 107,
+            algo_dim: int = 58,
+            hidden_dims: List[int] = [300, 200, 100],
+            device: torch.device = torch.device("cpu"),
     ):
         super(AlgoRankMLP, self).__init__()
         self.meta_features_dim = input_dim
@@ -64,17 +68,14 @@ class RankLSTM(nn.Module):
 
         Args:
             input_dim   : Dimension of the input
-            hidden_dim  : Dimension of the hidden state
-            layer_dim   : Number of layers
+            hidden_dim  : Dimension of the hidden state (hidden dimensions)
+            layer_dim   : Number of hidden layers
             output_dim  : Dimension of the output
             readout     : Optional readout layer for decoding the hidden state
         """
         super(RankLSTM, self).__init__()
 
-        # Hidden dimensions
         self.hidden_dim = hidden_dim
-
-        # Number of hidden layers
         self.layer_dim = layer_dim
 
         # LSTM layer of hte network
@@ -124,7 +125,7 @@ class RankLSTM(nn.Module):
         # Feed the context as a batched sequence so that at every rollout step, a fidelity
         # is fed as an input to the LSTM
         out, (hn, cn) = self.lstm(context.double(), (h0, c0))
-
+        # FIXME: @Aditya: move this part to the RankLSTM_Ensemble class
         # Convert the last element of the lstm into values that
         # can be ranked
         out = self.readout(out[:, -1, :])
@@ -132,15 +133,15 @@ class RankLSTM(nn.Module):
         return out
 
 
-class RankLSTM_Ensemble(nn.Module):
+class RankLSTM_Ensemble(nn.Module):  # FIXME: @Aditya rename: IMFAS?
     def __init__(
-        self,
-        input_dim: int = 107,
-        algo_dim: int = 58,
-        # lstm_hidden_dims: List[int] = 100,
-        lstm_layers: int = 2,
-        shared_hidden_dims: List[int] = [300, 200],
-        device: str = "cpu",
+            self,
+            input_dim: int = 107,
+            algo_dim: int = 58,
+            # lstm_hidden_dims: List[int] = 100,
+            lstm_layers: int = 2,
+            shared_hidden_dims: List[int] = [300, 200],
+            device: str = "cpu",
     ):
         """
         Sequential Ensemble of LSTM cells to rank based on multiple fidelities
@@ -173,14 +174,14 @@ class RankLSTM_Ensemble(nn.Module):
 
         """
 
-        # Build the shared network
-        self.shared_network = AlgoRankMLP(
+        # Dataset Meta Feature Encoder:
+        self.encoder = AlgoRankMLP(
             input_dim=self.meta_features_dim,
             algo_dim=self.shared_hidden_dims[-1],
             hidden_dims=self.shared_hidden_dims[:-1],
         )
 
-        # Build the lstms
+        # Fidelity Contextualizer:
         self.seq_network = RankLSTM(
             input_dim=self.algo_dim,
             hidden_dim=self.shared_hidden_dims[-1],
@@ -188,6 +189,9 @@ class RankLSTM_Ensemble(nn.Module):
             output_dim=self.algo_dim,
             readout=None,
         )
+
+        # FIXME: @Aditya: there should be a decoder for the final state, before
+        #
 
     def forward(self, dataset_meta_features, fidelities):
         """
@@ -201,7 +205,7 @@ class RankLSTM_Ensemble(nn.Module):
         """
 
         # Forward through the shared network
-        shared_D = self.shared_network(dataset_meta_features)
+        shared_D = self.encoder(dataset_meta_features)
 
         # Forward through the lstm networks to get the readouts
         lstm_D = self.seq_network(init_hidden=shared_D, context=fidelities)
@@ -214,5 +218,5 @@ if __name__ == "__main__":
 
     # print the network
 
-    print("shared network", network.shared_network)
+    print("shared network", network.encoder)
     print("lstm_net", network.seq_network)

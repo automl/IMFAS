@@ -7,56 +7,36 @@ from imfas.trainer.base_trainer import BaseTrainer
 
 
 class Trainer_Hierarchical_Transformer(BaseTrainer):
-    def __init__(self, model: HierarchicalTransformer, loss_fn, optimizer, test_lim=5):
-
-        self.step = 0
-        self.losses = {
-            # 'ranking_loss': 0
-        }
-
-        self.model = model
-        self.loss_fn = loss_fn
-        self.optimizer = optimizer
-        self.test_lim = test_lim
-        # self.n_slices = self.model.n_fidelities
-        self.model.to(self.model.device)
-
-    @staticmethod
-    def evaluate(model, loss_fn, test_dataloader, test_lim):
-        test_lstm_losses = []
-        test_shared_losses = []
-
-        for X, y in enumerate(test_dataloader):
-            # TODO write the evaluation parts
-
-            pass
-
-    def step_next(self):
-        self.step += 1
+    def __init__(self, model: HierarchicalTransformer, optimizer):
+        super().__init__(model, optimizer)
 
     def train(self, train_dataloader):
         for X, y in train_dataloader:
             # FIXME: @DIFAN: make this part of the preprocessing using dataset_joint class
+            # FIXME @DIFAN MOVE TO PREP PIPE ----------------------------------
             X_lc = X['X_lc'].float()
             X_meta_features = X['X_meta_features'].float()
             tgt_algo_features = X['tgt_algo_features'].float()
             tgt_meta_features = X['tgt_meta_features'].float()
-
             query_algo_features = X[
                 'query_algo_features'].float()  # [batch_size, n_query_algo], n_algo_feat
             query_algo_lc = X['query_algo_lc'].float()
-
             tgt_algo_lc = y['tgt_algo_lc'].float()  # [batch_size, L, n_query_algo, 1]
+            # ------------------------------------------------------------------
 
-            labels = tgt_algo_lc[:, -1]
+            final_fidelity = tgt_algo_lc[:, -1]  # FIXME: make this part of the y dict!
 
+            # FIXME: @Difan why do we need this? what do they mean?
             decoder_input_shape = query_algo_lc.shape
+            batch_size, lc_length, n_query_algos_all, _ = decoder_input_shape
 
-            batch_size = decoder_input_shape[0]
-            lc_length = decoder_input_shape[1]
-            n_query_algos_all = decoder_input_shape[2]
+            # TODO deprec:
+            # batch_size = decoder_input_shape[0]
+            # lc_length = decoder_input_shape[1]
+            # n_query_algos_all = decoder_input_shape[2]
 
-            # flatten the first two dimensions
+            # flatten the first two dimensions todo what?
+            # todo : doc what is a query algo
             query_algo_lc = torch.transpose(query_algo_lc, 1, 2).reshape(
                 batch_size * n_query_algos_all, lc_length, 1)
             query_algo_features = query_algo_features.reshape(batch_size * n_query_algos_all, -1)
@@ -83,7 +63,7 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
                 n_lc=n_query_lc
             )
 
-            n_query_algos_all_list = n_query_algos.tolist()
+            n_query_algos_all_list = n_query_algos.tolist()  # FIXME: this is not used
             # query_algo_features = torch.split(query_algo_features, n_query_algos_all_list)
             # query_algo_lc = torch.split(query_algo_lc, n_query_algos_all_list)
             # query_algo_padding_mask = torch.split(query_algo_padding_mask, n_query_algos_all_list)
@@ -98,25 +78,31 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             )
 
             self.optimizer.zero_grad()
-            # Dataset meta features and final  slice labels
+            # Dataset meta features and final fidelity values
 
-            device = self.model.device
-            # Fixme: @DIFAN unburden the forward call by specifying the data (including masking in
-            #  the dataset_joint class (i am sure this is possible)
+            # Fixme: @DIFAN unburden the forward call by specifying the data in
+            #  the dataset_joint class (with the exception of the tgt which are dynamically masked)
+
+            features = {
+                "tgt_algo_features": tgt_algo_features,
+                "tgt_meta_features": tgt_meta_features,
+                "query_algo_features": query_algo_features,
+                "n_query_algo": n_query_algos,
+                "query_algo_lc": query_algo_lc,
+                "query_algo_padding_mask": query_algo_padding_mask,
+                "tgt_algo_lc": tgt_algo_lc,
+                "tgt_algo_padding_mask": tgt_algo_padding_mask
+            }
+            self.to_device(features)
+
             predict = self.model(
-                X_lc.to(device),
-                X_meta_features.to(device),
-                tgt_algo_features=tgt_algo_features.to(device),
-                tgt_meta_features=tgt_meta_features.to(device),
-                query_algo_features=query_algo_features.to(device),
-                n_query_algo=n_query_algos,
-                query_algo_lc=query_algo_lc.to(device),
-                query_algo_padding_mask=query_algo_padding_mask.to(device),
-                tgt_algo_lc=tgt_algo_lc.to(device),
-                tgt_algo_padding_mask=tgt_algo_padding_mask.to(device))
+                X_lc.to(self.device),
+                X_meta_features.to(self.device),
+                **features
+            )
 
             # FIXME: @DIFAN: why is this an LSTM loss?
-            lstm_loss = self.loss_fn(input=predict, target=labels.to(device))
+            lstm_loss = self.loss_fn(input=predict, target=final_fidelity.to(self.device))
             lstm_loss.backward()
 
             self.optimizer.step()
@@ -135,9 +121,9 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             lc: torch.Tensor,
                 learning curves
             n_lc: int
-                number of learning curves
+                number of learning curves # FIXME: cant we infer this?
             lc_length: int,
-                length of the learning curves
+                length of the learning curves # FIXME: cant we infer this?
             lower: int,
                 minimal length of the learning curves after the masking
             upper: int
@@ -146,7 +132,7 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             masked_lc: torch.Tensor
                 masked learning curves. Masked values are 0
             padding_mask: torch.BoolTensor
-                a tensor indicating which learning curves are masked
+                a tensor indicating which learning curves are masked # FIXME: what for?
 
         """
         n_reserved_lc = torch.randint(lower, upper, (n_lc, 1))

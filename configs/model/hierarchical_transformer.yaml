@@ -13,3 +13,4 @@ n_layers_meta: 2
 dropout: 0.2
 output_dim: 1
 norm_first: False
+device: ${device}
