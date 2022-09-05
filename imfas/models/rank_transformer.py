@@ -150,6 +150,7 @@ class RankTransfromer(nn.Module):
         return out
 
 
+# @Difan: Please have a look at the input documnetation
 class RankTransformer_Ensemble(nn.Module):
     def __init__(
             self,
@@ -167,7 +168,8 @@ class RankTransformer_Ensemble(nn.Module):
             device: str = "cpu",
     ):
         """
-        Sequential Ensemble of LSTM cells to rank based on multiple fidelities
+        
+        Sequential Ensemble of Transformers to rank based on multiple fidelities
 
         Args:
             input_dim: input dimension

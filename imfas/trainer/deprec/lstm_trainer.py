@@ -14,6 +14,8 @@ class Trainer_Ensemble_lstm(BaseTrainer):
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         self.test_lim = test_lim
+
+        # TODO: Move to the model
         self.readout = torch.nn.Linear(model.shared_hidden_dims[-1], model.algo_dim)
 
         # self.n_slices = self.model.n_fidelities
@@ -32,13 +34,16 @@ class Trainer_Ensemble_lstm(BaseTrainer):
             # Get Embeddings
             self.model.eval()
             with torch.no_grad():
-                # Feed the lstm till penultimate fidelitie
+                # Feed the lstm till penultimate fidelity
                 # calculate embedding
                 shared_D0, lstm_D0 = self.model.forward(dataset_meta_features=D0, fidelities=labels)
 
                 # Get the loss for lstm output
                 lstm_loss = self.loss_fn(input=lstm_D0, target=data[1][:, -1, :])
 
+                
+                # For using the trained model, used the state_duict of the decoder to readout
+                # the penultimate fidelities
                 self.readout.load_state_dict(self.model.seq_network.readout.state_dict())
                 D0_rank = self.readout.forward(shared_D0.detach())
 

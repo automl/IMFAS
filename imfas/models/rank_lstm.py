@@ -4,9 +4,6 @@ import torch
 import torch.nn as nn
 import torchsort
 
-import pdb
-
-
 class AlgoRankMLP(nn.Module):
     def __init__(
         self,
@@ -21,13 +18,12 @@ class AlgoRankMLP(nn.Module):
         self.hidden_dims = hidden_dims
         self.device = device
 
-        self.rank = torchsort.soft_rank
-
         self._build_network()
 
     def _build_network(self):
         """
-        Build the network based on the initialized hyperparameters
+        Build the network by containerizing linear transformations
+        based on the number of layers and the specified dimensions
         """
         modules = []
 
@@ -60,7 +56,8 @@ class AlgoRankMLP(nn.Module):
 class RankLSTM(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim, readout=None):
         """
-        Basic implementation of a an LSTM network
+        Basic implementation of a an LSTM network and the readout module to convert the 
+        hidden dimension to the output dimension
 
         Args:
             input_dim   : Dimension of the input
@@ -77,7 +74,7 @@ class RankLSTM(nn.Module):
         # Number of hidden layers
         self.layer_dim = layer_dim
 
-        # LSTM layer of hte network
+        # LSTM layer of the network
         # batch_first=True causes input/output tensors to be of shape
         # (batch_dim, seq_dim, feature_dim)
         self.lstm = nn.LSTM(
@@ -88,7 +85,6 @@ class RankLSTM(nn.Module):
         )
 
         # Readout layer to convert hidden state output to the final output
-
         if readout is None:
             self.readout = nn.Linear(hidden_dim, output_dim)
         else:
@@ -99,6 +95,7 @@ class RankLSTM(nn.Module):
     def forward(self, init_hidden, context):
         """
         Forward pass of the LSTM
+
         Args:
             init_hidden : Initializer for hidden and/or cell state
             context     : Input tensor of shape (batch_dim, seq_dim, feature_dim)
@@ -129,6 +126,7 @@ class RankLSTM(nn.Module):
         # can be ranked
         out = self.readout(out[:, -1, :])
 
+        # Return the output
         return out
 
 
@@ -137,7 +135,6 @@ class RankLSTM_Ensemble(nn.Module):
         self,
         input_dim: int = 107,
         algo_dim: int = 58,
-        # lstm_hidden_dims: List[int] = 100,
         lstm_layers: int = 2,
         shared_hidden_dims: List[int] = [300, 200],
         device: str = "cpu",
@@ -206,6 +203,7 @@ class RankLSTM_Ensemble(nn.Module):
         # Forward through the lstm networks to get the readouts
         lstm_D = self.seq_network(init_hidden=shared_D, context=fidelities)
 
+        # Return the output of the shared layer and the LSTM layer
         return shared_D, lstm_D
 
 
