@@ -4,53 +4,53 @@ import torch
 import torch.nn as nn
 import torchsort
 
-class AlgoRankMLP(nn.Module):
-    def __init__(
-        self,
-        input_dim: int = 107,
-        algo_dim: int = 58,
-        hidden_dims: List[int] = [300, 200, 100],
-        device: torch.device = torch.device("cpu"),
-    ):
-        super(AlgoRankMLP, self).__init__()
-        self.meta_features_dim = input_dim
-        self.algo_dim = algo_dim
-        self.hidden_dims = hidden_dims
-        self.device = device
+# class AlgoRankMLP(nn.Module):
+#     def __init__(
+#         self,
+#         input_dim: int = 107,
+#         algo_dim: int = 58,
+#         hidden_dims: List[int] = [300, 200, 100],
+#         device: torch.device = torch.device("cpu"),
+#     ):
+#         super(AlgoRankMLP, self).__init__()
+#         self.meta_features_dim = input_dim
+#         self.algo_dim = algo_dim
+#         self.hidden_dims = hidden_dims
+#         self.device = device
 
-        self._build_network()
+#         self._build_network()
 
-    def _build_network(self):
-        """
-        Build the network by containerizing linear transformations
-        based on the number of layers and the specified dimensions
-        """
-        modules = []
+#     def _build_network(self):
+#         """
+#         Build the network by containerizing linear transformations
+#         based on the number of layers and the specified dimensions
+#         """
+#         modules = []
 
-        hidden_dims = self.hidden_dims
-        input_dim = self.meta_features_dim
+#         hidden_dims = self.hidden_dims
+#         input_dim = self.meta_features_dim
 
-        for h_dim in hidden_dims:
-            modules.append(nn.Linear(input_dim, h_dim))
-            modules.append(nn.ReLU())
-            input_dim = h_dim
+#         for h_dim in hidden_dims:
+#             modules.append(nn.Linear(input_dim, h_dim))
+#             modules.append(nn.ReLU())
+#             input_dim = h_dim
 
-        modules.append(nn.Linear(input_dim, self.algo_dim))
-        modules.append(nn.ReLU())
+#         modules.append(nn.Linear(input_dim, self.algo_dim))
+#         modules.append(nn.ReLU())
 
-        self.network = torch.nn.Sequential(*modules)
+#         self.network = torch.nn.Sequential(*modules)
 
-    def forward(self, D):
-        """
-        Forward path through the meta-feature ranker
+#     def forward(self, D):
+#         """
+#         Forward path through the meta-feature ranker
 
-        Args:
-            D: input tensor
-        Returns:
-            algorithm values tensor
+#         Args:
+#             D: input tensor
+#         Returns:
+#             algorithm values tensor
 
-        """
-        return self.network(D)
+#         """
+#         return self.network(D)
 
 
 class RankLSTM(nn.Module):
@@ -171,7 +171,7 @@ class RankLSTM_Ensemble(nn.Module):
         """
 
         # Build the shared network
-        self.shared_network = AlgoRankMLP(
+        self.shared_network = self._AlgoRankMLP(
             input_dim=self.meta_features_dim,
             algo_dim=self.shared_hidden_dims[-1],
             hidden_dims=self.shared_hidden_dims[:-1],
@@ -205,6 +205,37 @@ class RankLSTM_Ensemble(nn.Module):
 
         # Return the output of the shared layer and the LSTM layer
         return shared_D, lstm_D
+
+    def _AlgoRankMLP(
+        self,
+        input_dim: int = 107,
+        algo_dim: int = 58,
+        hidden_dims: List[int] = [300, 200, 100],
+        ):
+        """
+        Function to build the MLP network for pre-processing the meta-features
+        before the LSTM takes over
+
+        Args:
+            input_dim: input dimension
+            algo_dim: number of algorithms
+            hidden_dims: list of hidden dimensions for the shared MLP
+        
+        Returns:
+            Torch sequential module for the MLP network
+        """
+
+        modules = []
+
+        for h_dim in hidden_dims:
+            modules.append(nn.Linear(input_dim, h_dim))
+            modules.append(nn.ReLU())
+            input_dim = h_dim
+
+        modules.append(nn.Linear(input_dim, algo_dim))
+        modules.append(nn.ReLU())
+
+        return torch.nn.Sequential(*modules)
 
 
 if __name__ == "__main__":
