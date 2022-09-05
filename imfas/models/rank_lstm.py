@@ -1,75 +1,68 @@
-"""
-Main implementation of the Workshop version of IMFAS. AlgoRankMLP and RankLSTM
-are the core components of the RankLSTM_Ensemble model (which in fact is the Imfas model)
-"""
-
 from typing import List
 
 import torch
 import torch.nn as nn
 import torchsort
 
+# class AlgoRankMLP(nn.Module):
+#     def __init__(
+#         self,
+#         input_dim: int = 107,
+#         algo_dim: int = 58,
+#         hidden_dims: List[int] = [300, 200, 100],
+#         device: torch.device = torch.device("cpu"),
+#     ):
+#         super(AlgoRankMLP, self).__init__()
+#         self.meta_features_dim = input_dim
+#         self.algo_dim = algo_dim
+#         self.hidden_dims = hidden_dims
+#         self.device = device
 
-class AlgoRankMLP(nn.Module):
-    # FIXME: @Aditya: What does this model do?
-    def __init__(
-            self,
-            input_dim: int = 107,
-            algo_dim: int = 58,
-            hidden_dims: List[int] = [300, 200, 100],
-            device: torch.device = torch.device("cpu"),
-    ):
-        super(AlgoRankMLP, self).__init__()
-        self.meta_features_dim = input_dim
-        self.algo_dim = algo_dim
-        self.hidden_dims = hidden_dims
-        self.device = device
+#         self._build_network()
 
-        self.rank = torchsort.soft_rank
+#     def _build_network(self):
+#         """
+#         Build the network by containerizing linear transformations
+#         based on the number of layers and the specified dimensions
+#         """
+#         modules = []
 
-        self._build_network()
+#         hidden_dims = self.hidden_dims
+#         input_dim = self.meta_features_dim
 
-    def _build_network(self):
-        """
-        Build the network based on the initialized hyperparameters
-        """
-        modules = []
+#         for h_dim in hidden_dims:
+#             modules.append(nn.Linear(input_dim, h_dim))
+#             modules.append(nn.ReLU())
+#             input_dim = h_dim
 
-        hidden_dims = self.hidden_dims
-        input_dim = self.meta_features_dim
+#         modules.append(nn.Linear(input_dim, self.algo_dim))
+#         modules.append(nn.ReLU())
 
-        for h_dim in hidden_dims:
-            modules.append(nn.Linear(input_dim, h_dim))
-            modules.append(nn.ReLU())
-            input_dim = h_dim
+#         self.network = torch.nn.Sequential(*modules)
 
-        modules.append(nn.Linear(input_dim, self.algo_dim))
-        modules.append(nn.ReLU())
+#     def forward(self, D):
+#         """
+#         Forward path through the meta-feature ranker
 
-        self.network = torch.nn.Sequential(*modules)
+#         Args:
+#             D: input tensor
+#         Returns:
+#             algorithm values tensor
 
-    def forward(self, D):
-        """
-        Forward path through the meta-feature ranker
-
-        Args:
-            D: input tensor
-        Returns:
-            algorithm values tensor
-
-        """
-        return self.network(D)
+#         """
+#         return self.network(D)
 
 
 class RankLSTM(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim, readout=None):
         """
-        Basic implementation of a an LSTM network
+        Basic implementation of a an LSTM network and the readout module to convert the
+        hidden dimension to the output dimension
 
         Args:
             input_dim   : Dimension of the input
-            hidden_dim  : Dimension of the hidden state (hidden dimensions)
-            layer_dim   : Number of hidden layers
+            hidden_dim  : Dimension of the hidden state
+            layer_dim   : Number of layers
             output_dim  : Dimension of the output
             readout     : Optional readout layer for decoding the hidden state
         """
@@ -78,7 +71,7 @@ class RankLSTM(nn.Module):
         self.hidden_dim = hidden_dim
         self.layer_dim = layer_dim
 
-        # LSTM layer of hte network
+        # LSTM layer of the network
         # batch_first=True causes input/output tensors to be of shape
         # (batch_dim, seq_dim, feature_dim)
         self.lstm = nn.LSTM(
@@ -89,7 +82,6 @@ class RankLSTM(nn.Module):
         )
 
         # Readout layer to convert hidden state output to the final output
-
         if readout is None:
             self.readout = nn.Linear(hidden_dim, output_dim)
         else:
@@ -100,6 +92,7 @@ class RankLSTM(nn.Module):
     def forward(self, init_hidden, context):
         """
         Forward pass of the LSTM
+
         Args:
             init_hidden : Initializer for hidden and/or cell state
             context     : Input tensor of shape (batch_dim, seq_dim, feature_dim)
@@ -135,13 +128,12 @@ class RankLSTM(nn.Module):
 
 class RankLSTM_Ensemble(nn.Module):  # FIXME: @Aditya rename: IMFAS?
     def __init__(
-            self,
-            input_dim: int = 107,
-            algo_dim: int = 58,
-            # lstm_hidden_dims: List[int] = 100,
-            lstm_layers: int = 2,
-            shared_hidden_dims: List[int] = [300, 200],
-            device: str = "cpu",
+        self,
+        input_dim: int = 107,
+        algo_dim: int = 58,
+        lstm_layers: int = 2,
+        shared_hidden_dims: List[int] = [300, 200],
+        device: str = "cpu",
     ):
         """
         Sequential Ensemble of LSTM cells to rank based on multiple fidelities
@@ -175,7 +167,7 @@ class RankLSTM_Ensemble(nn.Module):  # FIXME: @Aditya rename: IMFAS?
         """
 
         # Dataset Meta Feature Encoder:
-        self.encoder = AlgoRankMLP(
+        self.encoder = self._AlgoRankMLP(
             input_dim=self.meta_features_dim,
             algo_dim=self.shared_hidden_dims[-1],
             hidden_dims=self.shared_hidden_dims[:-1],
@@ -189,9 +181,6 @@ class RankLSTM_Ensemble(nn.Module):  # FIXME: @Aditya rename: IMFAS?
             output_dim=self.algo_dim,
             readout=None,
         )
-
-        # FIXME: @Aditya: there should be a decoder for the final state, before
-        #
 
     def forward(self, dataset_meta_features, fidelities):
         """
@@ -211,6 +200,37 @@ class RankLSTM_Ensemble(nn.Module):  # FIXME: @Aditya rename: IMFAS?
         lstm_D = self.seq_network(init_hidden=shared_D, context=fidelities)
 
         return shared_D, lstm_D
+
+    def _AlgoRankMLP(
+        self,
+        input_dim: int = 107,
+        algo_dim: int = 58,
+        hidden_dims: List[int] = [300, 200, 100],
+        ):
+        """
+        Function to build the MLP network for pre-processing the meta-features
+        before the LSTM takes over
+
+        Args:
+            input_dim: input dimension
+            algo_dim: number of algorithms
+            hidden_dims: list of hidden dimensions for the shared MLP
+
+        Returns:
+            Torch sequential module for the MLP network
+        """
+
+        modules = []
+
+        for h_dim in hidden_dims:
+            modules.append(nn.Linear(input_dim, h_dim))
+            modules.append(nn.ReLU())
+            input_dim = h_dim
+
+        modules.append(nn.Linear(input_dim, algo_dim))
+        modules.append(nn.ReLU())
+
+        return torch.nn.Sequential(*modules)
 
 
 if __name__ == "__main__":

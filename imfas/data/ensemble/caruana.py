@@ -118,6 +118,8 @@ def ensemble(loss_table, init_size=1, replacement=True, max_iter=100):
 
 
 if __name__ == "__main__":
+
+    # FIXME: @Tim please use relatve paths for the csv's
     test_acc = pd.read_csv("/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/data_2k/final_test_accuracy.csv")
 
     loss, weights = ensemble(loss_table=test_acc, init_size=1, replacement=False)

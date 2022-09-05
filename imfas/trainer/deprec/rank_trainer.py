@@ -3,11 +3,11 @@ import logging
 import torch
 import torchsort
 import wandb
-from imfas.trainer.hierarchical_transformer_trainer import (
+from imfas.trainer.deprec.hierarchical_transformer_trainer import (
     Trainer_Hierarchical_Transformer,
     Trainer_Hierarchical_TransformerRankingLoss
 )
-from imfas.trainer.lstm_trainer import Trainer_Ensemble_lstm
+from imfas.trainer.deprec.lstm_trainer import Trainer_Ensemble_lstm
 from tqdm import tqdm
 
 from imfas.losses.ranking_loss import SpearmanLoss

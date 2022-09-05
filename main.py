@@ -28,7 +28,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return "".join(random.choice(chars) for _ in range(size))
 
 
-@hydra.main(config_path="configs", config_name="base", version_base='1.1')
+@hydra.main(config_path="configs", config_name="base")
 def pipe_train(cfg: DictConfig) -> None:
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
     print_cfg(cfg)
