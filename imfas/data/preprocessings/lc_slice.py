@@ -13,24 +13,28 @@ from imfas.data.preprocessings.table_transforms import Transform
 
 
 class LC_TimeSlices(Transform):
-    def __init__(self, slices: List[int]):
+    def __init__(self, slices: List[int]) -> None:
         """
         :param slices: which time slices across algos & dataset you want to have.
         """
         super().__init__(None)
         self.slices = slices
 
-    def transform(self, X: pd.DataFrame):
+    def transform(self, X: pd.DataFrame) -> torch.Tensor:
         """
         :param X: is an Array, where the time dimension is #FIXME ???
         :return: torch.Tensor: (n_slices, n_datasets n_algorithms)
         # FIXME: downstream must be tensor!
+
+        Returns: torch.Tensor: (n_datasets, n_algorithms, n_slices)
         """
         # X[self.slices]
+
+        # format of a single slice:
         format = X[self.slices[-1]].unstack().T
         self.columns = format.columns
         self.index = format.index  # dataset row major
 
         # FIXME: .T is depreciated for more than two dimensions
         sliced = torch.tensor(np.array([X[sl].unstack().T.values for sl in self.slices]))
-        return torch.swapaxes(sliced, 0, 1)
+        return torch.swapaxes(sliced, 0, 2)

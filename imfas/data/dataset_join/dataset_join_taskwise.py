@@ -72,6 +72,7 @@ from imfas.data.lc_dataset import Dataset_LC
 
 
 class Dataset_Joint_Taskwise2(Dataset):
+    #
     def __init__(
             self,
             meta_dataset: DatasetMetaFeatures,
@@ -90,21 +91,26 @@ class Dataset_Joint_Taskwise2(Dataset):
         self.meta_dataset = meta_dataset
         self.lc = lc
         self.meta_algo = meta_algo
-        self.num_datasets = len(meta_dataset)
-        self.num_algos = len(lc)
 
         if split is None:
             split = set(i for i in range(self.num_datasets))
 
+        # descriptives
+        self.n_datasets = len(split)
+        self.n_algos = self.meta_algo.transformed_df.shape[0]
+        self.n_algo_features = self.meta_algo.transformed_df.shape[1]
+        self.n_meta_features = self.meta_dataset.transformed_df.shape[1]
+        self.len_lc = self.lc.transformed_df.shape[2]
+
         # identifier indicies for the dataset-algorithm tuples
         self.datasets = set(split)
-        self.algos = set(range(self.num_algos))
+        self.algos = set(range(self.n_algos))
         self.index = [(d, a) for d in self.datasets for a in self.algos]
 
     def __len__(self):
         return len(self.index)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int):
         """
         :param item: idx. Notice, that this idx is translated into a dataset algorithm tuple (D_i, A_j)
 

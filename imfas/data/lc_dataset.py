@@ -1,8 +1,8 @@
 import pandas as pd
 from torch.utils.data import Dataset
 
-from imfas.data.preprocessings.transformpipeline import TransformPipeline
 from imfas.data.preprocessings.lc_slice import LC_TimeSlices
+from imfas.data.preprocessings.transformpipeline import TransformPipeline
 
 
 class Dataset_LC(Dataset):
@@ -22,24 +22,10 @@ class Dataset_LC(Dataset):
 
         if transforms is not None:
             if transforms.fitted:
-                # FIXME: .T is depreciated for more than two dimensions
-                self.transformed_df = self.transforms.transform(self.df).T
+                self.transformed_df = self.transforms.transform(self.df)
             else:
-                # FIXME: .T is depreciated for more than two dimensions
                 self.transforms = self.transforms.fit(self.df)
-                self.transformed_df = self.transforms.transform(self.df).T
-            self.df = self.df[self.df.columns[-1]].unstack().T  # transform the df appropriately
-            # self.transformed_df = self.transformed_df
-
-            # for getitem;
-            last_time_slice = [trans for trans in self.transforms if isinstance(trans, LC_TimeSlices)][-1]
-
-            if last_time_slice:
-                # time slices create a new dataframe, whose indicies must be known
-                # to get some sensible indexing going
-                self.columns = last_time_slice.columns
-                self.index = last_time_slice.index
-
+                self.transformed_df = self.transforms.transform(self.df)
 
     def __getitem__(self, item: int):
         """
