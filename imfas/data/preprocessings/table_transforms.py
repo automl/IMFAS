@@ -99,13 +99,16 @@ class Drop(Transform):
 
 
 class Convert(Transform):
-    def __init__(self, columns, dtype):
+    def __init__(self, columns=None, dtype=None):  # FIXME: dtype should be used
         """change to a specific type"""
 
         self.columns = columns
         self.dtype = dtype
 
     def transform(self, X: pd.DataFrame):
+        if self.columns is None:
+            self.columns = X.columns
+
         for col in self.columns:
             if self.dtype == "int":
                 X[col] = X[col].astype(int)

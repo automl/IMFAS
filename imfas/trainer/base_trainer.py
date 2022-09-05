@@ -3,6 +3,7 @@ from typing import Callable, List, Dict
 import torch.optim
 import wandb
 from hydra.utils import instantiate
+from omegaconf import DictConfig
 
 
 class BaseTrainer:
@@ -41,11 +42,14 @@ class BaseTrainer:
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
             self.to_device(X)
-            self.to_device(y)
+            self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
+            # masking?)
 
             self.optimizer.zero_grad()
-            y_hat = self.model.forward(X)
-            loss = loss_fn(y_hat, y).backward()
+            print(X.keys())
+            y_hat = self.model.forward(**X)
+            loss = loss_fn(y_hat, y['y']).backward()  # FIXME: y needs to be explicit & have a
+            # convention in dictionary naming
 
             wandb.log({'trainingloss': loss}, step=self.step)  # fixme: every training step?
 
@@ -80,7 +84,10 @@ class BaseTrainer:
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
-        train_loss_fn = instantiate(train_loss_fn)
+        if isinstance(train_loss_fn, DictConfig):
+            train_loss_fn = instantiate(train_loss_fn)
+        elif isinstance(train_loss_fn, Callable):
+            pass
 
         if valid_loss_fns is not None:
             assert aggregate_fn is not None

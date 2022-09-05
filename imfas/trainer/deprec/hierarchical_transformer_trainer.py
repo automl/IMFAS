@@ -14,6 +14,8 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
         for X, y in train_dataloader:
             # FIXME: @DIFAN: make this part of the preprocessing using dataset_joint class
             # FIXME @DIFAN MOVE TO PREP PIPE ----------------------------------
+
+            # fixme: Move dict parsing to model!
             X_lc = X['X_lc'].float()
             X_meta_features = X['X_meta_features'].float()
             tgt_algo_features = X['tgt_algo_features'].float()

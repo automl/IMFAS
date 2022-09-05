@@ -25,8 +25,5 @@ transforms:
         - 'num_layers'
       replacedict: { 'True': 1 }
     - _target_: imfas.data.preprocessings.table_transforms.Convert
-      columns:
-        - 'num_layers'
-      dtype: 'numeric'
     - _target_: imfas.data.preprocessings.table_transforms.ToTensor
     - _target_: imfas.data.preprocessings.tensor_transforms.ScaleStd

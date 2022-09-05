@@ -8,5 +8,6 @@ transforms:
   modulelist:
     - _target_: imfas.data.preprocessings.nan_transforms.Zero_fill
     #- _target_: imfas.data.preprocessings.table_transforms.Scalar
+    - _target_: imfas.data.preprocessings.table_transforms.Convert # novelty
     - _target_: imfas.data.preprocessings.table_transforms.ToTensor
     - _target_: imfas.data.preprocessings.tensor_transforms.ScaleStd
