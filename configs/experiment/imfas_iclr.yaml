@@ -11,11 +11,15 @@ defaults:
   - override /trainer: basetrainer
 
 dataset:
-  dataset_class:
+  train_dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
     masking_fn:
       _partial_: True
       _target_: imfas.data.mask_lcs_randomly
+
+  test_dataset_class:
+    _target_: imfas.data.Dataset_Join_Dmajor
+
 
   dataloader_class:
     batch_size: 10

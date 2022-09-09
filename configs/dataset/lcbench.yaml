@@ -98,7 +98,14 @@ dataset_raw:
       #       'Train/layer_wise_gradient_std_layer_2',
       #       'Train/layer_wise_gradient_std_layer_3'
 
-dataset_class:
+train_dataset_class:
+  _target_: imfas.data.Dataset_Join_Dmajor
+  meta_dataset: ${dataset.dataset_meta}
+  lc: ${dataset.lc_meta}
+  meta_algo: ${dataset.algo_meta}
+
+
+test_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   lc: ${dataset.lc_meta}

@@ -86,8 +86,8 @@ def pipe_train(cfg: DictConfig) -> None:
     )
 
     # Create the dataloaders
-    train_set = instantiate(cfg.dataset.dataset_class, split=train_split)
-    test_set = instantiate(cfg.dataset.dataset_class, split=test_split)
+    train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
+    test_set = instantiate(cfg.dataset.test_dataset_class, split=test_split)
 
     train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set, shuffle=True)
     test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
