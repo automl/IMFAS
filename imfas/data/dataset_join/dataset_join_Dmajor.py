@@ -21,7 +21,7 @@ def mask_lcs_randomly(lc_tensor, dataset=None):
     mask_idx = torch.randint(0, n_fidelities, (n_algos,)).view(-1, 1)
     for i, idx in enumerate(mask_idx):
         mask[i, 0:idx] = 1
-    return lc_tensor * mask
+    return lc_tensor * mask, mask.bool()
 
 
 class Dataset_Join_Dmajor(Dataset):
@@ -65,14 +65,16 @@ class Dataset_Join_Dmajor(Dataset):
 
         # if masking strategy is supplied:
         if self.masking_fn is not None:
-            lc_tensor = self.masking_fn(self.lc[it])
+            lc_tensor, lc_values_observed = self.masking_fn(self.lc[it])
 
         else:
             lc_tensor = self.lc[it]
+            lc_values_observed = torch.ones_like(lc_tensor, dtype=torch.bool)
 
         X = {
             "dataset_meta_features": self.meta_dataset[it],
             "learning_curves": lc_tensor,
+            "lc_values_observed": lc_values_observed,
             # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
             #  columnwise
         }
