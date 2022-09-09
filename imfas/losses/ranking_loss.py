@@ -50,6 +50,22 @@ class WeightedSpearman(Loss):
         return self.spearman_loss(input, target)
 
 
+class PlackettLuceModelLoss(Loss):
+    def __init__(self, reduction: str = 'mean') -> None:
+        super(PlackettLuceModelLoss, self).__init__(reduction=reduction)
+
+    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """
+        Apply Plackett Luce Model to the input and targets and compute their losses
+        """
+        assert len(input.shape) == 2
+        assert len(target.shape) == 2
+        target_orders = torch.argsort(target, dim=1)
+        input_reordered = torch.gather(input, -1, target_orders)
+        input_reordered = input_reordered.log_softmax(1)
+        return - torch.sum(input_reordered)
+
+
 def spear_halve_loss(halving_op, final_fidelity_performance):
     pred = halving_op.type(torch.float)
 

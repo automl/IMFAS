@@ -16,9 +16,9 @@ class IMFASTransformer(torch.nn.Module):
     def build_transformerencoder(self):
         self.transformer_encoder = None
 
-    def forward(self, dataset_meta_features, learning_curves):
+    def forward(self, dataset_meta_features, learning_curves, lc_values_observed):
         encoded_D = self.encoder(dataset_meta_features)
 
-        encoded_lcs = self.transformer_encoder(learning_curves)
+        encoded_lcs = self.transformer_encoder(learning_curves. lc_values_observed)
 
         return self.decoder(torch.cat(((encoded_lcs, encoded_D), 1)))
