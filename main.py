@@ -14,6 +14,13 @@ OmegaConf.register_new_resolver(
     "device_ident", lambda _: torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 )
 
+OmegaConf.register_new_resolver(
+    "add", lambda *numbers: sum(numbers)
+)
+OmegaConf.register_new_resolver(
+    "len", lambda l: len(l)
+)
+
 import os
 import random
 import string
@@ -88,7 +95,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # Dynamically computed configurations.
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
     cfg.dynamically_computed.n_data_meta_features = dataset_meta_features.df.columns.size
-    cfg.dynamically_computed.n_algos = len(train_set.lc.index)
+    cfg.dynamically_computed.n_algos = len(train_set.lc)
     cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
 
     wandb.config.update(

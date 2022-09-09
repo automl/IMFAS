@@ -29,7 +29,7 @@ class Dataset_LC(Dataset):
 
     def __getitem__(self, item: int):
         """
-        :param item: index of dataset to be queried
+        :param item: int. index of dataset to be queried
         :returns: tensor of shape (n_fidelities, n_algorithms)
         """
         # FIXME: this won't be applicable no more when transform has ToTensor
@@ -39,7 +39,12 @@ class Dataset_LC(Dataset):
         return self.transformed_df[item]
 
     def __len__(self):
-        return len(self.df)
+        # Dataset major; i.e. dataset dimension!
+        return self.shape[0]
+
+    @property
+    def shape(self):
+        return self.transformed_df.shape
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+_target_: imfas.models.imfas_wp.IMFAS_WP
+
+encoder:
+  _target_: imfas.utils.mlp.MLP
+  mlp_dims: [ 2,3,4 ]
+  #  [ ${ dynamically_computed.n_data_meta_features }, 200, 100 ]
+  activation: 'relu'
+
+lstm:
+  _target_: imfas.models.imfas_wp.FidelityLSTM
+  input_dim: 4
+  hidden_dim: 50
+  layer_dim: ${len:dataset.slices}
+
+decoder:
+  _target_: imfas.utils.mlp.MLP
+  mlp_dims: [ 2,3,4 ]
+  #  [ ${ add: ${ model.encoder.mlp_dims[ 0 ] }, ${ transformer_dims[ 0 ] } }, 200, 100 ] # fixme: change index
+  activation: 'relu'
+
+
+
+
