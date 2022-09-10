@@ -111,16 +111,23 @@ class Dataset_Joint_Taskwise2(Dataset):
         return len(self.index)
 
     def __getitem__(self, item: int):
+        d, a = self.index[item]
+
+        others = self.algos / {a}
+
+        self._get_subitem(d, a)
+
+    def _get_subitem(self, d, subitem: str):
         """
         :param item: idx. Notice, that this idx is translated into a dataset algorithm tuple (D_i, A_j)
 
         :return: X, y
         """
 
-        d, a = self.index[item]
-
         # current algorithm, dataset combination
         d_meta = self.meta_dataset.transformed_df[d]
+
+        # FIXME: masking?
         y_lc = self.lc.transformed_df[d][:, [a]]  # fixme: is this the target algorithm's lc?
         # fixme: should we present the "label" i.e. unmasked lc and the same but masked
         #  lc as "training datapoint"

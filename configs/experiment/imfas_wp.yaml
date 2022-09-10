@@ -1,0 +1,42 @@
+# @package _global_
+
+#  Workshop paper version of the IMFAS model: https://arxiv.org/pdf/2206.03130.pdf
+#  MLP1(D) = h_0 -> for_{i=0,..k}  LSTM(h_i, f_i)=h_{i+1}  -> MLP2(h_k) = output
+#
+#  D: dataset meta-features
+#  f_i: performances of all n (=algo_dim) algorithms on the i-th fidelity
+#
+#  The dimensions of the model are the following:
+#  MLP1: input_dim -> mlp1_hidden_dims -> h_dim
+#  LSTM: h_dim -> h_dim
+#  MLP2: h_dim -> mlp2_hidden_dims -> algo_dim
+defaults:
+  - override /dataset: lcbench
+  - override /dataset/dataset_meta: lcbench_minimal
+  - override /dataset/algo_meta: lcbench_minimal
+  - override /model: imfas_wp
+  - override /trainer: basetrainer
+
+
+dataset:
+  dataset_class:
+    _target_: imfas.data.Dataset_Join_Dmajor
+
+
+model:
+  encoder:
+    mlp_dims: [ 107, 100 ]
+
+  decoder:
+    mlp_dims: [ 100, 100 ]
+
+
+trainer:
+  optimizer:
+    lr: 0.0005
+
+
+wandb:
+  group: imfas_wp
+  notes: 'imfas wp'
+  mode: 'offline'

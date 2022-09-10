@@ -1,0 +1,35 @@
+# @package _global_
+
+# Transformer model.
+# d = MLP_d(D), t = TransformerEncoder(lcs_DA), output = MLP(concat(d,t))
+
+defaults:
+  - override /dataset: lcbench
+  - override /dataset/dataset_meta: lcbench_minimal
+  - override /dataset/algo_meta: lcbench_minimal
+  - override /model: imfas_transformer
+  - override /trainer: basetrainer
+
+dataset:
+  dataset_class:
+    _target_: imfas.data.Dataset_Join_Dmajor
+    masking_fn:
+      _partial_: True
+      _target_: imfas.data.mask_lcs_randomly
+
+  dataloader_class:
+    batch_size: 10
+
+model:
+  encoder:
+    mlp_dims: # [ 107, 100 ]
+      - ${dynamically_computed.n_data_meta_features}
+      - 100
+
+  decoder:
+    mlp_dims: [ 100, 100 ]
+
+wandb:
+  group: imfas_wp
+  notes: 'imfas wp'
+  mode: 'offline'

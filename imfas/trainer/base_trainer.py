@@ -16,7 +16,7 @@ class BaseTrainer:
         """
 
         :param model: torch.nn.Module
-        :param optimizer:
+        :param optimizer: A partially instantiated object accepting model.parameters()
         :param callbacks_end: list of functions to be called at the end of each epoch
         """
         self._step = 0  # FIXME: @Aditya: why exactly doesn't it suffice to have the epoch?

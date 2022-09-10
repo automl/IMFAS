@@ -65,9 +65,9 @@ setuptools.setup(
         "hydra-core",
         "pandas",
         "omegaconf",
-        "hydra-core"  # fixme might require an --upgrade
-        "pytorch_forecasting",
-        "pytables",
+        "hydra-core",  # fixme might require an --upgrade
+        # "pytorch_forecasting",
+        # "pytables",
     ],
     extras_require=extras_require,
     test_suite="pytest",

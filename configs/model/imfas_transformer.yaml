@@ -1,0 +1,17 @@
+_target_: imfas.models.imfas_transformer.IMFASTransformer
+transformer_dims:
+  ${add:2,3}
+#  [ ${ dataset.slices }, ]
+
+encoder:
+  _target_: imfas.utils.mlp.MLP
+  mlp_dims: [ 2,3,4 ]
+  #  [ ${ dynamically_computed.n_data_meta_features }, 200, 100 ]
+  activation: 'relu'
+
+decoder:
+  _target_: imfas.utils.mlp.MLP
+  mlp_dims: [ 2,3,4 ]
+  #  [ ${ add: ${ model.encoder.mlp_dims[ 0 ] }, ${ transformer_dims[ 0 ] } }, 200, 100 ] # fixme: change index
+  activation: 'relu'
+

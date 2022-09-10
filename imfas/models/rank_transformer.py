@@ -1,6 +1,6 @@
-import math
 from typing import Optional, Tuple, List
 
+import math
 import torch
 from torch import nn
 
@@ -58,7 +58,8 @@ class PositionalEncoding(nn.Module):
             x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]  # type: ignore[misc]
         return self.dropout(x)
 
-from imfas.models.rank_lstm import AlgoRankMLP, RankLSTM, RankLSTM_Ensemble
+
+from imfas.models.imfas_wp import AlgoRankMLP
 
 
 class RankTransfromer(nn.Module):
@@ -87,7 +88,8 @@ class RankTransfromer(nn.Module):
             readout     : Optional readout layer for decoding the hidden state
         """
         super(RankTransfromer, self).__init__()
-        self.embedding_layer = nn.Identity() if input_dim == d_model else nn.Linear(input_dim, d_model)
+        self.embedding_layer = nn.Identity() if input_dim == d_model else nn.Linear(input_dim,
+                                                                                    d_model)
         self.positional_encoder = PositionalEncoding(d_model=d_model, dropout=dropout)
         encoder_layers = nn.TransformerEncoderLayer(d_model=d_model,
                                                     nhead=n_head,
@@ -129,7 +131,8 @@ class RankTransfromer(nn.Module):
         src_key_padding_mask = None
         if self.training:
             if self.use_src_mask:
-                src_mask = nn.Transformer.generate_square_subsequent_mask(net_input.shape[1]).double().to(self.device)
+                src_mask = nn.Transformer.generate_square_subsequent_mask(
+                    net_input.shape[1]).double().to(self.device)
             if self.use_src_key_padding_mask:
                 # masked out part of the learning curves. This will force the network to do the prediction without
                 # observing the full learning curve.
@@ -199,7 +202,6 @@ class RankTransformer_Ensemble(nn.Module):
         self.use_src_key_padding_mask = use_src_key_padding_mask
 
         self._build_network()
-
 
     def _build_network(self):
         """
