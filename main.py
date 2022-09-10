@@ -48,7 +48,7 @@ def pipe_train(cfg: DictConfig) -> None:
             + "_"
             + os.path.basename(HydraConfig.get().run.dir)
     )
-    cfg.wandb.id = hydra_job + "_" + id_generator()  # fixme: necessary?
+    cfg.wandb.id = hydra_job + "_" + id_generator()  # FIXME: necessary?
 
     run = wandb.init(**cfg.wandb, config=dict_cfg)
 

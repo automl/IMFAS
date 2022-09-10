@@ -14,8 +14,11 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         self.mlp_dims = mlp_dims
 
-        mlp = [(nn.Linear(in_dim, out_dim, bias=True), self.activation[activation](),
-                nn.BatchNorm1d(out_dim))
+        mlp = [(
+                nn.Linear(in_dim, out_dim, bias=True), 
+                self.activation[activation](),
+                # nn.BatchNorm1d(out_dim)           # FIXME Check if needed
+                )
                for in_dim, out_dim in zip(mlp_dims, mlp_dims[1:])]
 
         self.layers = nn.ModuleList(chain(*mlp))
