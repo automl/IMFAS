@@ -1,7 +1,4 @@
-_target_: imfas.models.imfas_transformer.IMFASTransformer
-transformer_dims:
-  ${add:2,3}
-#  [ ${ dataset.slices }, ]
+_target_: imfas.models.imfas_transformer.IMFASBaseTransformer
 
 encoder:
   _target_: imfas.utils.mlp.MLP

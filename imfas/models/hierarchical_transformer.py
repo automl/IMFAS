@@ -4,7 +4,7 @@ import torch
 from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import GatedResidualNetwork
 from torch import nn
 
-from imfas.models.rank_transformer import PositionalEncoding
+from imfas.models.imfas_transformer import PositionalEncoding
 
 
 class HierarchicalTransformer(nn.Module):
