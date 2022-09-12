@@ -31,9 +31,10 @@ class BaseTrainer:
     def step(self):
         return self._step
 
-    def to_device(self, dict, ) -> None:
-        for v in dict.values():
-            v.to(self.device)
+    def to_device(self, input, ) -> None:
+        for k, v in input.items():
+            input[k] = v.to(self.device).float()
+        return input
 
     def train(self, train_loader, epochs, loss_fn) -> None:
         """define one epoch of training"""
@@ -42,8 +43,8 @@ class BaseTrainer:
         for _, data in enumerate(train_loader):
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
-            self.to_device(X)
-            self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
+            X = self.to_device(X)
+            y = self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
             # masking?)
 
             self.optimizer.zero_grad()
