@@ -22,13 +22,21 @@ dataset:
   dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
 
+  train_dataloader_class:
+    shuffle: True
+    batch_size: 5 # must be greater than 1 due to mlp batchnorm
+
+  test_dataloader_class:
+    shuffle: False
+    batch_size: 5
+
 
 model:
   encoder:
-    mlp_dims: [ 107, 100 ]
+    hidden_dims: [ 107, 100 ]
 
   decoder:
-    mlp_dims: [ 100, 100 ]
+    hidden_dims: [ 100, 100 ]
 
 
 trainer:

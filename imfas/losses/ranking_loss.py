@@ -19,6 +19,7 @@ class SpearmanLoss(Loss):
 
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         # generate soft ranks
+        # FIXME: @Aditya, what is the expected dtype of both tensors?
         input = self.ranking_fn(input, **self.ts_kwargs)
         target = self.ranking_fn(target, **self.ts_kwargs)
 
@@ -55,7 +56,7 @@ class PlackettLuceModelLoss(Loss):
         super(PlackettLuceModelLoss, self).__init__(reduction=reduction)
 
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """
+        r"""
         Apply Plackett Luce Model to the input and targets and compute their losses
         """
         assert len(input.shape) == 2

@@ -62,7 +62,7 @@ class FidelityLSTM(nn.Module):
         # Feed the context as a batched sequence so that at every rollout step, a fidelity
         # is fed as an input to the LSTM
         out, (hn, cn) = self.lstm(context.double(), (h0, c0))
-        # FIXME: @Aditya: move this part to the IMFAS1 class
+        # FIXME: @Aditya: something is off with the dimensions here. cannot train WP
         # Convert the last element of the lstm into values that
         # can be ranked
         out = self.readout(out[:, -1, :])
@@ -104,29 +104,6 @@ class IMFAS_WP(nn.Module):
 
         self.device = torch.device(device)
 
-        self._build_network()
-
-    # def _build_network(self):
-    #     """
-    #     Build the network based on the initialized hyperparameters
-    #
-    #     """
-    #
-    #     # Dataset Meta Feature Encoder:
-    #     mlp_dims = [self.meta_features_dim, *self.mlp_hidden_dims, self.algo_dim]
-    #     self.encoder = MLP(mlp_dims, activation="relu")
-    #
-    #     # Fidelity Contextualizer:
-    #     self.seq_network = FidelityLSTM(
-    #         input_dim=self.lstm_hidden_dim,
-    #         hidden_dim=self.mlp_hidden_dims[-1],
-    #         layer_dim=self.lstm_layers,
-    #         output_dim=self.lstm_hidden_dim,
-    #         readout=None,
-    #     )
-    #
-    #     if self.readout:
-    #         self.decoder = MLP()
 
     def forward(self, dataset_meta_features, learning_curves, *args, **kwargs):
         """
@@ -146,8 +123,6 @@ class IMFAS_WP(nn.Module):
         lstm_D = self.fidelity_lstm(init_hidden=initial_hiddenstate, context=learning_curves)
 
         return self.decoder(lstm_D)
-
-        return initial, lstm_D
 
 
 if __name__ == "__main__":

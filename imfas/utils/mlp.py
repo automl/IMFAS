@@ -10,13 +10,13 @@ class MLP(nn.Module):
         'identiy': nn.Identity
     }
 
-    def __init__(self, mlp_dims: List[int], activation: str = "relu"):
+    def __init__(self, hidden_dims: List[int], activation: str = "relu"):
         super(MLP, self).__init__()
-        self.mlp_dims = mlp_dims
+        self.mlp_dims = hidden_dims
 
         mlp = [(nn.Linear(in_dim, out_dim, bias=True), self.activation[activation](),
                 nn.BatchNorm1d(out_dim))
-               for in_dim, out_dim in zip(mlp_dims, mlp_dims[1:])]
+               for in_dim, out_dim in zip(hidden_dims, hidden_dims[1:])]
 
         self.layers = nn.ModuleList(chain(*mlp))
         # self.double() # FIXME needed for LSTM?
