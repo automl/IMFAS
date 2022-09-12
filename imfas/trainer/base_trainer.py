@@ -9,10 +9,10 @@ from tqdm import tqdm
 
 class BaseTrainer:
     def __init__(
-        self,
-        model: torch.nn.Module,
-        optimizer: torch.optim.Optimizer = None,
-        # callbacks_end: List[Callable] = None
+            self,
+            model: torch.nn.Module,
+            optimizer: torch.optim.Optimizer = None,
+            # callbacks_end: List[Callable] = None
     ):
         """
 
@@ -33,8 +33,8 @@ class BaseTrainer:
         return self._step
 
     def to_device(
-        self,
-        input,
+            self,
+            input,
     ) -> None:
         for k, v in input.items():
             input[k] = v.to(self.device).float()
@@ -48,7 +48,8 @@ class BaseTrainer:
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
             X = self.to_device(X)
-            y = self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
+            y = self.to_device(
+                y)  # fixme: move to device in fwd call (to allow for data prep such as
             # masking?)
 
             self.optimizer.zero_grad()
@@ -84,13 +85,13 @@ class BaseTrainer:
             return losses  # returns the entire trace of all instances in the testloader
 
     def run(
-        self,
-        train_loader,
-        test_loader,
-        epochs,
-        train_loss_fn,
-        valid_loss_fns: Dict[str, Callable] = None,
-        aggregate_fn: Optional[Callable] = None,
+            self,
+            train_loader,
+            test_loader,
+            epochs,
+            train_loss_fn,
+            valid_loss_fns: Dict[str, Callable] = None,
+            aggregate_fn: Optional[Callable] = None,
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
