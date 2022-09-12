@@ -27,6 +27,9 @@ dataset:
       _target_: imfas.utils.masking.mask_lcs_randomly
       _partial_: True
 
+  test_dataset_class:
+    _target_: imfas.data.Dataset_Join_Dmajor
+
   train_dataloader_class:
     shuffle: True
     batch_size: 5 # must be greater than 1 due to mlp batchnorm
@@ -40,11 +43,8 @@ model:
   encoder:
     hidden_dims: [ 107, 100 ]
 
-  lstm:
-    _target_: imfas.models.imfas_wp.FidelityLSTM
-    input_dim: 100
-    hidden_dim: 50
-    layer_dim: 1 #${len:dataset.slices}
+  input_dim: ${dynamically_computed.len_lc}
+  n_layers: 2
 
   decoder:
     hidden_dims: [ 100, 100 ]
@@ -82,6 +82,16 @@ trainer:
         _target_: sklearn.metrics.ndcg_score
         _partial_: True
         k: 5
+
+      ndcg3:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 3
+
+      ndcg1:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 1
 
 
 

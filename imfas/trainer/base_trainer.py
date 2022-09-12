@@ -4,6 +4,7 @@ import torch.optim
 import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
+from tqdm import tqdm
 
 
 class BaseTrainer:
@@ -77,7 +78,7 @@ class BaseTrainer:
                 loss = valid_loss_fn(y_hat, y)
                 losses.append(loss)
 
-        if aggregate_fn is not None:
+        if aggregate_fn is not None:  # fixme: we might want an aggregate for each loss fn
             return aggregate_fn(losses)
         else:
             return losses  # returns the entire trace of all instances in the testloader
@@ -100,7 +101,7 @@ class BaseTrainer:
         elif isinstance(train_loss_fn, Callable):
             pass
 
-        for epoch in range(epochs):
+        for epoch in tqdm(range(epochs), desc='Training epochs'):
             self.train(train_loader, epoch, train_loss_fn)
 
             if valid_loss_fns is not None:

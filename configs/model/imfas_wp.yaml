@@ -2,23 +2,23 @@ _target_: imfas.models.imfas_wp.IMFAS_WP
 
 encoder:
   _target_: imfas.utils.mlp.MLP
-  mlp_dims: 
-   - ${ dynamically_computed.n_data_meta_features }
-   - 300
-   - 200
+  hidden_dims:
+    - ${ dynamically_computed.n_data_meta_features }
+    - 300
+    - 200
   #  [ ${ dynamically_computed.n_data_meta_features }, 200, 100 ]
   activation: 'relu'
 
 decoder:
   _target_: imfas.utils.mlp.MLP
-  mlp_dims:
-    - 200 
+  hidden_dims:
+    - 200
     - ${dynamically_computed.n_algos}
-    
+
   #  [ ${ add: ${ model.encoder.mlp_dims[ 0 ] }, ${ transformer_dims[ 0 ] } }, 200, 100 ] # fixme: change index
   activation: 'relu'
 
-input_dims: ${dynamically_computed.len_lc}
+input_dim: ${dynamically_computed.len_lc}
 n_layers: 2
 device: 'cpu'
 
