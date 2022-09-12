@@ -8,10 +8,7 @@ from torch.nn.modules.loss import _Loss as Loss
 
 class SpearmanLoss(Loss):
     def __init__(
-            self,
-            reduction: str = 'mean',
-            ranking_fn: Callable = torchsort.soft_rank,
-            ts_kwargs: Dict = {}
+        self, reduction: str = "mean", ranking_fn: Callable = torchsort.soft_rank, ts_kwargs: Dict = {}
     ) -> None:
         super(SpearmanLoss, self).__init__(reduction=reduction)
         self.ranking_fn = ranking_fn
@@ -39,8 +36,9 @@ class SpearmanLoss(Loss):
 
 
 class WeightedSpearman(Loss):
-    def __init__(self, reduction: str = 'mean',
-                 ranking_fn: Callable = torchsort.soft_rank, ts_kwargs: Dict = {}) -> None:
+    def __init__(
+        self, reduction: str = "mean", ranking_fn: Callable = torchsort.soft_rank, ts_kwargs: Dict = {}
+    ) -> None:
         super(WeightedSpearman, self).__init__(reduction=reduction)
         self.spearman_loss = SpearmanLoss(reduction, ranking_fn=ranking_fn, ts_kwargs=ts_kwargs)
         self.weight_func = Softmax(dim=1)
@@ -49,6 +47,7 @@ class WeightedSpearman(Loss):
         weights = self.weight_func(target)
         input = input * weights
         return self.spearman_loss(input, target)
+
 
 # FIXME: @TIM deprecate this (was used in old sh variant)
 # def spear_halve_loss(halving_op, final_fidelity_performance):

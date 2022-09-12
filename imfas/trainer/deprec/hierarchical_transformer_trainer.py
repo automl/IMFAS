@@ -16,14 +16,13 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             # FIXME @DIFAN MOVE TO PREP PIPE ----------------------------------
 
             # fixme: Move dict parsing to model!
-            X_lc = X['X_lc'].float()
-            X_meta_features = X['X_meta_features'].float()
-            tgt_algo_features = X['tgt_algo_features'].float()
-            tgt_meta_features = X['tgt_meta_features'].float()
-            query_algo_features = X[
-                'query_algo_features'].float()  # [batch_size, n_query_algo], n_algo_feat
-            query_algo_lc = X['query_algo_lc'].float()
-            tgt_algo_lc = y['tgt_algo_lc'].float()  # [batch_size, L, n_query_algo, 1]
+            X_lc = X["X_lc"].float()
+            X_meta_features = X["X_meta_features"].float()
+            tgt_algo_features = X["tgt_algo_features"].float()
+            tgt_meta_features = X["tgt_meta_features"].float()
+            query_algo_features = X["query_algo_features"].float()  # [batch_size, n_query_algo], n_algo_feat
+            query_algo_lc = X["query_algo_lc"].float()
+            tgt_algo_lc = y["tgt_algo_lc"].float()  # [batch_size, L, n_query_algo, 1]
             # ------------------------------------------------------------------
 
             final_fidelity = tgt_algo_lc[:, -1]  # FIXME: make this part of the y dict!
@@ -39,8 +38,7 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
 
             # flatten the first two dimensions todo what?
             # todo : doc what is a query algo
-            query_algo_lc = torch.transpose(query_algo_lc, 1, 2).reshape(
-                batch_size * n_query_algos_all, lc_length, 1)
+            query_algo_lc = torch.transpose(query_algo_lc, 1, 2).reshape(batch_size * n_query_algos_all, lc_length, 1)
             query_algo_features = query_algo_features.reshape(batch_size * n_query_algos_all, -1)
 
             # for each query set, select exactly n_query_algos[i] learning curves
@@ -48,8 +46,7 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             query_idx = torch.cat([torch.randperm(n_query_algos_all) for _ in range(batch_size)])
             query_idx = query_idx < n_query_algos.repeat_interleave(n_query_algos_all)
 
-            query_algo_features = query_algo_features[
-                query_idx]  # [sum(n_query_algos), n_query_algo]
+            query_algo_features = query_algo_features[query_idx]  # [sum(n_query_algos), n_query_algo]
             query_algo_lc = query_algo_lc[query_idx]  # [sum(n_query_algos), L, 1]
 
             # randomly mask out the tail of each learning curves. each learning curve needs to have at least 1 time step
@@ -58,11 +55,7 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             n_query_lc = len(query_algo_lc)
 
             query_algo_lc, query_algo_padding_mask = self.mask_learning_curves(
-                query_algo_lc,
-                lc_length=lc_length,
-                lower=1,
-                upper=lc_length + 1,
-                n_lc=n_query_lc
+                query_algo_lc, lc_length=lc_length, lower=1, upper=lc_length + 1, n_lc=n_query_lc
             )
 
             n_query_algos_all_list = n_query_algos.tolist()  # FIXME: this is not used
@@ -73,10 +66,7 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             # same as above, mask the learning curve of the target algorithm. However, we allow zero evaluations while
             # the full fidelity value should not be presented here
             tgt_algo_lc, tgt_algo_padding_mask = self.mask_learning_curves(
-                tgt_algo_lc,
-                lc_length=lc_length,
-                lower=0, upper=lc_length,
-                n_lc=batch_size
+                tgt_algo_lc, lc_length=lc_length, lower=0, upper=lc_length, n_lc=batch_size
             )
 
             self.optimizer.zero_grad()
@@ -93,15 +83,11 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
                 "query_algo_lc": query_algo_lc,
                 "query_algo_padding_mask": query_algo_padding_mask,
                 "tgt_algo_lc": tgt_algo_lc,
-                "tgt_algo_padding_mask": tgt_algo_padding_mask
+                "tgt_algo_padding_mask": tgt_algo_padding_mask,
             }
             self.to_device(features)
 
-            predict = self.model(
-                X_lc.to(self.device),
-                X_meta_features.to(self.device),
-                **features
-            )
+            predict = self.model(X_lc.to(self.device), X_meta_features.to(self.device), **features)
 
             # FIXME: @DIFAN: why is this an LSTM loss?
             lstm_loss = self.loss_fn(input=predict, target=final_fidelity.to(self.device))
@@ -110,12 +96,12 @@ class Trainer_Hierarchical_Transformer(BaseTrainer):
             self.optimizer.step()
 
     def mask_learning_curves(
-            self,
-            lc: torch.Tensor,
-            n_lc: int,
-            lc_length: int,
-            lower: int,
-            upper: int,
+        self,
+        lc: torch.Tensor,
+        n_lc: int,
+        lc_length: int,
+        lower: int,
+        upper: int,
     ) -> Tuple[torch.Tensor, torch.BoolTensor]:
         """
         mask the learning curves with 0. The masked learning curve has length between [lower, uppper)

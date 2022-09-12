@@ -1,6 +1,7 @@
 from imfas.data.dataset_meta_features import DatasetMetaFeatures
-from imfas.data.preprocessings.transformpipeline import TransformPipeline
 from imfas.data.preprocessings.table_transforms import *
+from imfas.data.preprocessings.transformpipeline import TransformPipeline
+
 
 class AlgorithmMetaFeatures(DatasetMetaFeatures):
     def __init__(self, path, transforms: TransformPipeline = None, *args, **kwargs):

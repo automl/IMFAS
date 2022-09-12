@@ -1,9 +1,11 @@
 from itertools import chain
 
 import pandas as pd
+
 try:
     import matplotlib.pyplot as plt
     import seaborn as sns
+
     PACKAGE_FOUND = True
 except ModuleNotFoundError:
     PACKAGE_FOUND = False

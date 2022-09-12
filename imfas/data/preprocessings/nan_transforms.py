@@ -38,7 +38,7 @@ class Column_Mean(Transform):
         """
         super(Column_Mean, self).__init__()
 
-    def transform(self, X:pd.DataFrame):
+    def transform(self, X: pd.DataFrame):
 
         for col in X.columns:
             X[col].fillna(X[col].mean(), inplace=True)
@@ -47,7 +47,7 @@ class Column_Mean(Transform):
 
 
 class Column_Ffill(Transform):
-    def transform(self, X:pd.DataFrame):
-        X_t = X.T.fillna(method='ffill', inplace=True)
-        X_t = X_t.fillna(method='bfill', inplace=True)
+    def transform(self, X: pd.DataFrame):
+        X_t = X.T.fillna(method="ffill", inplace=True)
+        X_t = X_t.fillna(method="bfill", inplace=True)
         return X_t.T

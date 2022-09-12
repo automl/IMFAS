@@ -10,20 +10,12 @@ log = logging.getLogger(__name__)
 
 import torch
 
-OmegaConf.register_new_resolver(
-    "device_ident", lambda _: torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-)
+OmegaConf.register_new_resolver("device_ident", lambda _: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
-OmegaConf.register_new_resolver(
-    "add", lambda *numbers: sum(numbers)
-)
-OmegaConf.register_new_resolver(
-    "len", lambda l: len(l)
-)
+OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
+OmegaConf.register_new_resolver("len", lambda l: len(l))
 
-OmegaConf.register_new_resolver(
-    "range", lambda start, stop, step: list(range(start, stop, step))
-)
+OmegaConf.register_new_resolver("range", lambda start, stop, step: list(range(start, stop, step)))
 
 import os
 import random
@@ -48,11 +40,11 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # FIXME: W&B id???
     hydra_job = (
-            os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
-            + "_"
-            + os.path.basename(HydraConfig.get().run.dir)
+        os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
+        + "_"
+        + os.path.basename(HydraConfig.get().run.dir)
     )
-    cfg.wandb.id = hydra_job + "_" + id_generator()  # fixme: necessary?
+    cfg.wandb.id = hydra_job + "_" + id_generator()  # FIXME: necessary?
 
     run = wandb.init(**cfg.wandb, config=dict_cfg)
 
@@ -103,14 +95,15 @@ def pipe_train(cfg: DictConfig) -> None:
     cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
 
     wandb.config.update(
-        {"dynamically_computed.n_algos": train_set.meta_algo.transformed_df.shape[-1],
-         "dynamically_computed.n_data_meta_features": dataset_meta_features.df.columns.size}
+        {
+            "dynamically_computed.n_algos": train_set.meta_algo.transformed_df.shape[-1],
+            "dynamically_computed.n_data_meta_features": dataset_meta_features.df.columns.size,
+        }
     )
 
     # CLASSICAL MODELS -----------------------------------------------------------------------------
     model = instantiate(cfg.model, device=cfg.device)
     model.to(cfg.device)
-
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
     trainer.run(

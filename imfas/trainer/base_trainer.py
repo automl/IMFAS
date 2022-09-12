@@ -8,10 +8,10 @@ from omegaconf import DictConfig
 
 class BaseTrainer:
     def __init__(
-            self,
-            model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer = None,
-            # callbacks_end: List[Callable] = None
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer = None,
+        # callbacks_end: List[Callable] = None
     ):
         """
 
@@ -31,7 +31,10 @@ class BaseTrainer:
     def step(self):
         return self._step
 
-    def to_device(self, input, ) -> None:
+    def to_device(
+        self,
+        input,
+    ) -> None:
         for k, v in input.items():
             input[k] = v.to(self.device).float()
         return input
@@ -44,18 +47,17 @@ class BaseTrainer:
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
             X = self.to_device(X)
-            y = self.to_device(
-                y)  # fixme: move to device in fwd call (to allow for data prep such as
+            y = self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
             # masking?)
 
             self.optimizer.zero_grad()
 
             y_hat = self.model.forward(**X)
 
-            loss = loss_fn(y_hat, y['final_fidelity']).backward()
+            loss = loss_fn(y_hat, y["final_fidelity"]).backward()
             # FIXME: y needs to be explicit or have a strong convention
 
-            wandb.log({'trainingloss': loss}, step=self.step)  # fixme: every training epoch!
+            wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
 
             self.optimizer.step()
             self._step += 1
@@ -81,13 +83,13 @@ class BaseTrainer:
             return losses  # returns the entire trace of all instances in the testloader
 
     def run(
-            self,
-            train_loader,
-            test_loader,
-            epochs,
-            train_loss_fn,
-            valid_loss_fns: Dict[str, Callable] = None,
-            aggregate_fn: Optional[Callable] = None
+        self,
+        train_loader,
+        test_loader,
+        epochs,
+        train_loss_fn,
+        valid_loss_fns: Dict[str, Callable] = None,
+        aggregate_fn: Optional[Callable] = None,
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 

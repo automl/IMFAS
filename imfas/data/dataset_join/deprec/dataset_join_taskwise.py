@@ -1,6 +1,8 @@
 import torch
 
-from imfas.data.dataset_join.dataset_join_taskwiseranking import Dataset_Joint_TaskswiseRanking
+from imfas.data.dataset_join.dataset_join_taskwiseranking import (
+    Dataset_Joint_TaskswiseRanking,
+)
 
 
 class Dataset_Joint_Taskswise(Dataset_Joint_TaskswiseRanking):
@@ -47,15 +49,15 @@ class Dataset_Joint_Taskswise(Dataset_Joint_TaskswiseRanking):
         query_algo_lc = y_lc[:, query_algo_idx]
 
         X = {
-            'X_lc': X_lc,
-            'X_meta_features': X_meta_features,
-            'tgt_algo_features': tgt_algo_features,
-            'query_algo_features': query_algo_features,
-            'tgt_meta_features': tgt_meta_features,
-            'query_algo_lc': query_algo_lc
+            "X_lc": X_lc,
+            "X_meta_features": X_meta_features,
+            "tgt_algo_features": tgt_algo_features,
+            "query_algo_features": query_algo_features,
+            "tgt_meta_features": tgt_meta_features,
+            "query_algo_lc": query_algo_lc,
         }
 
-        y = {'tgt_algo_lc': tgt_algo_lc}
+        y = {"tgt_algo_lc": tgt_algo_lc}
 
         return X, y
 
@@ -64,6 +66,7 @@ class Dataset_Joint_Taskswise(Dataset_Joint_TaskswiseRanking):
 
 
 from typing import Optional
+
 from torch.utils.data import Dataset
 
 from imfas.data.algorithm_meta_features import AlgorithmMetaFeatures
@@ -74,11 +77,11 @@ from imfas.data.lc_dataset import Dataset_LC
 class Dataset_Joint_Taskwise2(Dataset):
     #
     def __init__(
-            self,
-            meta_dataset: DatasetMetaFeatures,
-            lc: Dataset_LC,
-            meta_algo: Optional[AlgorithmMetaFeatures] = None,
-            split=None
+        self,
+        meta_dataset: DatasetMetaFeatures,
+        lc: Dataset_LC,
+        meta_algo: Optional[AlgorithmMetaFeatures] = None,
+        split=None,
     ):
         """
         A Dataset, assuming there is a cuboid, where the vertical dim are the algorithms,

@@ -1,4 +1,4 @@
-from typing import Optional, Callable, List
+from typing import Callable, List, Optional
 
 import torch
 from torch.utils.data import Dataset
@@ -10,13 +10,12 @@ from imfas.data.lc_dataset import Dataset_LC
 
 class Dataset_Join_Dmajor(Dataset):
     def __init__(
-            self,
-            meta_dataset: DatasetMetaFeatures,
-            lc: Dataset_LC,
-            meta_algo: Optional[AlgorithmMetaFeatures] = None,
-            split: List[int] = None,
-            masking_fn: Optional[Callable] = None,
-
+        self,
+        meta_dataset: DatasetMetaFeatures,
+        lc: Dataset_LC,
+        meta_algo: Optional[AlgorithmMetaFeatures] = None,
+        split: List[int] = None,
+        masking_fn: Optional[Callable] = None,
     ):
         """
         Dataset, joining Dataset Meta features, Algorithm Meta features and the

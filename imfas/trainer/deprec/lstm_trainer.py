@@ -41,7 +41,6 @@ class Trainer_Ensemble_lstm(BaseTrainer):
                 # Get the loss for lstm output
                 lstm_loss = self.loss_fn(input=lstm_D0, target=data[1][:, -1, :])
 
-                
                 # For using the trained model, used the state_duict of the decoder to readout
                 # the penultimate fidelities
                 self.readout.load_state_dict(self.model.seq_network.readout.state_dict())

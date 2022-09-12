@@ -1,7 +1,9 @@
 from typing import List, Union
 
 import torch
-from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import GatedResidualNetwork
+from pytorch_forecasting.models.temporal_fusion_transformer.sub_modules import (
+    GatedResidualNetwork,
+)
 from torch import nn
 
 from imfas.models.imfas_transformer import PositionalEncoding
@@ -9,25 +11,25 @@ from imfas.models.imfas_transformer import PositionalEncoding
 
 class HierarchicalTransformer(nn.Module):
     def __init__(
-            self,
-            device: torch.device,
-            input_dim_meta_feat: int,  # FIXME: number of (classical) dataset meta features
-            input_dim_algo_feat: int,  # FIXME: number of hyperparameters / algo meta features
-            input_dim_lc: int,  # Fixme: number of n_fidelity levels?
-            d_model: int,  # the number of expected features in the input in transformer
-            n_head: int,  # number of attention heads
-            dim_feedforward: int,  # the dimension of the feedforward network model  in transformer
-            n_layers_lc: int,  # number of transformer layers applied to each lc. (ensures
-            # separate learning curves between competitors & target algorithm on different datasets
-            n_layers_meta: int,  # attention layer used to fuse info between different learning
-            # curves
-            dropout: float,
-            output_dim: int = 1,
-            norm_first: bool = False,
-            mask_uncorrelated_lcs: bool = False,
-            readout=None,
-            incorporate_tgt_length_to_encoder: bool = False,
-            incorporate_tgt_meta_features_to_encoder: bool = False
+        self,
+        device: torch.device,
+        input_dim_meta_feat: int,  # FIXME: number of (classical) dataset meta features
+        input_dim_algo_feat: int,  # FIXME: number of hyperparameters / algo meta features
+        input_dim_lc: int,  # Fixme: number of n_fidelity levels?
+        d_model: int,  # the number of expected features in the input in transformer
+        n_head: int,  # number of attention heads
+        dim_feedforward: int,  # the dimension of the feedforward network model  in transformer
+        n_layers_lc: int,  # number of transformer layers applied to each lc. (ensures
+        # separate learning curves between competitors & target algorithm on different datasets
+        n_layers_meta: int,  # attention layer used to fuse info between different learning
+        # curves
+        dropout: float,
+        output_dim: int = 1,
+        norm_first: bool = False,
+        mask_uncorrelated_lcs: bool = False,
+        readout=None,
+        incorporate_tgt_length_to_encoder: bool = False,
+        incorporate_tgt_meta_features_to_encoder: bool = False,
     ):
         """
         Hierarchical Transformer. both encoder layers and decoder layers are composed of two parts:
@@ -117,14 +119,9 @@ class HierarchicalTransformer(nn.Module):
         # gated residual network and variable selection are used to encode the static
         # features (i.e. meta features and algo features)
         self.flattened_grn_encoder = GatedResidualNetwork(
-            n_var_encoder * self.d_model,
-            n_var_encoder,
-            n_var_encoder,
-            self.dropout, False
+            n_var_encoder * self.d_model, n_var_encoder, n_var_encoder, self.dropout, False
         )
-        self.flattened_grn_decoder = GatedResidualNetwork(
-            2 * self.d_model, 2, 2, self.dropout, False
-        )
+        self.flattened_grn_decoder = GatedResidualNetwork(2 * self.d_model, 2, 2, self.dropout, False)
         self.softmax = nn.Softmax(dim=-1)
 
         # ---------------------------------------------------------------------
@@ -135,7 +132,7 @@ class HierarchicalTransformer(nn.Module):
             dim_feedforward=self.dim_feedforward,
             dropout=self.dropout,
             batch_first=True,
-            norm_first=self.norm_first
+            norm_first=self.norm_first,
         )
 
         decoder_layer = nn.TransformerDecoderLayer(
@@ -149,23 +146,22 @@ class HierarchicalTransformer(nn.Module):
         self.lc_encoder = nn.TransformerEncoder(encoder_layer, num_layers=self.n_layers_lc)
         self.meta_encoder = nn.TransformerEncoder(encoder_layer, num_layers=self.n_layers_meta)
 
-        self.lc_decoder = nn.TransformerDecoder(decoder_layer=decoder_layer,
-                                                num_layers=self.n_layers_lc)
+        self.lc_decoder = nn.TransformerDecoder(decoder_layer=decoder_layer, num_layers=self.n_layers_lc)
         self.meta_decoder = nn.TransformerDecoder(decoder_layer, num_layers=self.n_layers_meta)
 
     def forward(  # Fixme @difan: this is a mess. split it into multiple sub-functions, whose
-            # names and documentation convey the purpose of each op.
-            self,
-            X_lc: torch.Tensor,
-            X_meta_features: torch.Tensor,
-            tgt_algo_features: torch.Tensor,
-            tgt_meta_features: torch.Tensor,
-            query_algo_features: Union[List[torch.Tensor], torch.Tensor],
-            n_query_algo: torch.IntTensor,
-            query_algo_lc: Union[List[torch.Tensor], torch.Tensor],
-            query_algo_padding_mask: Union[List[torch.Tensor], torch.Tensor],
-            tgt_algo_lc: torch.Tensor,
-            tgt_algo_padding_mask: torch.Tensor
+        # names and documentation convey the purpose of each op.
+        self,
+        X_lc: torch.Tensor,
+        X_meta_features: torch.Tensor,
+        tgt_algo_features: torch.Tensor,
+        tgt_meta_features: torch.Tensor,
+        query_algo_features: Union[List[torch.Tensor], torch.Tensor],
+        n_query_algo: torch.IntTensor,
+        query_algo_lc: Union[List[torch.Tensor], torch.Tensor],
+        query_algo_padding_mask: Union[List[torch.Tensor], torch.Tensor],
+        tgt_algo_lc: torch.Tensor,
+        tgt_algo_padding_mask: torch.Tensor,
     ):
         """
         Forward pass to hierarchy Transformer. Only learning curves from each individual datasets ([L, N_features])
@@ -222,20 +218,15 @@ class HierarchicalTransformer(nn.Module):
 
         # Encode dataset meta features
         en_feat_embeddings = self.project_layer_meta_feat(X_meta_features)
-        en_feat_embeddings = en_feat_embeddings.view(  # [B * N_datasets, d_model]
-            batch_size * n_datasets_encoder, -1
-        )
+        en_feat_embeddings = en_feat_embeddings.view(batch_size * n_datasets_encoder, -1)  # [B * N_datasets, d_model]
 
         # Encode algorithm features:
         # for the first layer, we only compute the attention map within each learning curve
         # a1d1, a1d2, ... | a2dn, a3dn, ... * a1dn
         # a2d1, a2d2, ... | a1dm, a3dm, ... * a2dm
-        en_algo_embeddings: torch.Tensor = self.project_layer_algo_feat(
-            tgt_algo_features)  # [B, d_model]
+        en_algo_embeddings: torch.Tensor = self.project_layer_algo_feat(tgt_algo_features)  # [B, d_model]
         en_algo_embeddings_repeat = en_algo_embeddings.repeat(1, n_datasets_encoder)
-        en_algo_embeddings_repeat = en_algo_embeddings_repeat.view(
-            batch_size * n_datasets_encoder, -1
-        )
+        en_algo_embeddings_repeat = en_algo_embeddings_repeat.view(batch_size * n_datasets_encoder, -1)
 
         # assert torch.all(en_algo_embeddings_repeat[0] == en_algo_embeddings_repeat[1])
         # assert torch.any(en_algo_embeddings_repeat[0] != en_algo_embeddings_repeat[n_datasets_encoder])
@@ -259,8 +250,7 @@ class HierarchicalTransformer(nn.Module):
         # This is a feature softmax * vector selector.
         # Fixme: makes only sense, if the features are not encoded (identiy)!
         en_meta_embedding = self.select_variable(  # [B * N_datasets,1, d_model]
-            encoder_meta_variables,
-            self.flattened_grn_encoder
+            encoder_meta_variables, self.flattened_grn_encoder
         )
         # ----------------------------------------------------------------------
 
@@ -284,14 +274,13 @@ class HierarchicalTransformer(nn.Module):
         # first transformer layer wrt to each learning curve. attention to separate learninv
         # curves (individually). 4D joint embedding of the learning curves and their contexts.
         encoder_output = self.lc_encoder(encoder_input)
-        encoder_output = encoder_output.view(
-            batch_size, n_datasets_encoder, 1 + lc_length, -1
-        )[:, :, 0, :]  # select only the context embeddings.
+        encoder_output = encoder_output.view(batch_size, n_datasets_encoder, 1 + lc_length, -1)[
+            :, :, 0, :
+        ]  # select only the context embeddings.
 
         # feed context to the second encoder: this is the hierarchy of context attentions to
         # figure out how we should "corss correlate" the algorihtms.
-        encoder_output = self.meta_encoder(
-            encoder_output)  # [batch_size, n_datasets_encoder, d_model]
+        encoder_output = self.meta_encoder(encoder_output)  # [batch_size, n_datasets_encoder, d_model]
 
         # across the number of algorithms (i.e. multiple crosses) the decoder is not guranteed to
         # recieve a constant number of observations - (during meta testing ie. few shot we query
@@ -315,8 +304,7 @@ class HierarchicalTransformer(nn.Module):
         # vertical data direction (decoder is always fed in the vertial direction)
         # these are the other algorithms that observe the current dataset.
         de_meta_embedding = self.select_variable(
-            [de_feat_embedding_repeat, de_algo_embeddings],
-            self.flattened_grn_decoder
+            [de_feat_embedding_repeat, de_algo_embeddings], self.flattened_grn_decoder
         )  # [sum(n_algo_test_set),1, d_model]
 
         # vertical: learning curves of crosses!
@@ -324,18 +312,14 @@ class HierarchicalTransformer(nn.Module):
             query_algo_lc = torch.cat(query_algo_lc, dim=0)
 
         query_algo_lc = self.project_layer_lc(query_algo_lc)
-        query_algo_lc = self.positional_encoder(
-            query_algo_lc)  # [sum(n_algo_test_set),L_de, d_model]
+        query_algo_lc = self.positional_encoder(query_algo_lc)  # [sum(n_algo_test_set),L_de, d_model]
 
         # token vertical: embedding of lcs from the other crosses.
         query_algo_lc = torch.cat([de_meta_embedding, query_algo_lc], dim=1)
 
         # context of the target learning curve: i.e. dataset meta features and algo meta features
         # from target.
-        tgt_meta_embedding = self.select_variable(
-            [de_feat_embedding, en_algo_embeddings],
-            self.flattened_grn_decoder
-        )
+        tgt_meta_embedding = self.select_variable([de_feat_embedding, en_algo_embeddings], self.flattened_grn_decoder)
 
         # learning curve embedding + encoding
         tgt_algo_lc = self.project_layer_lc(tgt_algo_lc)
@@ -346,20 +330,18 @@ class HierarchicalTransformer(nn.Module):
 
         # learning curves of all algorithms in vertical direction that are supposed to be
         # ranked.
-        decoder_input = torch.cat([query_algo_lc, tgt_algo_lc],
-                                  dim=0)  # [sum(n_algo_test_set)+ B, L_max, d_model]
+        decoder_input = torch.cat([query_algo_lc, tgt_algo_lc], dim=0)  # [sum(n_algo_test_set)+ B, L_max, d_model]
 
         # indication which values of the learning curve are masked: see transformer pytorch
         # implementation!
         if isinstance(query_algo_padding_mask, list):
-            tgt_padding_masking = torch.cat([*query_algo_padding_mask, tgt_algo_padding_mask],
-                                            dim=0)
+            tgt_padding_masking = torch.cat([*query_algo_padding_mask, tgt_algo_padding_mask], dim=0)
         else:
             tgt_padding_masking = torch.cat([query_algo_padding_mask, tgt_algo_padding_mask], dim=0)
 
         tgt_padding_masking = torch.cat(
-            [torch.zeros([len(tgt_padding_masking), 1], dtype=torch.bool, device=self.device),
-             tgt_padding_masking], dim=1
+            [torch.zeros([len(tgt_padding_masking), 1], dtype=torch.bool, device=self.device), tgt_padding_masking],
+            dim=1,
         )
 
         # vertical & horizontal lines are not supposed to be correlated.
@@ -368,21 +350,19 @@ class HierarchicalTransformer(nn.Module):
         if self.mask_uncorrelated_lcs:
             n_query_algos_total = torch.sum(n_query_algo)
             encoder_output_repeat = encoder_output.new_full(
-                (n_query_algos_total, *encoder_output.shape[1:]),
-                fill_value=0)
-            encoder_output_repeat = torch.cat([encoder_output_repeat, encoder_output],
-                                              dim=0)  # query + targets
+                (n_query_algos_total, *encoder_output.shape[1:]), fill_value=0
+            )
+            encoder_output_repeat = torch.cat([encoder_output_repeat, encoder_output], dim=0)  # query + targets
             memory_key_padding_mask = torch.cat(
-                [torch.ones(n_query_algos_total, encoder_output.shape[1], dtype=torch.bool),
-                 torch.zeros(encoder_output.shape[0], encoder_output.shape[1], dtype=torch.bool)],
+                [
+                    torch.ones(n_query_algos_total, encoder_output.shape[1], dtype=torch.bool),
+                    torch.zeros(encoder_output.shape[0], encoder_output.shape[1], dtype=torch.bool),
+                ],
                 dim=0,
             ).to(self.device)
         else:
-            encoder_output_repeat = [
-                en_o.repeat(n_algo, 1, 1) for en_o, n_algo in zip(encoder_output, n_query_algo)
-            ]
-            encoder_output_repeat = torch.cat([*encoder_output_repeat, encoder_output],
-                                              dim=0)  # query + targets
+            encoder_output_repeat = [en_o.repeat(n_algo, 1, 1) for en_o, n_algo in zip(encoder_output, n_query_algo)]
+            encoder_output_repeat = torch.cat([*encoder_output_repeat, encoder_output], dim=0)  # query + targets
             memory_key_padding_mask = None
 
         # assert torch.all(encoder_output_repeat[0] == encoder_output_repeat[1])
@@ -391,12 +371,11 @@ class HierarchicalTransformer(nn.Module):
         # [sum(n_algo_test_set) + batch_size, d_model]
         decoder_out = self.lc_decoder(
             tgt=decoder_input,  # learning curves of all target algorithms encoded
-
             # arguments to ensure that the learningcurves of each target can only see their
             # vertical & horizontal lc's.
             memory=encoder_output_repeat,
             memory_key_padding_mask=memory_key_padding_mask,
-            tgt_key_padding_mask=tgt_padding_masking
+            tgt_key_padding_mask=tgt_padding_masking,
         )[:, 0]
 
         # taking all of the vertical algorithms' learning curves and then take only their contexts
@@ -409,30 +388,27 @@ class HierarchicalTransformer(nn.Module):
 
         # we cannot guratnee that the lc of those vertical algos are of same
         # length, so we pad them.
-        decoder_out_padded = decoder_out_test.new_full(
-            (batch_size, n_algo_max, self.d_model),
-            fill_value=0)
+        decoder_out_padded = decoder_out_test.new_full((batch_size, n_algo_max, self.d_model), fill_value=0)
 
         # Finally, we only read the output of the last embedding value.
         # Thus, we pad the zero values at the end of each sequence (final fidelity).
         for i, decoder_query_algos in enumerate(decoder_out_query_algos):
-            decoder_out_padded[i, -n_query_algo[i] - 1: -1] = decoder_out_query_algos[i]
+            decoder_out_padded[i, -n_query_algo[i] - 1 : -1] = decoder_out_query_algos[i]
             decoder_out_padded[i, -1] = decoder_out_test[i]
 
         # describes which values are observed and which are not (pytorch transformer
         # documentation) -------------------
         tgt_mask_decoder_meta = torch.arange(0, n_algo_max)
-        tgt_mask_decoder_meta = tgt_mask_decoder_meta < (
-                n_algo_max - n_query_algo.unsqueeze(-1) - 1)
+        tgt_mask_decoder_meta = tgt_mask_decoder_meta < (n_algo_max - n_query_algo.unsqueeze(-1) - 1)
         tgt_mask_decoder_meta = tgt_mask_decoder_meta.to(self.device)
 
         if self.mask_uncorrelated_lcs:
             l_encoder = encoder_output.shape[1]
             l_decoder = decoder_out_padded.shape[1]
             memory_mask = torch.cat(
-                [torch.ones(l_decoder - 1, l_encoder, dtype=torch.bool),
-                 torch.zeros(1, l_encoder, dtype=torch.bool)],
-                dim=0).to(self.device)
+                [torch.ones(l_decoder - 1, l_encoder, dtype=torch.bool), torch.zeros(1, l_encoder, dtype=torch.bool)],
+                dim=0,
+            ).to(self.device)
         else:
             memory_mask = None
 
@@ -442,7 +418,7 @@ class HierarchicalTransformer(nn.Module):
             decoder_out_padded,
             memory=encoder_output,
             memory_mask=memory_mask,
-            tgt_key_padding_mask=tgt_mask_decoder_meta
+            tgt_key_padding_mask=tgt_mask_decoder_meta,
         )[:, -1, :]
         # linear or identity layer. output  is of dim self.d_model, self.output_dim
         # self.d_model must be both input and output o the transformer.

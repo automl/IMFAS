@@ -2,7 +2,7 @@ import torch.nn as nn
 
 
 class PlackettTest(nn.Module):
-    def __init__(self, encoder: nn.Module, device: str = 'cpu'):
+    def __init__(self, encoder: nn.Module, device: str = "cpu"):
         super(PlackettTest, self).__init__()
         self.encoder = encoder
         self.device = device

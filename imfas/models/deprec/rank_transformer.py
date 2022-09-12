@@ -7,19 +7,21 @@ from imfas.models.imfas_wp import AlgoRankMLP
 
 
 class RankTransfromer(nn.Module):
-    def __init__(self,
-                 input_dim: int,
-                 d_model: int,
-                 n_head: int,
-                 dim_feedforward: int,
-                 layer_dim: int,
-                 output_dim: int,
-                 dropout: float,
-                 norm_first=False,
-                 use_src_mask: bool = False,
-                 use_src_key_padding_mask: bool = False,
-                 readout=None,
-                 device: torch.device = torch.device('cpu')):
+    def __init__(
+        self,
+        input_dim: int,
+        d_model: int,
+        n_head: int,
+        dim_feedforward: int,
+        layer_dim: int,
+        output_dim: int,
+        dropout: float,
+        norm_first=False,
+        use_src_mask: bool = False,
+        use_src_key_padding_mask: bool = False,
+        readout=None,
+        device: torch.device = torch.device("cpu"),
+    ):
         """
         Basic implementation of a Transformer Network
 
@@ -32,15 +34,16 @@ class RankTransfromer(nn.Module):
             readout     : Optional readout layer for decoding the hidden state
         """
         super(RankTransfromer, self).__init__()
-        self.embedding_layer = nn.Identity() if input_dim == d_model else nn.Linear(input_dim,
-                                                                                    d_model)
+        self.embedding_layer = nn.Identity() if input_dim == d_model else nn.Linear(input_dim, d_model)
         self.positional_encoder = PositionalEncoding(d_model=d_model, dropout=dropout)
-        encoder_layers = nn.TransformerEncoderLayer(d_model=d_model,
-                                                    nhead=n_head,
-                                                    dim_feedforward=dim_feedforward,
-                                                    dropout=dropout,
-                                                    batch_first=True,
-                                                    norm_first=norm_first)
+        encoder_layers = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=n_head,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            batch_first=True,
+            norm_first=norm_first,
+        )
 
         self.encoder = nn.TransformerEncoder(encoder_layers, layer_dim)
 
@@ -75,8 +78,7 @@ class RankTransfromer(nn.Module):
         src_key_padding_mask = None
         if self.training:
             if self.use_src_mask:
-                src_mask = nn.Transformer.generate_square_subsequent_mask(
-                    net_input.shape[1]).double().to(self.device)
+                src_mask = nn.Transformer.generate_square_subsequent_mask(net_input.shape[1]).double().to(self.device)
             if self.use_src_key_padding_mask:
                 # masked out part of the learning curves. This will force the network to do the prediction without
                 # observing the full learning curve.
@@ -100,22 +102,22 @@ class RankTransfromer(nn.Module):
 # @Difan: Please have a look at the input documnetation
 class RankTransformer_Ensemble(nn.Module):
     def __init__(
-            self,
-            input_dim: int = 107,
-            algo_dim: int = 58,
-            # lstm_hidden_dims: List[int] = 100,
-            transformer_layers: int = 2,
-            shared_hidden_dims: List[int] = [300, 200],
-            n_head: int = 4,
-            dim_feedforward: int = 256,
-            dropout: float = 0.2,
-            norm_first: bool = False,
-            use_src_mask: bool = False,
-            use_src_key_padding_mask: bool = True,
-            device: str = "cpu",
+        self,
+        input_dim: int = 107,
+        algo_dim: int = 58,
+        # lstm_hidden_dims: List[int] = 100,
+        transformer_layers: int = 2,
+        shared_hidden_dims: List[int] = [300, 200],
+        n_head: int = 4,
+        dim_feedforward: int = 256,
+        dropout: float = 0.2,
+        norm_first: bool = False,
+        use_src_mask: bool = False,
+        use_src_key_padding_mask: bool = True,
+        device: str = "cpu",
     ):
         """
-        
+
         Sequential Ensemble of Transformers to rank based on multiple fidelities
 
         Args:
@@ -173,7 +175,7 @@ class RankTransformer_Ensemble(nn.Module):
             readout=None,
             use_src_mask=self.use_src_mask,
             use_src_key_padding_mask=self.use_src_key_padding_mask,
-            device=self.device
+            device=self.device,
         )
 
     def forward(self, dataset_meta_features, fidelities):

@@ -10,11 +10,8 @@ from imfas.data.lc_dataset import Dataset_LC
 # FIXME: Refactor joint - gravity, multiindex & compettitor sampling
 class Dataset_Join_Gravity(Dataset):
     def __init__(
-            self,
-            meta_dataset: DatasetMetaFeatures,
-            meta_algo: AlgorithmMetaFeatures,
-            lc: Dataset_LC,
-            competitors: int = 0):
+        self, meta_dataset: DatasetMetaFeatures, meta_algo: AlgorithmMetaFeatures, lc: Dataset_LC, competitors: int = 0
+    ):
         self.meta_dataset = meta_dataset
         self.meta_algo = meta_algo
         self.lc = lc

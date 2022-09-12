@@ -1,5 +1,6 @@
-from functools import partial
 from typing import List
+
+from functools import partial
 
 import torch
 
@@ -40,7 +41,7 @@ class SliceEvaluator(BaseTrainer):
                 self.to_device(y)
 
                 y_hat = self.model.forward(**X)
-                losses.append(valid_loss_fn(y_hat, y['final_fidelity']))
+                losses.append(valid_loss_fn(y_hat, y["final_fidelity"]))
 
             return losses
 

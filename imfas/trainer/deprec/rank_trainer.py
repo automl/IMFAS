@@ -8,7 +8,7 @@ from tqdm import tqdm
 from imfas.losses.spearman import SpearmanLoss
 from imfas.trainer.deprec.hierarchical_transformer_trainer import (
     Trainer_Hierarchical_Transformer,
-    Trainer_Hierarchical_TransformerRankingLoss
+    Trainer_Hierarchical_TransformerRankingLoss,
 )
 from imfas.trainer.deprec.lstm_trainer import Trainer_Ensemble_lstm
 
@@ -17,27 +17,27 @@ log = logging.getLogger(__name__)
 
 
 def train_lstm(
-        model,
-        train_dataloader,
-        test_dataloader,
-        epochs,
-        lr,
-        trainer_type='rank_lstm',
-        loss_type='spearman',
-        ranking_fn=torchsort.soft_rank,
-        optimizer_cls=torch.optim.Adam,
-        test_lim=5,
-        log_freq=10,
+    model,
+    train_dataloader,
+    test_dataloader,
+    epochs,
+    lr,
+    trainer_type="rank_lstm",
+    loss_type="spearman",
+    ranking_fn=torchsort.soft_rank,
+    optimizer_cls=torch.optim.Adam,
+    test_lim=5,
+    log_freq=10,
 ):
     """ """
-    if loss_type == 'spearman':
+    if loss_type == "spearman":
         loss_fn = SpearmanLoss(ranking_fn=ranking_fn)
-    elif loss_type == 'mse':
+    elif loss_type == "mse":
         loss_fn = torch.nn.MSELoss()
-    elif loss_type == 'l1':
+    elif loss_type == "l1":
         loss_fn = torch.nn.L1Loss()
     else:
-        raise NotImplementedError(f'Unknown loss type {loss_type}')
+        raise NotImplementedError(f"Unknown loss type {loss_type}")
 
     optimizer = optimizer_cls(model.parameters(), lr)
 
@@ -49,10 +49,10 @@ def train_lstm(
     }
 
     # Initialize the trainer
-    if trainer_type == 'rank_lstm':
+    if trainer_type == "rank_lstm":
         trainer = Trainer_Ensemble_lstm(**trainer_kwargs)
-    elif trainer_type == 'hierarchical_transformer':
-        if loss_type == 'spearman':
+    elif trainer_type == "hierarchical_transformer":
+        if loss_type == "spearman":
             trainer = Trainer_Hierarchical_TransformerRankingLoss(**trainer_kwargs)
         else:
             trainer = Trainer_Hierarchical_Transformer(**trainer_kwargs)
