@@ -51,6 +51,7 @@ class SuccessiveHalving(nn.Module):
         # determine max available fidelity and index not mask!
         # assuming that mask is basically stack of a torch.ones & torch.zero tensor.
         max_fidelity_idx = mask.sum(dim=-1).max()
+        max_fidelity_idx = torch.tensor(max_fidelity_idx, dtype=torch.long)
         logger.debug(f"Max fidelity: {max_fidelity_idx}")
 
         # since masking might disrupt the schedule, we need to adjust the schedule
@@ -62,7 +63,6 @@ class SuccessiveHalving(nn.Module):
                 (self.schedule_index, torch.tensor([max_fidelity_idx - 1])))
 
         self.schedule_index = self.schedule_index.tolist()
-        print(self.schedule_index)
         # FIXME: instead of this hack, make the indexing of _forward appropriate
         if len(learning_curves.shape) == 3:
             # batched
