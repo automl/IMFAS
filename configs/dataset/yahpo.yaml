@@ -21,8 +21,13 @@ test_dataset_class:
   meta_algo: ${dataset.algo_meta}
 
 
-# todo: refactor this to be separately configurable at will for train/test
-dataloader_class:
+train_dataloader_class:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 1
+  shuffle: True
+  num_workers: ${num_workers}
+
+test_dataloader_class:
   _target_: torch.utils.data.DataLoader
   batch_size: 1
   shuffle: False
@@ -30,7 +35,7 @@ dataloader_class:
 
 
 # fidelity space slices
-slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ]
+slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ] # ${range:0.1, 1.0, 0.1} fixme: check if that worked!
 
 # For LC Bench, use the slices [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
 

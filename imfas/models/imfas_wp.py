@@ -128,14 +128,14 @@ class IMFAS_WP(nn.Module):
     #     if self.readout:
     #         self.decoder = MLP()
 
-    def forward(self, dataset_meta_features, learning_curves, lc_values_observed):
+    def forward(self, dataset_meta_features, learning_curves, *args, **kwargs):
         """
         Forward path through the meta-feature ranker
 
         Args:
             dataset_meta_features: tensor of shape (batch_dim, meta_features_dim)
             learning_curves: tensor of shape (batch_dim, n_learning_curves)
-            lc_values_observed: if the learning curve values are observed
+            mask: if the learning curve values are observed
 
         Returns:
             tensor of shape (batch_dim, algo_dim)

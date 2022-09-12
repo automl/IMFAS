@@ -14,13 +14,28 @@ def mask_lcs_randomly(lc_tensor, dataset=None):
     curve, and set all values after that index to 0.
     :param lc_tensor: [n_fidelities, n_algos]
     :param dataset: if necessary, this allows access to the dataset object.
-    :return: [n_fidelities, n_algos]
+    :return: [n_algos, n_fidelities]
     """
     n_algos, n_fidelities = lc_tensor.shape
     mask = torch.zeros_like(lc_tensor)
     mask_idx = torch.randint(0, n_fidelities, (n_algos,)).view(-1, 1)
     for i, idx in enumerate(mask_idx):
         mask[i, 0:idx] = 1
+    return lc_tensor * mask, mask.bool()
+
+
+def mask_lcs_to_max_fidelity(lc_tensor, max_fidelity, *args, **kwargs):
+    """
+    In the case of SH & the Masked Fidelity evaluation protocol, we
+
+    :param lc_tensor: [n_fidelities, n_algos]
+    :param max_fidelity: int
+    :param dataset: if necessary, this allows access to the dataset object.
+    :return: [n_algos, max_fidelity], the mask of the tensor
+    """
+    # n_algos, n_fidelities = lc_tensor.shape
+    mask = torch.zeros_like(lc_tensor)
+    mask[:, 0:max_fidelity] = 1
     return lc_tensor * mask, mask.bool()
 
 
@@ -65,16 +80,16 @@ class Dataset_Join_Dmajor(Dataset):
 
         # if masking strategy is supplied:
         if self.masking_fn is not None:
-            lc_tensor, lc_values_observed = self.masking_fn(self.lc[it])
+            lc_tensor, mask = self.masking_fn(self.lc[it])
 
         else:
             lc_tensor = self.lc[it]
-            lc_values_observed = torch.ones_like(lc_tensor, dtype=torch.bool)
+            mask = torch.ones_like(lc_tensor, dtype=torch.bool)
 
         X = {
             "dataset_meta_features": self.meta_dataset[it],
             "learning_curves": lc_tensor,
-            "lc_values_observed": lc_values_observed,
+            "mask": mask,
             # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
             #  columnwise
         }

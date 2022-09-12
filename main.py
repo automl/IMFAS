@@ -21,6 +21,10 @@ OmegaConf.register_new_resolver(
     "len", lambda l: len(l)
 )
 
+OmegaConf.register_new_resolver(
+    "range", lambda start, stop, step: list(range(start, stop, step))
+)
+
 import os
 import random
 import string
@@ -81,7 +85,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # train test split by dataset major
     train_split, test_split = train_test_split(
-        len(dataset_meta_features),  # todo refactor - needs to be aware of dropped meta features
+        len(dataset_meta_features),  # fixme refactor - needs to be aware of dropped meta features
         cfg.dataset.split,
     )
 
@@ -89,8 +93,8 @@ def pipe_train(cfg: DictConfig) -> None:
     train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
     test_set = instantiate(cfg.dataset.test_dataset_class, split=test_split)
 
-    train_loader = instantiate(cfg.dataset.dataloader_class, dataset=train_set, shuffle=True)
-    test_loader = instantiate(cfg.dataset.dataloader_class, dataset=test_set)
+    train_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=train_set)
+    test_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=test_set)
 
     # Dynamically computed configurations.
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation

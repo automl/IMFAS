@@ -1,4 +1,4 @@
-from typing import Callable, List, Dict
+from typing import Callable, Dict, Optional
 
 import torch.optim
 import wandb
@@ -10,8 +10,8 @@ class BaseTrainer:
     def __init__(
             self,
             model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer,
-            callbacks_end: List[Callable] = None
+            optimizer: torch.optim.Optimizer = None,
+            # callbacks_end: List[Callable] = None
     ):
         """
 
@@ -23,8 +23,9 @@ class BaseTrainer:
         self.model = model
         self.device = self.model.device
 
-        self.optimizer = optimizer(self.model.parameters())
-        self.callbacks_end = callbacks_end
+        if optimizer is not None:
+            self.optimizer = optimizer(self.model.parameters())
+        # self.callbacks_end = callbacks_end
 
     @property
     def step(self):
@@ -48,15 +49,17 @@ class BaseTrainer:
             self.optimizer.zero_grad()
             print(X.keys())
             y_hat = self.model.forward(**X)
-            loss = loss_fn(y_hat, y['y']).backward()  # FIXME: y needs to be explicit & have a
-            # convention in dictionary naming
+            print(loss_fn, y_hat, y)
+            print(loss_fn(y_hat, y['final_fidelity']))
+            loss = loss_fn(y_hat, y['final_fidelity']).backward()
+            # FIXME: y needs to be explicit or have a strong convention
 
-            wandb.log({'trainingloss': loss}, step=self.step)  # fixme: every training step?
+            wandb.log({'trainingloss': loss}, step=self.step)  # fixme: every training epoch!
 
             self.optimizer.step()
             self._step += 1
 
-    def evaluate(self, test_loader, valid_loss_fn, aggregate_fn):
+    def evaluate(self, test_loader, valid_loss_fn, aggregate_fn=None):
         """evaluate the model on the test set after epoch ends for a single validation function"""
         losses = []
         self.model.eval()  # Consider: since we can ask the state of the model
@@ -71,7 +74,10 @@ class BaseTrainer:
                 loss = valid_loss_fn(y_hat, y)
                 losses.append(loss)
 
-        wandb.log({'validationloss': aggregate_fn(losses)}, step=self.step)
+        if aggregate_fn is not None:
+            return aggregate_fn(losses)
+        else:
+            return losses  # returns the entire trace of all instances in the testloader
 
     def run(
             self,
@@ -80,18 +86,16 @@ class BaseTrainer:
             epochs,
             train_loss_fn,
             valid_loss_fns: Dict[str, Callable] = None,
-            aggregate_fn: Callable = torch.mean
+            aggregate_fn: Optional[Callable] = None
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
+        # Class & functional interface
         if isinstance(train_loss_fn, DictConfig):
             train_loss_fn = instantiate(train_loss_fn)
+
         elif isinstance(train_loss_fn, Callable):
             pass
-
-        if valid_loss_fns is not None:
-            assert aggregate_fn is not None
-            # self.losses = {k: [] for k in valid_loss_fns}
 
         for epoch in range(epochs):
             self.train(train_loader, epoch, train_loss_fn)
@@ -103,6 +107,6 @@ class BaseTrainer:
                     # self.losses[k].append(loss)
                     wandb.log({k: loss}, step=self.step)
 
-            # execute other callbacks on the end of each epoch
-            for callback in self.callbacks_end:
-                callback(trainer=self)
+            # # execute other callbacks on the end of each epoch
+            # for callback in self.callbacks_end:
+            #     callback(trainer=self)
