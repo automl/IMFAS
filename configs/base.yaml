@@ -22,14 +22,14 @@ output_dir: ./tmp
 num_workers: 2
 device: ${device_ident:None}
 
-trainer:
-  trainerobj:
-    optimizer:
-      lr: 0.001  # actively mingeling with the learning rate of adam
 
 dataset:
-  dataloader_class:
+  train_dataloader_class:
     shuffle: True
+    batch_size: 1
+
+  test_dataloader_class:
+    shuffle: False
     batch_size: 1
 
 wandb:
