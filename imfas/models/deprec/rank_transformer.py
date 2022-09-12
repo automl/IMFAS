@@ -1,11 +1,7 @@
-from typing import Optional, Tuple, List
+from typing import List
 
-import math
 import torch
 from torch import nn
-
-
-
 
 from imfas.models.imfas_wp import AlgoRankMLP
 

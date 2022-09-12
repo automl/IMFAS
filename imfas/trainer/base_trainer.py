@@ -44,14 +44,14 @@ class BaseTrainer:
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
             X = self.to_device(X)
-            y = self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
+            y = self.to_device(
+                y)  # fixme: move to device in fwd call (to allow for data prep such as
             # masking?)
 
             self.optimizer.zero_grad()
-            print(X.keys())
+
             y_hat = self.model.forward(**X)
-            print(loss_fn, y_hat, y)
-            print(loss_fn(y_hat, y['final_fidelity']))
+
             loss = loss_fn(y_hat, y['final_fidelity']).backward()
             # FIXME: y needs to be explicit or have a strong convention
 
@@ -104,6 +104,10 @@ class BaseTrainer:
             if valid_loss_fns is not None:
                 # End of epoch validation loss tracked in wandb
                 for k, fn in valid_loss_fns.items():
+
+                    if isinstance(fn, DictConfig):
+                        fn = instantiate(fn)
+
                     loss = self.evaluate(test_loader, fn, aggregate_fn)
                     # self.losses[k].append(loss)
                     wandb.log({k: loss}, step=self.step)

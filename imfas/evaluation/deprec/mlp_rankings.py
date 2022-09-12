@@ -15,11 +15,11 @@ from imfas.data import DatasetMetaFeatures
 
 class ZeroShotOptimalDistance:
     def __init__(
-        self,
-        model,
-        ranking_loss,
-        scaler=MinMaxScaler(),
-        batch: int = 20,
+            self,
+            model,
+            ranking_loss,
+            scaler=MinMaxScaler(),
+            batch: int = 20,
     ):
         self.model = model
         self.ranking_loss = ranking_loss
@@ -128,10 +128,10 @@ class ZeroShotOptimalDistance:
         model_ndcg = torch.zeros(len(true_rankings))
 
         for i, (truth, predicted) in enumerate(
-            zip(
-                true_rankings.reshape(newshape).detach().numpy(),
-                model_scores.reshape(newshape_predicted),
-            )
+                zip(
+                    true_rankings.reshape(newshape).detach().numpy(),
+                    model_scores.reshape(newshape_predicted),
+                )
         ):
             model_ndcg[i] = call(self.ranking_loss, truth, predicted)
 

@@ -1,7 +1,7 @@
 import torchsort
-
-from imfas.losses.ranking_loss import spearman
 from imfas.trainer.rank_ensemble import Trainer_Ensemble
+
+from imfas.losses.spearman import spearman
 
 
 # todo for now take the trainer.evaluation() protocol!  - look into trainer.rank_trainer !

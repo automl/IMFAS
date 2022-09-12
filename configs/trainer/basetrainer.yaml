@@ -10,13 +10,13 @@ run_call:
 
   train_loss_fn:
     _target_: imfas.losses.ranking_loss.SpearmanLoss
-    reduction: 'mean'
-    ranking_fn: torchsort.soft_rank
-    ts_kwargs: { }
-
-  valid_loss_fns:
-    Spearman: # Name for wandb, can specify other losses in dict format!
-      _target_: imfas.losses.ranking_loss.SpearmanLoss
-      reduction: 'mean'
-      ranking_fn: torchsort.soft_rank
-      ts_kwargs: { }
+#    reduction: 'mean'
+#    ranking_fn: torchsort.soft_rank
+#    ts_kwargs: { }
+#
+#  valid_loss_fns:
+#    Spearman: # Name for wandb, can specify other losses in dict format!
+#      _target_: imfas.losses.ranking_loss.SpearmanLoss
+#      reduction: 'mean'
+#      ranking_fn: torchsort.soft_rank
+#      ts_kwargs: { }

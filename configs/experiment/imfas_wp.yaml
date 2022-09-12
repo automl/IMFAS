@@ -1,15 +1,17 @@
 # @package _global_
 
-#  Workshop paper version of the IMFAS model: https://arxiv.org/pdf/2206.03130.pdf
-#  MLP1(D) = h_0 -> for_{i=0,..k}  LSTM(h_i, f_i)=h_{i+1}  -> MLP2(h_k) = output
+
+#Workshop paper version of the IMFAS model: https://arxiv.org/pdf/2206.03130.pdf
+#MLP1(D) = h_0 -> for_{i=0,..k}  LSTM(h_i, f_i)=h_{i+1}  -> MLP2(h_k) = output
 #
-#  D: dataset meta-features
-#  f_i: performances of all n (=algo_dim) algorithms on the i-th fidelity
+#D: dataset meta-features
+#f_i: performances of all n (=algo_dim) algorithms on the i-th fidelity
 #
-#  The dimensions of the model are the following:
-#  MLP1: input_dim -> mlp1_hidden_dims -> h_dim
-#  LSTM: h_dim -> h_dim
-#  MLP2: h_dim -> mlp2_hidden_dims -> algo_dim
+#The dimensions of the model are the following:
+#MLP1: input_dim -> mlp1_hidden_dims -> h_dim
+#LSTM: h_dim -> h_dim
+#MLP2: h_dim -> mlp2_hidden_dims -> algo_dim
+
 defaults:
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
@@ -19,8 +21,11 @@ defaults:
 
 
 dataset:
-  dataset_class:
+  train_dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
+    masking_fn:
+      _target_: imfas.utils.masking.mask_lcs_randomly
+      _partial_: True
 
   train_dataloader_class:
     shuffle: True
@@ -35,13 +40,49 @@ model:
   encoder:
     hidden_dims: [ 107, 100 ]
 
+  lstm:
+    _target_: imfas.models.imfas_wp.FidelityLSTM
+    input_dim: 100
+    hidden_dim: 50
+    layer_dim: 1 #${len:dataset.slices}
+
   decoder:
     hidden_dims: [ 100, 100 ]
 
 
+
 trainer:
-  optimizer:
-    lr: 0.0005
+  trainerobj:
+    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
+    #    masking_fn:
+    #      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
+    #
+    #      _partial_: True
+    #      max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
+
+    optimizer:
+      _target_: torch.optim.Adam
+      lr: 0.001
+      _partial_: True
+
+  run_call:
+    epochs: 1000
+    train_loss_fn:
+      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+    valid_loss_fns:
+      spearman:
+        _target_: imfas.losses.ranking_loss.SpearmanLoss
+
+      ndcg10:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 10
+
+      ndcg5:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 5
+
 
 
 wandb:

@@ -50,42 +50,26 @@ class WeightedSpearman(Loss):
         input = input * weights
         return self.spearman_loss(input, target)
 
-
-class PlackettLuceModelLoss(Loss):
-    def __init__(self, reduction: str = 'mean') -> None:
-        super(PlackettLuceModelLoss, self).__init__(reduction=reduction)
-
-    def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        r"""
-        Apply Plackett Luce Model to the input and targets and compute their losses
-        """
-        assert len(input.shape) == 2
-        assert len(target.shape) == 2
-        target_orders = torch.argsort(target, dim=1)
-        input_reordered = torch.gather(input, -1, target_orders)
-        input_reordered = input_reordered.log_softmax(1)
-        return - torch.sum(input_reordered)
-
-
-def spear_halve_loss(halving_op, final_fidelity_performance):
-    pred = halving_op.type(torch.float)
-
-    arg_sorted = torch.argsort(final_fidelity_performance, descending=True)
-
-    rank = torch.zeros(len(final_fidelity_performance))
-
-    for i in range(len(final_fidelity_performance)):
-        rank[arg_sorted[i]] = i
-
-    target = rank
-
-    # normalize the soft ranks
-    pred = pred - pred.mean()
-    pred = pred / pred.norm()
-    target = target - target.mean()
-    target = target / target.norm()
-
-    # compute the loss
-    spear = (pred * target).sum()
-    return spear
-    # return 1 - spear
+# FIXME: @TIM deprecate this (was used in old sh variant)
+# def spear_halve_loss(halving_op, final_fidelity_performance):
+#     pred = halving_op.type(torch.float)
+#
+#     arg_sorted = torch.argsort(final_fidelity_performance, descending=True)
+#
+#     rank = torch.zeros(len(final_fidelity_performance))
+#
+#     for i in range(len(final_fidelity_performance)):
+#         rank[arg_sorted[i]] = i
+#
+#     target = rank
+#
+#     # normalize the soft ranks
+#     pred = pred - pred.mean()
+#     pred = pred / pred.norm()
+#     target = target - target.mean()
+#     target = target / target.norm()
+#
+#     # compute the loss
+#     spear = (pred * target).sum()
+#     return spear
+#     # return 1 - spear
