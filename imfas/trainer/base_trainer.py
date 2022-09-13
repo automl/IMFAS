@@ -32,10 +32,7 @@ class BaseTrainer:
     def step(self):
         return self._step
 
-    def to_device(
-            self,
-            input,
-    ) -> None:
+    def to_device(self, input, ) -> None:
         for k, v in input.items():
             input[k] = v.to(self.device).float()
         return input
@@ -47,13 +44,13 @@ class BaseTrainer:
         for _, data in enumerate(train_loader):
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
-            X = self.to_device(X)
-            y = self.to_device(
-                y)  # fixme: move to device in fwd call (to allow for data prep such as
+            self.to_device(X)
+            self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
             # masking?)
 
             self.optimizer.zero_grad()
-
+            print(self.model)
+            print(X.keys())
             y_hat = self.model.forward(**X)
 
             loss = loss_fn(y_hat, y["final_fidelity"]).backward()

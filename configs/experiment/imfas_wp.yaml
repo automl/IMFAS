@@ -43,7 +43,7 @@ model:
   encoder:
     hidden_dims: [ 107, 100 ]
 
-  input_dim: ${dynamically_computed.len_lc}
+  input_dim: ${dynamically_computed.n_algos}
   n_layers: 2
 
   decoder:
