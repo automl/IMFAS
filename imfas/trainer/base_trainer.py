@@ -53,7 +53,7 @@ class BaseTrainer:
             # masking?)
 
             self.optimizer.zero_grad()
-
+            print(self.model)
             y_hat = self.model.forward(**X)
 
             loss = loss_fn(y_hat, y["final_fidelity"]).backward()
