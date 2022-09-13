@@ -20,7 +20,7 @@ seed: 0
 output_dir: ./tmp
 
 num_workers: 2
-device: ${device_ident:None}
+device: 'cpu'
 
 
 dataset:

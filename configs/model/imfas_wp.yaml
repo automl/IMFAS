@@ -18,7 +18,7 @@ decoder:
   #  [ ${ add: ${ model.encoder.mlp_dims[ 0 ] }, ${ transformer_dims[ 0 ] } }, 200, 100 ] # fixme: change index
   activation: 'relu'
 
-input_dim: ${dynamically_computed.len_lc}
+input_dim: ${dynamically_computed.n_algos}
 n_layers: 2
 device: 'cpu'
 

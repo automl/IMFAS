@@ -104,6 +104,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # CLASSICAL MODELS -----------------------------------------------------------------------------
     model = instantiate(cfg.model, device=cfg.device)
     model.to(cfg.device)
+    torch.device(cfg.device)
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
     trainer.run(
