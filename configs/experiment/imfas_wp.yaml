@@ -41,13 +41,18 @@ dataset:
 
 model:
   encoder:
-    hidden_dims: [ 107, 100 ]
+    hidden_dims:
+    - ${ dynamically_computed.n_data_meta_features }
+    - 300
+    - 200
 
   input_dim: ${dynamically_computed.n_algos}
   n_layers: 2
 
   decoder:
-    hidden_dims: [ 100, 100 ]
+    hidden_dims:
+    - 200
+    - ${dynamically_computed.n_algos}
 
 
 
