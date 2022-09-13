@@ -76,7 +76,7 @@ trainer:
       _target_: imfas.losses.plackett_luce.PlackettLuceLoss
     valid_loss_fns:
       spearman:
-        _target_: imfas.losses.ranking_loss.SpearmanLoss
+        _target_: imfas.losses.spearman.SpearmanLoss
 
       ndcg10:
         _target_: sklearn.metrics.ndcg_score

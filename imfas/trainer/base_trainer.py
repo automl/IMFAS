@@ -6,6 +6,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
 
+import pdb
 
 class BaseTrainer:
     def __init__(
@@ -49,8 +50,7 @@ class BaseTrainer:
             # masking?)
 
             self.optimizer.zero_grad()
-            print(self.model)
-            print(X.keys())
+
             y_hat = self.model.forward(**X)
 
             loss = loss_fn(y_hat, y["final_fidelity"]).backward()
@@ -72,8 +72,8 @@ class BaseTrainer:
                 self.to_device(X)
                 self.to_device(y)
 
-                y_hat = self.model.forward(X)
-                loss = valid_loss_fn(y_hat, y)
+                y_hat = self.model.forward(**X)
+                loss = valid_loss_fn(y_hat, y["final_fidelity"])
                 losses.append(loss)
 
         if aggregate_fn is not None:  # fixme: we might want an aggregate for each loss fn
