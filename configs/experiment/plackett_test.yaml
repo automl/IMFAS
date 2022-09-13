@@ -2,10 +2,13 @@
 
 # MLP(D) ---> PlackettLuceLoss
 defaults:
+  - _self_
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
   - override /trainer: basetrainer
+  - override /model: imfas_wp
+
 
 dataset:
   train_dataset_class:

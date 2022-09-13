@@ -3,7 +3,6 @@ import torch.nn as nn
 
 from imfas.utils.mlp import MLP
 
-import pdb
 
 class IMFAS_WP(nn.Module):
     def __init__(
@@ -77,8 +76,6 @@ class IMFAS_WP(nn.Module):
         dataset_meta_features = dataset_meta_features.double()
         learning_curves = learning_curves.double()
 
-        # (1, 58, 11)
-
         # Initialize the hidden state with the output of the encoder
         h0 = torch.stack([self.encoder(dataset_meta_features) for _ in
                           range(self.n_layers)]).requires_grad_().double()
@@ -97,7 +94,7 @@ class IMFAS_WP(nn.Module):
         # Feed the learning curves as a batched sequence so that at every rollout step, a fidelity
         # is fed as an input to the LSTM
 
-        out, (hn, cn) = self.lstm(learning_curves.permute(0,2,1).double(), (h0, c0))
+        out, (hn, cn) = self.lstm(learning_curves.permute(0, 2, 1).double(), (h0, c0))
 
         out = self.decoder(out[:, -1, :].float())
 
