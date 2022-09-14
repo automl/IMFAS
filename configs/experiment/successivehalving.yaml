@@ -12,7 +12,7 @@ defaults:
   - override /trainer: sliceevaluator
 
 model:
-  _target_: imfas.models.successive_halving.SuccessiveHalving
+  _target_: imfas.models.baselines.successive_halving.SuccessiveHalving
   eta: 2
   budgets: ${dataset.slices} # ${range:1,51,1} # FIXME: adjust to the values of dataset.slices up until the
 
