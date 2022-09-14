@@ -72,6 +72,7 @@ trainer:
 
   run_call:
     epochs: 1000
+    log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
       _target_: imfas.losses.plackett_luce.PlackettLuceLoss
     valid_loss_fns:
