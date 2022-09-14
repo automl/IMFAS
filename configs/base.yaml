@@ -34,9 +34,9 @@ dataset:
 
 wandb:
   id: null
-  # entity: tnt
-  # project: gravitas
-  mode: 'disabled'    # Change to offline or debug mode
+  entity: tnt
+  project: imfas-iclr
+  mode: 'online'    # Change to offline or debug mode
   job_type: train
   tags: [ ]
   notes: null

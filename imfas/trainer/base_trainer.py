@@ -5,6 +5,8 @@ import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
+import numpy as np
+import torch as th
 
 import pdb
 
@@ -54,8 +56,9 @@ class BaseTrainer:
             y_hat = self.model.forward(**X)
 
             loss = loss_fn(y_hat, y["final_fidelity"]).backward()
-            # FIXME: y needs to be explicit or have a strong convention
+            # FIXME: y needs to be explicit or have a strong conventioN
 
+            # Log the training loss
             wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
 
             self.optimizer.step()
@@ -66,6 +69,7 @@ class BaseTrainer:
         losses = []
         self.model.eval()  # Consider: since we can ask the state of the model
         # we can actuall use this to change the forward to track particular values
+
         with torch.no_grad():
             for _, data in enumerate(test_loader):
                 X, y = data
@@ -74,10 +78,11 @@ class BaseTrainer:
 
                 y_hat = self.model.forward(**X)
                 loss = valid_loss_fn(y_hat, y["final_fidelity"])
+
                 losses.append(loss)
 
-        if aggregate_fn is not None:  # fixme: we might want an aggregate for each loss fn
-            return aggregate_fn(losses)
+        if aggregate_fn is not None:  
+            return aggregate_fn(losses)# fixme: we might want an aggregate for each loss fn
         else:
             return losses  # returns the entire trace of all instances in the testloader
 
@@ -87,6 +92,7 @@ class BaseTrainer:
             test_loader,
             epochs,
             train_loss_fn,
+            log_freq=5,
             valid_loss_fns: Dict[str, Callable] = None,
             aggregate_fn: Optional[Callable] = None,
     ):
@@ -98,12 +104,14 @@ class BaseTrainer:
 
         elif isinstance(train_loss_fn, Callable):
             pass
-
+        
         for epoch in tqdm(range(epochs), desc='Training epochs'):
             self.train(train_loader, epoch, train_loss_fn)
 
             if valid_loss_fns is not None:
                 # End of epoch validation loss tracked in wandb
+                
+   
                 for k, fn in valid_loss_fns.items():
 
                     if isinstance(fn, DictConfig):
@@ -111,7 +119,16 @@ class BaseTrainer:
 
                     loss = self.evaluate(test_loader, fn, aggregate_fn)
                     # self.losses[k].append(loss)
-                    wandb.log({k: loss}, step=self.step)
+
+
+                    # print({k: np.mean(loss)})
+                    # pdb.set_trace()
+
+                    if self.step % log_freq == 0:
+                    
+                        # Log all the  losses in wandb
+                        wandb.log({k: np.mean(loss)}, step=self.step)
+                
 
             # # execute other callbacks on the end of each epoch
             # for callback in self.callbacks_end:
