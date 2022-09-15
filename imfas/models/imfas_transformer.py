@@ -235,5 +235,8 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
         )
         encoded_lcs_local = encoded_lcs_local[torch.arange(len(encoded_lcs_local)), n_observed_lcs]
         encoded_lcs_local = encoded_lcs_local.view(batch_size, n_algos, -1)
+
+        encoded_lcs_local = self.positional_encoder(encoded_lcs_local)
+
         # TODO adjust the Meta features with this type of transformation
         return self.global_transformer(encoded_lcs_local)
