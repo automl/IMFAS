@@ -10,16 +10,37 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 from tqdm import tqdm
 
-def get_cc18_datasets():
-    cc18_benchmark_suite = openml.study.get_suite(99)
+import multiprocessing
+from joblib import Parallel, delayed
+
+import pandas as pd
+
+import pdb
+
+def get_cc18_datasets(n_datasets):
+    cc18_benchmark_suite = openml.study.get_suite(1)
+
     return openml.datasets.get_datasets(cc18_benchmark_suite.data)
 
 
 def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_splits, seed):
     print(f"{openml_dataset}")
-    pipeline = Pipeline(steps=[('imputer', SimpleImputer(strategy='most_frequent')),
-                               ('onehot', OneHotEncoder(handle_unknown='ignore')),
-                               ('classifier', algorithm)])
+
+    # NOTE Dataframes for CSV processing
+    dataset_mf = pd.DataFrame()
+    algorithm_mf = pd.DataFrame()
+    learning_curves = pd.DataFrame()
+
+    # Define a classifcation pipeline
+    pipeline = Pipeline(
+                    steps=[
+                        ('imputer', SimpleImputer(strategy='most_frequent')),
+                        ('onehot', OneHotEncoder(handle_unknown='ignore')),
+                        ('classifier', algorithm)
+                    ]
+                )
+
+    # Get the features from the openml dataset
 
     X, y, categorical_indicator, attribute_names = openml_dataset.get_data(
         dataset_format="dataframe",
@@ -27,12 +48,14 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_
     X = X.to_numpy()
     y = y.to_numpy()
 
+    # initialitze the stratified folds
     stratiefiedKFold = StratifiedKFold(n_splits=number_of_splits, random_state=seed, shuffle=True)
     stratified_X_trains = list()
     stratified_y_trains = list()
     stratified_X_tests = list()
     stratified_y_tests = list()
 
+    # Get the features and data for each fold
     for train_index, test_index in stratiefiedKFold.split(X, y):
         X_train, X_test = X[train_index], X[test_index]
         stratified_X_trains.append(X_train)
@@ -42,6 +65,7 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_
         stratified_y_trains.append(y_train)
         stratified_y_tests.append(y_test)
 
+    # Run the algorithm for each budget for all folds
     for budget in budgets:
         accuracies = list()
 
@@ -64,16 +88,32 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_
         average_accuracy_over_folds = np.asarray(accuracies).mean()
         print(f"budget: {budget}, accuracy: {average_accuracy_over_folds}")
 
-        # TODO push score to database
+    # TODO Log into CSV
+        
 
 
 if __name__ == "__main__":
-    datasets = get_cc18_datasets()
-    budgets = [0.05, 0.10, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+    datasets = get_cc18_datasets(n_datasets=2)
+    
+    pdb.set_trace()
+
+    budgets = np.arange(0.05, 1.05, 0.05, dtype=float)
     number_of_splits = 3
 
     seed = 42
     np.random.seed(seed)
 
-    for dataset in tqdm(datasets):
-        evaluate_algorithm_on_dataset(dataset, RandomForestClassifier(), budgets, number_of_splits, seed)
+    algorithms = [RandomForestClassifier()]
+
+    # Function for parallell running 
+    def calc_stuff():
+    
+        for algo in algorithms:
+            for dataset in datasets:
+                evaluate_algorithm_on_dataset(dataset, algo, budgets, number_of_splits, seed)
+    
+    # TODO parallelize based dataset computation time
+
+    Parallel(n_jobs=2)(delayed(calc_stuff))         # NOTE yet to be done
+
+    
