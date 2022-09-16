@@ -40,7 +40,7 @@ class BaseTrainer:
             input[k] = v.to(self.device).float()
         return input
 
-    def train(self, train_loader, epochs, loss_fn) -> None:
+    def train(self, train_loader, epochs, loss_fn,  log_freq=5) -> None:
         """define one epoch of training"""
         # TODO: incorporate callbacks to the training loop (before and after each epoch, and )
         #  at every (k-th) step?
@@ -55,11 +55,14 @@ class BaseTrainer:
 
             y_hat = self.model.forward(**X)
 
-            loss = loss_fn(y_hat, y["final_fidelity"]).backward()
+            loss = loss_fn(y_hat, y["final_fidelity"])
+            loss.backward()
+
             # FIXME: y needs to be explicit or have a strong conventioN
 
             # Log the training loss
-            wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
+            if self.step % log_freq == 0:
+                wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
 
             self.optimizer.step()
             self._step += 1
@@ -98,6 +101,7 @@ class BaseTrainer:
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
+        
         # Class & functional interface
         if isinstance(train_loss_fn, DictConfig):
             train_loss_fn = instantiate(train_loss_fn)
@@ -121,9 +125,9 @@ class BaseTrainer:
                     # self.losses[k].append(loss)
 
 
-                    # print({k: np.mean(loss)})
-                    # pdb.set_trace()
+                    
 
+                    
                     if self.step % log_freq == 0:
                     
                         # Log all the  losses in wandb
