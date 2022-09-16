@@ -104,4 +104,4 @@ trainer:
 wandb:
   group: imfas_wp
   notes: 'imfas wp'
-  mode: 'offline'
+  mode: 'online'

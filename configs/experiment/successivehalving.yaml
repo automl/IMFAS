@@ -19,7 +19,7 @@ model:
 dataset:
   test_dataset_class:
     masking_fn:
-      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
+      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity
       _partial_: True
       max_fidelities: [ 1, 10 ]
 
@@ -30,7 +30,7 @@ dataset:
 trainer:
   trainerobj:
     masking_fn:
-      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
+      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity
       _partial_: True
     max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
 
@@ -38,7 +38,7 @@ trainer:
     epochs: 1 # since we only need a single test execution anyways (HACK)
     valid_loss_fns:
       spearman:
-        _target_: imfas.losses.ranking_loss.SpearmanLoss # Fixme: replace this with
+        _target_: imfas.losses.spearman.SpearmanLoss # Fixme: replace this with
       # fixme: add other dictionary items
 
 device: cpu
