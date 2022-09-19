@@ -1,14 +1,12 @@
 from typing import Callable, Dict, Optional
 
+import numpy as np
 import torch.optim
 import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
-import numpy as np
-import torch as th
 
-import pdb
 
 class BaseTrainer:
     def __init__(
@@ -40,7 +38,7 @@ class BaseTrainer:
             input[k] = v.to(self.device).float()
         return input
 
-    def train(self, train_loader, epochs, loss_fn,  log_freq=5) -> None:
+    def train(self, train_loader, epochs, loss_fn, log_freq=5) -> None:
         """define one epoch of training"""
         # TODO: incorporate callbacks to the training loop (before and after each epoch, and )
         #  at every (k-th) step?
@@ -56,6 +54,7 @@ class BaseTrainer:
             y_hat = self.model.forward(**X)
 
             loss = loss_fn(y_hat, y["final_fidelity"])
+            # print(y, y_hat, loss)
             loss.backward()
 
             # FIXME: y needs to be explicit or have a strong conventioN
@@ -84,8 +83,8 @@ class BaseTrainer:
 
                 losses.append(loss)
 
-        if aggregate_fn is not None:  
-            return aggregate_fn(losses)# fixme: we might want an aggregate for each loss fn
+        if aggregate_fn is not None:
+            return aggregate_fn(losses)  # fixme: we might want an aggregate for each loss fn
         else:
             return losses  # returns the entire trace of all instances in the testloader
 
@@ -101,21 +100,23 @@ class BaseTrainer:
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
-        
         # Class & functional interface
         if isinstance(train_loss_fn, DictConfig):
             train_loss_fn = instantiate(train_loss_fn)
 
         elif isinstance(train_loss_fn, Callable):
             pass
-        
+
         for epoch in tqdm(range(epochs), desc='Training epochs'):
             self.train(train_loader, epoch, train_loss_fn)
 
-            if valid_loss_fns is not None:
+            # move this  parameter hist tracker to a callback?
+            for k, t in self.model.state_dict().items():
+                wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
+
+            if valid_loss_fns is not None and self.step % log_freq == 0:
                 # End of epoch validation loss tracked in wandb
-                
-   
+
                 for k, fn in valid_loss_fns.items():
 
                     if isinstance(fn, DictConfig):
@@ -124,15 +125,9 @@ class BaseTrainer:
                     loss = self.evaluate(test_loader, fn, aggregate_fn)
                     # self.losses[k].append(loss)
 
-
-                    
-
-                    
                     if self.step % log_freq == 0:
-                    
                         # Log all the  losses in wandb
                         wandb.log({k: np.mean(loss)}, step=self.step)
-                
 
             # # execute other callbacks on the end of each epoch
             # for callback in self.callbacks_end:

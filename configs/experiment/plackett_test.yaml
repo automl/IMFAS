@@ -27,10 +27,12 @@ dataset:
 model:
   _target_: imfas.models.plackett_test.PlackettTest
   encoder:
+    # linear model:
     _target_: imfas.utils.mlp.MLP
     hidden_dims:
       - ${dynamically_computed.n_data_meta_features}
       - ${dynamically_computed.n_algos}
+    activation: 'identity'
 
 trainer:
   trainerobj:
@@ -50,6 +52,4 @@ trainer:
 
 
 wandb:
-  group: imfas_wp
   notes: 'plackett test'
-  mode: 'offline'

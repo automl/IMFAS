@@ -1,8 +1,5 @@
-from typing import List
-
 from functools import partial
-
-import torch
+from typing import List
 
 from imfas.trainer.base_trainer import BaseTrainer
 
@@ -34,7 +31,7 @@ class SliceEvaluator(BaseTrainer):
 
             test_loader.dataset.masking_fn = partial(self.masking_fn, max_fidelity=fidelity)
 
-            losses = torch.zeros(n_algos)
+            losses = list()
 
             for X, y in test_loader:
                 self.to_device(X)

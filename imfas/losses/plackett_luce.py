@@ -1,9 +1,6 @@
 import torch
 from torch.nn.modules.loss import _Loss as Loss
 
-import pdb
-
-import xdist
 
 class PlackettLuceLoss(Loss):
     def __init__(self, reduction: str = 'mean') -> None:
@@ -36,7 +33,7 @@ class PlackettLuceLoss(Loss):
 
         x = self.shifted_softmax(yhat_reordered)
 
-        return  - torch.sum(x)
+        return - torch.sum(x)
 
     def shifted_softmax(self, ordered_ranking: torch.Tensor):
         """Shifted softmax, to account for the "without replacement property" of the Plackett Luce Model

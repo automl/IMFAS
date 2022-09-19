@@ -44,6 +44,5 @@ trainer:
 device: cpu
 
 wandb:
-  group: imfas_wp
   notes: 'Successive Halving'
-  mode: 'offline'
+

@@ -48,6 +48,4 @@ model:
 
 
 wandb:
-  group: imfas_wp
-  notes: 'imfas wp'
-  mode: 'offline'
+  notes: 'imfas transformer'
