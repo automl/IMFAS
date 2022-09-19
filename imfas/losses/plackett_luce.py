@@ -3,8 +3,9 @@ from torch.nn.modules.loss import _Loss as Loss
 
 
 class PlackettLuceLoss(Loss):
-    def __init__(self, reduction: str = 'mean') -> None:
+    def __init__(self, reduction: str = 'mean', k=999) -> None:
         super(PlackettLuceLoss, self).__init__(reduction=reduction)
+        self.k = k
 
     def forward(self, y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         r"""
@@ -31,9 +32,7 @@ class PlackettLuceLoss(Loss):
         # need the "without replacement" option of this. meaning, when we do the
         # softmax, we will have to do a shifted softmax on the reordered tensor.
 
-        x = self.shifted_softmax(yhat_reordered)
-
-        return - torch.sum(x)
+        return - torch.sum(self.shifted_softmax(yhat_reordered))
 
     def shifted_softmax(self, ordered_ranking: torch.Tensor):
         """Shifted softmax, to account for the "without replacement property" of the Plackett Luce Model
@@ -45,20 +44,20 @@ class PlackettLuceLoss(Loss):
 
         where we shift the normalization
         """
+        shifted = torch.zeros(ordered_ranking.shape)
+        for i in range(min(self.k, ordered_ranking.shape[1])):
+            a = ordered_ranking[:, i:]
+            shifted[:, i] = torch.log(torch.exp(a[:, 0]) / torch.exp(a).sum(axis=1))
+        return shifted
 
-        return sum(
-            [torch.log_softmax(ordered_ranking[:, i:], dim=1).sum(axis=1)  # algodim
-             for i in range(ordered_ranking.shape[1])]
-        )
+        # sum(
+        # [torch.log_softmax(ordered_ranking[:, i:], dim=1).sum(axis=1)
+        #  for i in range(ordered_ranking.shape[1])]
+        # )
 
 
 if __name__ == '__main__':
-    loss = PlackettLuceLoss()
-
-    # FIXME: remove this
-    # permutation = torch.tensor([[2, 1, 0, 3, 4], [1, 0, 2, 3, 4]])
-    # to_sort = torch.tensor([[0.1, 0.2, 0.3, 0.4, 0.5], [2.0, 1.0, 4.0, 3.0, 3.0]])
-    # PlackettLuceLoss.sort_by_permutation(to_sort, permutation)
+    loss = PlackettLuceLoss(k=3)
 
     y_hat = torch.tensor(
         [[-0.9204, -0.5594, 0.7821, 2.4453, 0.0966, 1.1002, -0.5674, -0.6546, -0.4556, -0.6019,
@@ -89,4 +88,6 @@ if __name__ == '__main__':
           40.9423, 52.2257, 63.8392, 85.1856, 31.6795, 79.6739, 38.4915, 87.7163, 73.7721,
           67.9704, 65.6597, 80.8843, 78.7136]])
 
-    loss(y_hat, y)
+    y_hat = torch.tensor([[0.1, 0.2, 0.3, 0.4, ], [0.1, 0.2, 0.3, 0.4, ]])
+    y = torch.tensor([[4, 2, 3, 1], [4, 3, 2, 1]])
+    print(loss(y_hat, y))
