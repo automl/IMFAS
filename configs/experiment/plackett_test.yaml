@@ -40,13 +40,22 @@ trainer:
 
     optimizer:
       _target_: torch.optim.Adam
-      lr: 0.001
+      lr: 0.0001
       _partial_: True
 
   run_call:
     epochs: 1000
     train_loss_fn:
       _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+      k: 3
+
+    valid_loss_fns:
+      topk1_regret:
+        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
+        k: 1
+      topk3_regret:
+        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
+        k: 3
 
 
 

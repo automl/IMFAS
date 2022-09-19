@@ -1,6 +1,5 @@
 from typing import Callable, Dict, Optional
 
-import numpy as np
 import torch.optim
 import wandb
 from hydra.utils import instantiate
@@ -83,10 +82,7 @@ class BaseTrainer:
 
                 losses.append(loss)
 
-        if aggregate_fn is not None:
-            return aggregate_fn(losses)  # fixme: we might want an aggregate for each loss fn
-        else:
-            return losses  # returns the entire trace of all instances in the testloader
+        return losses[0] if aggregate_fn is None else aggregate_fn(losses)
 
     def run(
             self,
@@ -125,9 +121,8 @@ class BaseTrainer:
                     loss = self.evaluate(test_loader, fn, aggregate_fn)
                     # self.losses[k].append(loss)
 
-                    if self.step % log_freq == 0:
-                        # Log all the  losses in wandb
-                        wandb.log({k: np.mean(loss)}, step=self.step)
+                    wandb.log({k: loss.item()}, step=self.step)  # FIXME @Aditya, this fails in
+                    # plackett-luce test
 
             # # execute other callbacks on the end of each epoch
             # for callback in self.callbacks_end:
