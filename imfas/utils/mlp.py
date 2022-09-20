@@ -12,9 +12,12 @@ class MLP(nn.Module):
         self.hidden_dims = hidden_dims
 
         mlp = [
-            (nn.Linear(in_dim, out_dim, bias=True), self.activation[activation](),
-             # nn.BatchNorm1d(out_dim
-             ) for in_dim, out_dim in zip(hidden_dims, hidden_dims[1:])
+            (
+                nn.Linear(in_dim, out_dim, bias=True),
+                self.activation[activation](),
+                # nn.BatchNorm1d(out_dim
+            )
+            for in_dim, out_dim in zip(hidden_dims, hidden_dims[1:])
         ]
 
         self.layers = nn.ModuleList(chain(*mlp))

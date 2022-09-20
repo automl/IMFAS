@@ -30,14 +30,14 @@ class TopkMaxRegret(nn.Module):
         return torch.mean(best_available - best_contender)  # batch mean
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # check top-1 regret
     torch.manual_seed(1)
 
     y_pred = torch.randperm(10)[:10].view(1, -1).double()
     y_true = torch.randperm(10)[:10].view(1, -1).double()
     regret = TopkMaxRegret(k=1)
-    assert regret(y_pred, y_true) == torch.tensor(3.)
+    assert regret(y_pred, y_true) == torch.tensor(3.0)
 
     # batch test
     torch.manual_seed(1)

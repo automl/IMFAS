@@ -35,6 +35,7 @@ model:
 
   decoder:
     hidden_dims:
+      # - ${add:dynamically_computed.n_algos,dynamically_computed.n_algos} 
       - 328               # FIXME: dynamically compute based on the 
                           # concat dim before the tensor comes to the decoder
       - ${dynamically_computed.n_algos}
@@ -48,6 +49,40 @@ model:
     activation: 'relu'
     batch_first: True
     norm_first: True
+
+trainer:
+  trainerobj:
+    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
+    #    masking_fn:
+    #      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
+    #
+    #      _partial_: True
+    #      max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
+
+    optimizer:
+      _target_: torch.optim.Adam
+      lr: 0.001
+      _partial_: True
+
+  run_call:
+    epochs: 1000
+    log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
+    train_loss_fn:
+      _target_: imfas.losses.spearman.SpearmanLoss
+    valid_loss_fns:
+      spearman:
+        _target_: imfas.losses.spearman.SpearmanLoss
+
+      topk1_regret:
+        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
+        k: 1
+      topk3_regret:
+        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
+        k: 3
+
+      plackett_luce:
+        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+        k: 3
 
 
 wandb:

@@ -9,10 +9,10 @@ from tqdm import tqdm
 
 class BaseTrainer:
     def __init__(
-            self,
-            model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer = None,
-            # callbacks_end: List[Callable] = None
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer = None,
+        # callbacks_end: List[Callable] = None
     ):
         """
 
@@ -57,14 +57,12 @@ class BaseTrainer:
             loss.backward()
 
             # FIXME: y needs to be explicit or have a strong conventioN
-
-            # Log the training loss
-            # fixme: every training epoch!
-
             self.optimizer.step()
 
+            # Log the training loss
         if self.step % log_freq == 0:
-            wandb.log({"trainingloss": loss}, step=self.step)
+            wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
+
         self._step += 1
 
     def evaluate(self, test_loader, valid_loss_fn, aggregate_fn=None):
@@ -87,14 +85,14 @@ class BaseTrainer:
         return losses[0] if aggregate_fn is None else aggregate_fn(losses)
 
     def run(
-            self,
-            train_loader,
-            test_loader,
-            epochs,
-            train_loss_fn,
-            log_freq=5,
-            valid_loss_fns: Dict[str, Callable] = None,
-            aggregate_fn: Optional[Callable] = None,
+        self,
+        train_loader,
+        test_loader,
+        epochs,
+        train_loss_fn,
+        log_freq=5,
+        valid_loss_fns: Dict[str, Callable] = None,
+        aggregate_fn: Optional[Callable] = None,
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
@@ -105,8 +103,8 @@ class BaseTrainer:
             self.train(train_loader, epoch, train_loss_fn)
 
             # move this  parameter hist tracker to a callback?
-            for k, t in self.model.state_dict().items():
-                wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
+            # for k, t in self.model.state_dict().items():
+            #     wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
 
             if valid_loss_fns is not None and self.step % log_freq == 0:
                 # End of epoch validation loss tracked in wandb

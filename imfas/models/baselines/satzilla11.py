@@ -69,36 +69,36 @@ class SATzilla11(nn.Module):
     #         self._models[(i, j)].fit(X= features, y= pair_target,sample_weight=sample_weights)
 
     # Main run call will be in forward
-    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, *args, **kwargs)):
+    # def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, *args, **kwargs)):
         
-        max_fidelity_idx = mask.sum(dim=-1).max()
-        max_fidelity_idx = torch.tensor(max_fidelity_idx, dtype=torch.long)
-        logger.debug(f"Max fidelity: {max_fidelity_idx}")
+    #     max_fidelity_idx = mask.sum(dim=-1).max()
+    #     max_fidelity_idx = torch.tensor(max_fidelity_idx, dtype=torch.long)
+    #     logger.debug(f"Max fidelity: {max_fidelity_idx}")
 
-        self._batch = learning_curves.shape[0]
-        self._num_algorithms = learning_curves.shape[1]
-        features = learning_curve.shape[2]
+    #     self._batch = learning_curves.shape[0]
+    #     self._num_algorithms = learning_curves.shape[1]
+    #     features = learning_curve.shape[2]
 
-        # Should be the performance values at the max_fidelity_idx, a tensor of shape of n_algos
-        performances = learning_curves[max_fidelity_idx]
+    #     # Should be the performance values at the max_fidelity_idx, a tensor of shape of n_algos
+    #     performances = learning_curves[max_fidelity_idx]
 
-        self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
+    #     self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
 
-        for (i, j) in self._pairwise_indices:
-            # determine pairwise target, initialize models and fit each RFC wrt. instance weights
-            pair_target = self._get_pairwise_target((i, j), performances)
-            sample_weights = self._compute_sample_weights(
-                (i, j), performances)
+    #     for (i, j) in self._pairwise_indices:
+    #         # determine pairwise target, initialize models and fit each RFC wrt. instance weights
+    #         pair_target = self._get_pairwise_target((i, j), performances)
+    #         sample_weights = self._compute_sample_weights(
+    #             (i, j), performances)
 
-            # account for nan values (i.e. ignore pairwise comparisons that involve an algorithm run violating
-            # the cutoff if the config specifies 'ignore_censored'), hence set all respective weights to 0
-            sample_weights = np.nan_to_num(sample_weights)
+    #         # account for nan values (i.e. ignore pairwise comparisons that involve an algorithm run violating
+    #         # the cutoff if the config specifies 'ignore_censored'), hence set all respective weights to 0
+    #         sample_weights = np.nan_to_num(sample_weights)
 
-            # TODO: how to set the remaining hyperparameters? 
-            self._models[(i, j)] = RandomForestClassifier(n_estimators=99, max_features='log2', n_jobs=1, random_state=0)
-            self._models[(i, j)].fit(X=features, y=pair_target,sample_weight=sample_weights)
+    #         # TODO: how to set the remaining hyperparameters? 
+    #         self._models[(i, j)] = RandomForestClassifier(n_estimators=99, max_features='log2', n_jobs=1, random_state=0)
+    #         self._models[(i, j)].fit(X=features, y=pair_target,sample_weight=sample_weights)
         
-        pass
+    #     pass
     
     def predict(self, features, instance_id: int):
         assert(features.ndim == 1), '`features` must be one dimensional'
