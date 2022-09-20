@@ -50,7 +50,8 @@ trainer:
     epochs: 1000
     train_loss_fn:
       _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-      k: 3
+      k: 10
+    #      _target_: imfas.losses.spearman.SpearmanLoss
 
     valid_loss_fns:
       top1_regret:

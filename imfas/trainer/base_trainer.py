@@ -99,11 +99,7 @@ class BaseTrainer:
         """Main loop including training & test evaluation, all of which report to wandb"""
 
         # Class & functional interface
-        if isinstance(train_loss_fn, DictConfig):
-            train_loss_fn = instantiate(train_loss_fn)
-
-        elif isinstance(train_loss_fn, Callable):
-            pass
+        train_loss_fn = instantiate(train_loss_fn)
 
         for epoch in tqdm(range(epochs), desc='Training epochs'):
             self.train(train_loader, epoch, train_loss_fn)

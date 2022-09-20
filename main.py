@@ -10,7 +10,8 @@ log = logging.getLogger(__name__)
 
 import torch
 
-OmegaConf.register_new_resolver("device_ident", lambda _: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+OmegaConf.register_new_resolver("device_ident", lambda _: torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"))
 
 OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
 OmegaConf.register_new_resolver("len", lambda l: len(l))
@@ -40,9 +41,9 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # FIXME: W&B id???
     hydra_job = (
-        os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
-        + "_"
-        + os.path.basename(HydraConfig.get().run.dir)
+            os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
+            + "_"
+            + os.path.basename(HydraConfig.get().run.dir)
     )
     cfg.wandb.id = hydra_job + "_" + id_generator()  # FIXME: necessary?
 
