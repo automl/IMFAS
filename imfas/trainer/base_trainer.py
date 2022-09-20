@@ -9,12 +9,13 @@ from tqdm import tqdm
 import numpy as np
 import pdb
 
+
 class BaseTrainer:
     def __init__(
-            self,
-            model: torch.nn.Module,
-            optimizer: torch.optim.Optimizer = None,
-            # callbacks_end: List[Callable] = None
+        self,
+        model: torch.nn.Module,
+        optimizer: torch.optim.Optimizer = None,
+        # callbacks_end: List[Callable] = None
     ):
         """
 
@@ -34,7 +35,10 @@ class BaseTrainer:
     def step(self):
         return self._step
 
-    def to_device(self, input, ) -> None:
+    def to_device(
+        self,
+        input,
+    ) -> None:
         for k, v in input.items():
             input[k] = v.to(self.device).float()
         return input
@@ -65,7 +69,6 @@ class BaseTrainer:
         if self.step % log_freq == 0:
             wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
 
-        
         self._step += 1
 
     def evaluate(self, test_loader, valid_loss_fn, aggregate_fn=None):
@@ -88,14 +91,14 @@ class BaseTrainer:
         return losses[0] if aggregate_fn is None else aggregate_fn(losses)
 
     def run(
-            self,
-            train_loader,
-            test_loader,
-            epochs,
-            train_loss_fn,
-            log_freq=5,
-            valid_loss_fns: Dict[str, Callable] = None,
-            aggregate_fn: Optional[Callable] = None,
+        self,
+        train_loader,
+        test_loader,
+        epochs,
+        train_loss_fn,
+        log_freq=5,
+        valid_loss_fns: Dict[str, Callable] = None,
+        aggregate_fn: Optional[Callable] = None,
     ):
         """Main loop including training & test evaluation, all of which report to wandb"""
 
@@ -105,11 +108,10 @@ class BaseTrainer:
 
         elif isinstance(train_loss_fn, Callable):
             pass
-        
 
-        for epoch in tqdm(range(epochs), desc='Training epochs'):
+        for epoch in tqdm(range(epochs), desc="Training epochs"):
             self.train(train_loader, epoch, train_loss_fn)
-            
+
             # move this  parameter hist tracker to a callback?
             # for k, t in self.model.state_dict().items():
             #     wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
@@ -129,7 +131,6 @@ class BaseTrainer:
                     if self.step % log_freq == 0:
                         # Log all the  losses in wandb
                         wandb.log({k: loss.mean()}, step=self.step)  # FIXME @Aditya, this fails in
-                   
 
             # # execute other callbacks on the end of each epoch
             # for callback in self.callbacks_end:

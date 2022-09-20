@@ -17,6 +17,7 @@ import pandas as pd
 
 import pdb
 
+
 def get_cc18_datasets(n_datasets):
     cc18_benchmark_suite = openml.study.get_suite(1)
 
@@ -33,18 +34,18 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_
 
     # Define a classifcation pipeline
     pipeline = Pipeline(
-                    steps=[
-                        ('imputer', SimpleImputer(strategy='most_frequent')),
-                        ('onehot', OneHotEncoder(handle_unknown='ignore')),
-                        ('classifier', algorithm)
-                    ]
-                )
+        steps=[
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+            ("classifier", algorithm),
+        ]
+    )
 
     # Get the features from the openml dataset
 
     X, y, categorical_indicator, attribute_names = openml_dataset.get_data(
-        dataset_format="dataframe",
-        target=openml_dataset.default_target_attribute)
+        dataset_format="dataframe", target=openml_dataset.default_target_attribute
+    )
     X = X.to_numpy()
     y = y.to_numpy()
 
@@ -75,7 +76,8 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_
                 stratified_X_trains[fold],
                 stratified_y_trains[fold],
                 random_state=fold,
-                n_samples=int(budget*stratified_X_trains[fold].shape[0]))
+                n_samples=int(budget * stratified_X_trains[fold].shape[0]),
+            )
 
             # train pipeline
             pipeline.fit(X_subsampled, y_subsampled)
@@ -89,12 +91,11 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budgets, number_of_
         print(f"budget: {budget}, accuracy: {average_accuracy_over_folds}")
 
     # TODO Log into CSV
-        
 
 
 if __name__ == "__main__":
     datasets = get_cc18_datasets(n_datasets=2)
-    
+
     pdb.set_trace()
 
     budgets = np.arange(0.05, 1.05, 0.05, dtype=float)
@@ -105,15 +106,13 @@ if __name__ == "__main__":
 
     algorithms = [RandomForestClassifier()]
 
-    # Function for parallell running 
+    # Function for parallell running
     def calc_stuff():
-    
+
         for algo in algorithms:
             for dataset in datasets:
                 evaluate_algorithm_on_dataset(dataset, algo, budgets, number_of_splits, seed)
-    
+
     # TODO parallelize based dataset computation time
 
-    Parallel(n_jobs=2)(delayed(calc_stuff))         # NOTE yet to be done
-
-    
+    Parallel(n_jobs=2)(delayed(calc_stuff))  # NOTE yet to be done
