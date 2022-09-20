@@ -26,8 +26,9 @@ def raw_pipe(*args, **kwargs):
     cfg = DictConfig(kwargs)
 
     # directory paths
+    # TODO @Tim change this to base config's data dir reference!
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd())
-    dir_data = pathlib.Path(orig_cwd).parent / cfg.dir_data
+    dir_data = pathlib.Path(orig_cwd).parent / 'AlgoSelectionMF' / cfg.dir_data
     dir_downloads = dir_data / "downloads"
     dir_raw_dataset = dir_data / "raw" / cfg.dataset_name
     # todcheck if already downloaded the data
@@ -83,7 +84,11 @@ def raw_pipe(*args, **kwargs):
 
     # select the index rows # FIXME: this is inefficient
     config = pd.DataFrame(
-        [config.loc[element] if config.index.dtype == str else config.loc[element] for element in candidates]
+        [
+            config.loc[element] if config.index.dtype == str
+            else config.loc[element]
+            for element in candidates
+        ]
     )
     df.index = df.index.astype(str)
     config.to_csv(dir_raw_dataset / "config_subset.csv")

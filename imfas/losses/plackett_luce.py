@@ -20,6 +20,8 @@ class PlackettLuceLoss(Loss):
 
         :param y_hat: torch.Tensor, float. score vector for the algorithms
         :param y: torch.Tensor, float. ordered true score (/ranking) of the algorithms
+
+         NOTE: Carefull, TopkMaxRegret is assuming that the maximum of y_scores is the best.
         """
         assert len(y_hat.shape) == 2
         assert y.shape == y_hat.shape

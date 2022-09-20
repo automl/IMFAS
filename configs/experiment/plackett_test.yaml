@@ -20,9 +20,11 @@ dataset:
 
   train_dataloader_class:
     batch_size: 10
+    shuffle: True
 
   test_dataloader_class:
     batch_size: 10
+    shuffle: False
 
 model:
   _target_: imfas.models.plackett_test.PlackettTest
@@ -31,8 +33,9 @@ model:
     _target_: imfas.utils.mlp.MLP
     hidden_dims:
       - ${dynamically_computed.n_data_meta_features}
+      - 100
       - ${dynamically_computed.n_algos}
-    activation: 'identity'
+    activation: 'relu'
 
 trainer:
   trainerobj:
@@ -40,7 +43,7 @@ trainer:
 
     optimizer:
       _target_: torch.optim.Adam
-      lr: 0.0001
+      lr: 0.001
       _partial_: True
 
   run_call:
@@ -50,12 +53,29 @@ trainer:
       k: 3
 
     valid_loss_fns:
-      topk1_regret:
+      top1_regret:
         _target_: imfas.evaluation.topk_regret.TopkMaxRegret
         k: 1
-      topk3_regret:
+      top3_regret:
         _target_: imfas.evaluation.topk_regret.TopkMaxRegret
         k: 3
+      plackett_luce3:
+        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+        k: 3
+      plackett_luce10:
+        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+        k: 10
+      spearman:
+        _target_: imfas.losses.spearman.SpearmanLoss
+      ndcg3:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 3
+      ndcg1:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 1
+
 
 
 

@@ -37,7 +37,7 @@ class BaseTrainer:
             input[k] = v.to(self.device).float()
         return input
 
-    def train(self, train_loader, epochs, loss_fn, log_freq=5) -> None:
+    def train(self, train_loader, epochs, loss_fn, log_freq=1) -> None:
         """define one epoch of training"""
         # TODO: incorporate callbacks to the training loop (before and after each epoch, and )
         #  at every (k-th) step?
@@ -59,11 +59,13 @@ class BaseTrainer:
             # FIXME: y needs to be explicit or have a strong conventioN
 
             # Log the training loss
-            if self.step % log_freq == 0:
-                wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
+            # fixme: every training epoch!
 
             self.optimizer.step()
-            self._step += 1
+
+        if self.step % log_freq == 0:
+            wandb.log({"trainingloss": loss}, step=self.step)
+        self._step += 1
 
     def evaluate(self, test_loader, valid_loss_fn, aggregate_fn=None):
         """evaluate the model on the test set after epoch ends for a single validation function"""

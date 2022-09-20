@@ -17,6 +17,7 @@ class TopkMaxRegret(nn.Module):
         :param: y_true: torch.Tensor, shape (n_samples, n_outputs). Ground truth scores,
         which imply a ranking of the algorithms.
 
+        NOTE: Careful, TopkMaxRegret is assuming that the maximum of y_scores is the best.
         """
         contenders = torch.topk(y_pred, k=self.k, dim=1)
         contenders_true_performance = y_true.gather(1, contenders.indices)
