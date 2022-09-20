@@ -6,6 +6,8 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
 
+import numpy as np
+import pdb
 
 class BaseTrainer:
     def __init__(
@@ -57,13 +59,14 @@ class BaseTrainer:
             loss.backward()
 
             # FIXME: y needs to be explicit or have a strong conventioN
+            self.optimizer.step()
 
             # Log the training loss
-            if self.step % log_freq == 0:
-                wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
+        if self.step % log_freq == 0:
+            wandb.log({"trainingloss": loss}, step=self.step)  # fixme: every training epoch!
 
-            self.optimizer.step()
-            self._step += 1
+        
+        self._step += 1
 
     def evaluate(self, test_loader, valid_loss_fn, aggregate_fn=None):
         """evaluate the model on the test set after epoch ends for a single validation function"""
@@ -102,13 +105,14 @@ class BaseTrainer:
 
         elif isinstance(train_loss_fn, Callable):
             pass
+        
 
         for epoch in tqdm(range(epochs), desc='Training epochs'):
             self.train(train_loader, epoch, train_loss_fn)
-
+            
             # move this  parameter hist tracker to a callback?
-            for k, t in self.model.state_dict().items():
-                wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
+            # for k, t in self.model.state_dict().items():
+            #     wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
 
             if valid_loss_fns is not None and self.step % log_freq == 0:
                 # End of epoch validation loss tracked in wandb
@@ -119,10 +123,13 @@ class BaseTrainer:
                         fn = instantiate(fn)
 
                     loss = self.evaluate(test_loader, fn, aggregate_fn)
+
                     # self.losses[k].append(loss)
 
-                    wandb.log({k: loss.item()}, step=self.step)  # FIXME @Aditya, this fails in
-                    # plackett-luce test
+                    if self.step % log_freq == 0:
+                        # Log all the  losses in wandb
+                        wandb.log({k: loss.mean()}, step=self.step)  # FIXME @Aditya, this fails in
+                   
 
             # # execute other callbacks on the end of each epoch
             # for callback in self.callbacks_end:

@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 
 import torch
 
+# NOTE Lambda functions for ops in yaml resolvers 
 OmegaConf.register_new_resolver("device_ident", lambda _: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
 OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
