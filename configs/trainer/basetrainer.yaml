@@ -9,7 +9,7 @@ run_call:
   epochs: 1000
 
   train_loss_fn:
-    _target_: imfas.losses.ranking_loss.SpearmanLoss
+    _target_: imfas.losses.spearman.SpearmanLoss
 #    reduction: 'mean'
 #    ranking_fn: torchsort.soft_rank
 #    ts_kwargs: { }
