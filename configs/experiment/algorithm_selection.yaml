@@ -21,7 +21,7 @@ defaults:
 
 
 dataset:
-  slices: 10 # FIXME: fidelity slice to evaluate on!
+  slices: [ 10 ] # FIXME: fidelity slice to evaluate on!
   train_dataset_class:
     _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicalAS
 
