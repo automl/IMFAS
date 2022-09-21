@@ -1,105 +1,84 @@
-'''
-    Plan of attack:
-        - We feed a particular fidelity value as the algorithm performances
-        - We use hte random forest voting procedure to get the selected algorithm
-        - we calculate the regret based on the ground truth
-'''#
-
 import logging
 import random
 import numpy as np
+from aslib_scenario.aslib_scenario import ASlibScenario
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.utils import resample
 from collections import Counter
 
-import torch.nn as nn
+
 import torch
-import logging
-import math
+import torch.nn as nn
+import wandb
 
-logger = logging.getLogger(__name__)
 
+import pdb
 
 class SATzilla11(nn.Module):
-    """ Implementation of SATzilla's internal algorithm selector. 
+    """ 
+    Implementation of SATzilla's internal algorithm selector. 
+
     Note, however, that this implementation does not account for SATzilla's many other steps, 
     thus does not account for presolving or employing a backup solver.    
     """
 
-    def __init__(self):
+    def __init__(self, scenario: torch.Tensor, device: str = 'cpu'):
+        super(SATzilla11, self).__init__()
+        
         self._name = 'satzilla-11'
         self._models = {}
-        self._imputer = SimpleImputer()
-        self._scaler = StandardScaler()
+        self.scenario = scenario
+        
         # used to break ties during the predictions phase
         self._rand = random.Random(0)
 
-    def get_name(self):
-        return self._name
-
-
-    
-    # def fit(self, scenario: ASlibScenario, fold: int, num_instances: int):
-
-    #     self._num_algorithms = len(scenario.algorithms)                 # we can get this from the main 
-    #     self._algorithm_cutoff_time = scenario.algorithm_cutoff_time    # NOTE how to determine this?  
-
-    #     # NOTE Preprocessing
-    #     # # resample `amount_of_training_instances` instances and preprocess them accordingly
-    #     # features, performances = self._resample_instances(scenario.feature_data.values, scenario.performance_data.values, num_instances, random_state=fold)
-    #     # features, performances = self._preprocess_scenario(scenario, features, performances)
-
-    #     # NOTE Fit Random Forests to the data
-    #     # create and fit rfcs' for all pairwise comparisons between two algorithms
-    #     self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
-
-    #     for (i, j) in self._pairwise_indices:
-    #         # determine pairwise target, initialize models and fit each RFC wrt. instance weights
-    #         pair_target = self._get_pairwise_target((i, j), performances)
-    #         sample_weights = self._compute_sample_weights((i, j), performances)
-
-    #         # account for nan values (i.e. ignore pairwise comparisons that involve an algorithm run violating
-    #         # the cutoff if the config specifies 'ignore_censored'), hence set all respective weights to 0
-    #         sample_weights = np.nan_to_num(sample_weights)
-
-    #         # TODO: how to set the remaining hyperparameters? 
-    #         self._models[(i, j)] = RandomForestClassifier(n_estimators=99, max_features='log2', n_jobs=1, random_state=fold)
-    #         self._models[(i, j)].fit(X= features, y= pair_target,sample_weight=sample_weights)
-
-    # Main run call will be in forward
-    # def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, *args, **kwargs)):
+    def forward(self):
         
-    #     max_fidelity_idx = mask.sum(dim=-1).max()
-    #     max_fidelity_idx = torch.tensor(max_fidelity_idx, dtype=torch.long)
-    #     logger.debug(f"Max fidelity: {max_fidelity_idx}")
+        print(self.scenario)
+        pdb.set_trace()
 
-    #     self._batch = learning_curves.shape[0]
-    #     self._num_algorithms = learning_curves.shape[1]
-    #     features = learning_curve.shape[2]
-
-    #     # Should be the performance values at the max_fidelity_idx, a tensor of shape of n_algos
-    #     performances = learning_curves[max_fidelity_idx]
-
-    #     self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
-
-    #     for (i, j) in self._pairwise_indices:
-    #         # determine pairwise target, initialize models and fit each RFC wrt. instance weights
-    #         pair_target = self._get_pairwise_target((i, j), performances)
-    #         sample_weights = self._compute_sample_weights(
-    #             (i, j), performances)
-
-    #         # account for nan values (i.e. ignore pairwise comparisons that involve an algorithm run violating
-    #         # the cutoff if the config specifies 'ignore_censored'), hence set all respective weights to 0
-    #         sample_weights = np.nan_to_num(sample_weights)
-
-    #         # TODO: how to set the remaining hyperparameters? 
-    #         self._models[(i, j)] = RandomForestClassifier(n_estimators=99, max_features='log2', n_jobs=1, random_state=0)
-    #         self._models[(i, j)].fit(X=features, y=pair_target,sample_weight=sample_weights)
         
-    #     pass
-    
+
+    def fit(self, scenario: torch.Tensor, mask: torch.Tensor, *args, **kwargs):
+        '''
+        Fit some random forests to given features and performances
+
+        '''
+
+
+        self._num_algorithms = len(scenario.algorithms)
+        self._algorithm_cutoff_time = scenario.algorithm_cutoff_time
+
+        # resample `amount_of_training_instances` instances and preprocess them accordingly
+        features, performances = self._resample_instances(
+                                                feature_data= scenario.feature_data.values, 
+                                                performance_data=scenario.performance_data.values, 
+                                                num_instances= num_instances, 
+                                                random_state=fold
+                                            )
+        features, performances = self._preprocess_scenario(scenario, features, performances)
+
+        # create and fit rfcs' for all pairwise comparisons between two algorithms
+        self._pairwise_indices = [(i, j) for i in range(
+            self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
+
+        for (i, j) in self._pairwise_indices:
+            # determine pairwise target, initialize models and fit each RFC wrt. instance weights
+            pair_target = self._get_pairwise_target((i, j), performances)
+            sample_weights = self._compute_sample_weights((i, j), performances)
+
+            # account for nan values (i.e. ignore pairwise comparisons that involve an algorithm run violating
+            # the cutoff if the config specifies 'ignore_censored'), hence set all respective weights to 0
+            sample_weights = np.nan_to_num(sample_weights)
+
+            # TODO: how to set the remaining hyperparameters? 
+            self._models[(i, j)] = RandomForestClassifier(
+                n_estimators=99, max_features='log2', n_jobs=1, random_state=fold)
+            self._models[(i, j)].fit(features, pair_target,
+                                     sample_weight=sample_weights)
+
     def predict(self, features, instance_id: int):
         assert(features.ndim == 1), '`features` must be one dimensional'
         features = np.expand_dims(features, axis=0)
@@ -107,7 +86,8 @@ class SATzilla11(nn.Module):
         features = self._scaler.transform(features)
 
         # compute the most voted algorithms for the given instance
-        predictions = {(i, j): rfc.predict(features).item() for (i, j), rfc in self._models.items()}
+        predictions = {(i, j): rfc.predict(features).item()
+                       for (i, j), rfc in self._models.items()}
 
         counter = Counter(predictions.values())
         max_votes = max(counter.values())
@@ -140,19 +120,16 @@ class SATzilla11(nn.Module):
         ranking[selection] = 0
         return ranking
 
-    # def _resample_instances(self, feature_data, performance_data, num_instances, random_state):
-    #     num_instances = min(num_instances, np.size(performance_data, axis=0)) if num_instances > 0 else np.size(performance_data, axis=0)
-    #     return resample(feature_data, performance_data, n_samples=num_instances, random_state=random_state)
+    def _resample_instances(self, feature_data, performance_data, num_instances, random_state):
+        num_instances = min(num_instances, np.size(performance_data, axis=0)) if num_instances > 0 else np.size(performance_data, axis=0)
+        return resample(feature_data, performance_data, n_samples=num_instances, random_state=random_state)
 
-    # # NOTE Note requied since algorithm tensor would be pre-fitted 
-    # def _preprocess_scenario(self, scenario, features, performances):
-    #     features = self._imputer.fit_transform(features)
-    #     features = self._scaler.fit_transform(features)
+    def _preprocess_scenario(self, scenario, features, performances):
+        features = self._imputer.fit_transform(features)
+        features = self._scaler.fit_transform(features)
 
-    #     return features, performances
+        return features, performances
 
-    
-    # NOTE remains untouched
     def _get_pairwise_target(self, pair, performances):
         i, j = pair
 
@@ -162,9 +139,18 @@ class SATzilla11(nn.Module):
 
         return pair_target
 
-    # NOTE remains untouched
     def _compute_sample_weights(self, pair, performances):
         i, j = pair
+
+        # sample weights are proportional to the difference in performances of all algorithms on
+        # the dataset
         weights = np.absolute(performances[:, i] - performances[:, j])
 
-        return 
+        return weights
+
+
+if __name__ == "__main__":
+
+    x = SATzilla11()
+
+    print('Hallelujah')
