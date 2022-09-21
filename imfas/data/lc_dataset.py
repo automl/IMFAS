@@ -10,9 +10,10 @@ class Dataset_LC(Dataset):
         """
         :param metric: Lcbench needs another specifier to subset the dataset.
         """
+        self.path = path
         self.df = pd.read_hdf(path, mode="r")
 
-        if metric != "None":
+        if metric is not "None":
             self.df = self.df.xs(key=metric)
 
         # consider: is this possible by read in? - to reduce memory overhead
@@ -45,6 +46,10 @@ class Dataset_LC(Dataset):
     @property
     def shape(self):
         return self.transformed_df.shape
+
+    def __repr__(self):
+        return f"DatasetLC(path={self.path}) , " \
+               f"shape={self.shape}"
 
 
 if __name__ == "__main__":

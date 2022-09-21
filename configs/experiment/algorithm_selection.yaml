@@ -1,0 +1,105 @@
+# @package _global_
+
+
+#Workshop paper version of the IMFAS model: https://arxiv.org/pdf/2206.03130.pdf
+#MLP1(D) = h_0 -> for_{i=0,..k}  LSTM(h_i, f_i)=h_{i+1}  -> MLP2(h_k) = output
+#
+#D: dataset meta-features
+#f_i: performances of all n (=algo_dim) algorithms on the i-th fidelity
+#
+#The dimensions of the model are the following:
+#MLP1: input_dim -> mlp1_hidden_dims -> h_dim
+#LSTM: h_dim -> h_dim
+#MLP2: h_dim -> mlp2_hidden_dims -> algo_dim
+
+defaults:
+  - override /dataset: lcbench
+  - override /dataset/dataset_meta: lcbench_minimal
+  - override /dataset/algo_meta: lcbench_minimal
+  - override /model: imfas_wp
+  - override /trainer: basetrainer
+
+
+dataset:
+  slices: 10 # FIXME: fidelity slice to evaluate on!
+  train_dataset_class:
+    _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicalAS
+
+
+  test_dataset_class:
+    _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicalAS
+
+  train_dataloader_class:
+    shuffle: True
+    batch_size: 5 # must be greater than 1 due to mlp batchnorm
+
+  test_dataloader_class:
+    shuffle: False
+    batch_size: 5
+
+
+model:
+  encoder:
+    hidden_dims:
+      - ${ dynamically_computed.n_data_meta_features }
+      - 300
+      - 200
+
+  input_dim: ${dynamically_computed.n_algos}
+  n_layers: 2
+
+  decoder:
+    hidden_dims:
+      - 200
+      - ${dynamically_computed.n_algos}
+
+
+
+trainer:
+  trainerobj:
+    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
+    #    masking_fn:
+    #      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
+    #
+    #      _partial_: True
+    #      max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
+
+    optimizer:
+      _target_: torch.optim.Adam
+      lr: 0.001
+      _partial_: True
+
+  run_call:
+    epochs: 1 # This must be 1, because the model can only be evaluated on a single fidelity and only once
+    log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
+    train_loss_fn:
+      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+    valid_loss_fns:
+      #      spearman:
+      #        _target_: imfas.losses.spearman.SpearmanLoss
+
+      ndcg10:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 10
+
+      ndcg5:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 5
+
+      ndcg3:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 3
+
+      ndcg1:
+        _target_: sklearn.metrics.ndcg_score
+        _partial_: True
+        k: 1
+
+
+
+wandb:
+  notes: 'imfas wp'
+

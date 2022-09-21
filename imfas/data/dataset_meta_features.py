@@ -6,11 +6,11 @@ from imfas.data.preprocessings.transformpipeline import TransformPipeline
 
 
 class DatasetMetaFeatures(Dataset):
-    def __init__(self, path, transforms: TransformPipeline = None, *args, **kwargs):
+    def __init__(self, path, transforms: TransformPipeline = None, index_col=0, *args, **kwargs):
         self.path = path
         self.transform = transforms
 
-        self.df = pd.read_csv(path, *args, **kwargs)
+        self.df = pd.read_csv(path, index_col=index_col, *args, **kwargs)
         self.names = list(self.df.index)
 
         if transforms is not None:
@@ -31,3 +31,11 @@ class DatasetMetaFeatures(Dataset):
         if not isinstance(self.transformed_df, torch.Tensor):
             raise ValueError(f"You are trying to index a {type(self.transformed_df)} not tensor!")
         return self.transformed_df[idx]
+
+    @property
+    def shape(self):
+        return self.transformed_df.shape
+
+    def __repr__(self):
+        return f"DatasetMetaFeatures(path={self.path}) , " \
+               f"shape={self.shape}"

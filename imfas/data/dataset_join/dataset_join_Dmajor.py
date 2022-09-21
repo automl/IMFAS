@@ -10,12 +10,12 @@ from imfas.data.lc_dataset import Dataset_LC
 
 class Dataset_Join_Dmajor(Dataset):
     def __init__(
-        self,
-        meta_dataset: DatasetMetaFeatures,
-        lc: Dataset_LC,
-        meta_algo: Optional[AlgorithmMetaFeatures] = None,
-        split: List[int] = None,
-        masking_fn: Optional[Callable] = None,
+            self,
+            meta_dataset: DatasetMetaFeatures,
+            lc: Dataset_LC,
+            meta_algo: Optional[AlgorithmMetaFeatures] = None,
+            split: List[int] = None,
+            masking_fn: Optional[Callable] = None,
     ):
         """
         Dataset, joining Dataset Meta features, Algorithm Meta features and the
@@ -68,3 +68,56 @@ class Dataset_Join_Dmajor(Dataset):
 
     def __len__(self):
         return len(self.split)
+
+    def __repr__(self):
+        message = f"Dataset_Join_Dmajor(split: {self.split})\n" \
+                  f"Shapes: \n\tDatasetMeta: {self.meta_dataset.shape} \n\tDatasetLC: {self.lc.shape}"
+
+        if self.meta_algo is not None:
+            message += f"\n\tAlgorithmMeta: {self.meta_algo.shape}"
+
+        return message
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    import imfas.data.preprocessings as prep
+
+    root = Path(__file__).parents[3]
+
+    dataset_name = "LCBench"
+    data_path = root / 'data' / 'raw' / dataset_name
+
+    pipe_lc = prep.TransformPipeline(
+        [prep.Column_Mean(), prep.Convert(), prep.LC_TimeSlices(slices=[0, 1, 2, 3])]
+    )
+
+    pipe_meta = prep.TransformPipeline(
+        [prep.Zero_fill(), prep.Convert(), prep.ToTensor(), prep.ScaleStd()]
+    )
+
+    pipe_algo = prep.TransformPipeline(
+        [prep.Zero_fill(),
+         prep.Drop(
+             ['imputation_strategy', 'learning_rate_scheduler', 'loss', 'network',
+              'normalization_strategy', 'optimizer', 'activation', 'mlp_shape', ]),
+         prep.Replace(columns=['num_layers'], replacedict={'True': 1}),
+         prep.Convert(),
+         prep.ToTensor(),
+         prep.ScaleStd()]
+    )
+
+    D = Dataset_Join_Dmajor(
+        meta_dataset=DatasetMetaFeatures(
+            path=data_path / 'meta_features.csv',
+            transforms=pipe_meta),
+        lc=Dataset_LC(
+            path=data_path / 'logs_subset.h5',
+            transforms=pipe_lc),
+        meta_algo=AlgorithmMetaFeatures(
+            path=data_path / 'config_subset.csv',
+            transforms=pipe_algo),
+        split=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    )
+
+    D[0]
