@@ -1,6 +1,7 @@
 # @package _global_
 
 defaults:
+  - train_test_split: classic_split
   - dataset: lcbench
   - dataset/dataset_meta: lcbench_minimal
   - dataset/lc_meta: multi_slice
@@ -36,7 +37,7 @@ wandb:
   id: null
   entity: tnt
   project: imfas-iclr
-  mode: 'online'    # Change to offline or debug mode
+  mode: 'offline'    # Change to offline or debug mode
   job_type: train
   tags: [ ]
   notes: null
@@ -58,5 +59,5 @@ dir_data_raw: ${dir_data}/raw
 dir_data_processed: ${dir_data}/processed
 
 # saving models specification
-save_models: False # Fixme: currently disabled
+#save_models: False # Fixme: currently disabled
 #save_path: ${output_dir}/${now:%Y-%m-%d}/${now:%H-%M-%S}_${dataset.name}_${model.name}_${seed}

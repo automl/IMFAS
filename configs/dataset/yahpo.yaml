@@ -6,7 +6,6 @@ path:
   lc_meta: ${dir_data_raw}/yahpo_data/${dataset.dataset_raw.selection.bench}/logs_subset.h5
 
 
-split: 0.8 # trainind dataset share
 
 train_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor

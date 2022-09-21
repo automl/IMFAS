@@ -26,7 +26,7 @@ import string
 import wandb
 from hydra.utils import get_original_cwd
 
-from imfas.util import print_cfg, seed_everything, train_test_split
+from imfas.utils.util import print_cfg, seed_everything
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -78,9 +78,9 @@ def pipe_train(cfg: DictConfig) -> None:
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
 
     # train test split by dataset major
-    train_split, test_split = train_test_split(
-        len(dataset_meta_features),  # fixme refactor - needs to be aware of dropped meta features
-        cfg.dataset.split,
+    train_split, test_split = call(
+        cfg.train_test_split,
+        n=len(dataset_meta_features)
     )
 
     # Create the dataloaders
