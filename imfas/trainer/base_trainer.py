@@ -6,6 +6,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
 
+import pdb
 
 class BaseTrainer:
     def __init__(
@@ -24,8 +25,8 @@ class BaseTrainer:
         self.model = model
         self.device = self.model.device
 
-        if optimizer is not None:
-            self.optimizer = optimizer(self.model.parameters())
+        # if optimizer is not None:
+        #     self.optimizer = optimizer(self.model.parameters())
         # self.callbacks_end = callbacks_end
 
     @property
@@ -44,11 +45,12 @@ class BaseTrainer:
         for _, data in enumerate(train_loader):
             # Data parsing
             X, y = data  # assuming a dict of tensors here for each
+
             self.to_device(X)
             self.to_device(y)  # fixme: move to device in fwd call (to allow for data prep such as
             # masking?)
 
-            self.optimizer.zero_grad()
+            # self.optimizer.zero_grad()
 
             y_hat = self.model.forward(**X)
 

@@ -24,22 +24,48 @@ class SATzilla11(nn.Module):
     thus does not account for presolving or employing a backup solver.    
     """
 
-    def __init__(self, scenario: torch.Tensor, device: str = 'cpu'):
+    def __init__(self, max_fidelity, device = 'cpu'):
         super(SATzilla11, self).__init__()
         
         self._name = 'satzilla-11'
         self._models = {}
-        self.scenario = scenario
+        self.max_fidelity = max_fidelity
+        self.device = device
         
         # used to break ties during the predictions phase
         self._rand = random.Random(0)
 
-    def forward(self):
-        
-        print(self.scenario)
-        pdb.set_trace()
+    def forward(self, dataset_meta_features, fidelity):
 
         
+        self._num_algorithms = np.shape(dataset_meta_features)[-1]
+        
+        # Get the dataset x meta-features matrix from the input
+        features = dataset_meta_features.numpy()[0]
+
+        # get datasets x algorithms matrix
+        performances = fidelity.numpy()[0]
+        
+        # create and fit rfcs' for all pairwise comparisons between two algorithms
+        self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
+
+        for (i, j) in self._pairwise_indices:
+            # determine pairwise target, initialize models and fit each RFC wrt. instance weights
+            pair_target = self._get_pairwise_target((i, j), performances)
+            sample_weights = self._compute_sample_weights((i, j), performances)
+
+            # account for nan values (i.e. ignore pairwise comparisons that involve an algorithm run violating
+            # the cutoff if the config specifies 'ignore_censored'), hence set all respective weights to 0
+            sample_weights = np.nan_to_num(sample_weights)
+
+            # TODO: how to set the remaining hyperparameters? 
+            self._models[(i, j)] = RandomForestClassifier(
+                n_estimators=99, max_features='log2', n_jobs=1, random_state=0)
+            self._models[(i, j)].fit(features, pair_target,
+                                     sample_weight=sample_weights)
+        
+        print(self._models)
+        pdb.set_trace()
 
     def fit(self, scenario: torch.Tensor, mask: torch.Tensor, *args, **kwargs):
         '''
@@ -124,11 +150,11 @@ class SATzilla11(nn.Module):
         num_instances = min(num_instances, np.size(performance_data, axis=0)) if num_instances > 0 else np.size(performance_data, axis=0)
         return resample(feature_data, performance_data, n_samples=num_instances, random_state=random_state)
 
-    def _preprocess_scenario(self, scenario, features, performances):
-        features = self._imputer.fit_transform(features)
-        features = self._scaler.fit_transform(features)
+    # def _preprocess_scenario(self, scenario, features, performances):
+    #     features = self._imputer.fit_transform(features)
+    #     features = self._scaler.fit_transform(features)
 
-        return features, performances
+    #     return features, performances
 
     def _get_pairwise_target(self, pair, performances):
         i, j = pair
