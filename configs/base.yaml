@@ -6,7 +6,7 @@ defaults:
   - dataset/dataset_meta: lcbench_minimal
   - dataset/lc_meta: multi_slice
   - dataset/algo_meta: lcbench_minimal
-  # - model: imfas_wp
+  - model: imfas_wp
   - trainer: basetrainer
   - _self_
 
