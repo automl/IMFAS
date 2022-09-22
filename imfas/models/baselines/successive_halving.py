@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class SuccessiveHalving(nn.Module):
-    def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", ):
+    def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", budget_type='additive'):
         """
         This class assumes a single batch (i.e. a single dataset!)
         :param budgets: List[int] of budget 'labels' to be used in the successive halving run
@@ -21,6 +21,9 @@ class SuccessiveHalving(nn.Module):
         self.eta = eta
         self.budgets = budgets
         self.device = device
+
+        self.update_costs = self.update_costs_additive if budget_type == 'additive' \
+            else self.update_costs_cumulative
 
     def plan_budgets(self, budgets: List, mask: torch.Tensor):
         """
@@ -63,6 +66,26 @@ class SuccessiveHalving(nn.Module):
 
         return schedule_index
 
+    def update_costs_additive(self, cost_curves, budget, survivors, ):
+        """
+        Additive costs (i.e. every level evaluates from scratch)
+        """
+
+        # inquired cost  for the next evaluation round
+        if cost_curves is not None:
+            self.elapsed_time += cost_curves[:, :, budget][0, survivors == 1].sum(dim=0)
+        else:
+            self.elapsed_time += self.budgets[budget] * torch.sum(survivors)
+
+    def update_costs_cumulative(self, cost_curves, budget, survivors, ):
+        old_budget = self.schedule_index[self.schedule_index.tolist().index(budget) - 1]
+        if cost_curves is not None:
+            self.elapsed_time += (cost_curves[:, :, budget] - cost_curves[:, :, old_budget])[
+                0, survivors == 1].sum(dim=0)
+        else:
+            self.elapsed_time += (self.budgets[budget] - self.budgets[old_budget]) \
+                                 * torch.sum(survivors)  # n_survivors
+
     def forward(
             self,
             learning_curves: torch.Tensor,
@@ -97,13 +120,9 @@ class SuccessiveHalving(nn.Module):
             if level == len(self.schedule_index):
                 k = n_algos - n_dead
 
-            # inquired cost  for the next evaluation round
-            if cost_curves is not None:
-                self.elapsed_time += cost_curves[:, :, budget][0, survivors == 1].sum(dim=0)
-            else:
-                self.elapsed_time += self.budgets[budget] * torch.sum(survivors)
-
             logger.debug(f"Budget {budget}: {k} survivors")
+
+            self.update_costs(cost_curves, budget, survivors)
 
             # dead in relative selection (index requires adjustment)
             slice = learning_curves[:, :, budget]
@@ -173,16 +192,23 @@ if __name__ == "__main__":
 
     assert torch.equal(sh.forward(learning_curves=lcs, mask=mask),
                        torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
-    assert torch.equal(sh.schedule_index, torch.tensor([0, 1, 3, 7]))
+    assert torch.equal(sh.schedule_index, torch.tensor([0, 1, 3, 6]))  # due to mask: capping at 6
 
-    # Check the foward call for batched data
+    # Check the foward call for different budgets
+    budgets = [1, 2, 3, 3.5, 4, 5, 6, 7, 8, 9]
+    sh = SuccessiveHalving(budgets, 3)
 
-    sh = SuccessiveHalving([1, 2, 3, 4, 5, 6, 7, 8, 9], 3)
-
+    batch = 1
+    n_algos = 10
+    fidelities = len(budgets)
     lcs = torch.arange(batch * n_algos * fidelities).reshape(batch, n_algos, fidelities)
+    mask = torch.cat(
+        [torch.ones((batch, n_algos, fidelities - 4), dtype=torch.bool),
+         torch.zeros((batch, n_algos, 4), dtype=torch.bool)], axis=2)
 
     rankings = sh(lcs, mask)
-
+    assert torch.equal(sh.schedule_index, torch.tensor([0, 2, 5]))
+    sh.elapsed_time
     assert torch.equal(
         rankings, torch.tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
                                dtype=torch.float)
