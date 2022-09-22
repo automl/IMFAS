@@ -49,7 +49,16 @@ class PlackettLuceLoss(Loss):
         shifted = torch.zeros(ordered_ranking.shape)
         for i in range(min(self.k, ordered_ranking.shape[1])):
             a = ordered_ranking[:, i:]
-            shifted[:, i] = torch.log(torch.exp(a[:, 0]) / torch.exp(a).sum(axis=1))
+
+            # TODO analyze impact on optimization procedure
+            # Safeguarding NaN adn infs with value impuation in torch
+            exp_a = torch.nan_to_num(torch.exp(a[:, 0]))
+            sum_a = torch.nan_to_num(torch.exp(a).sum(axis=1))
+            div_a = torch.nan_to_num(exp_a / sum_a)
+
+            shifted[:, i] = torch.nan_to_num(torch.log(div_a)) 
+
+
         return shifted
 
         # sum(
