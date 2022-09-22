@@ -117,7 +117,7 @@ class BaseTrainer:
                     if isinstance(fn, DictConfig):
                         fn = instantiate(fn)
 
-                    loss = self.evaluate(test_loader, fn, aggregate_fn)
+                    loss = torch.nan_to_num(self.evaluate(test_loader, fn, aggregate_fn))
                     # self.losses[k].append(loss)
 
                     wandb.log({k: loss.item()}, step=self.step)  # FIXME @Aditya, this fails in

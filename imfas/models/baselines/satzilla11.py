@@ -34,6 +34,8 @@ class SATzilla11(nn.Module):
         
         # used to break ties during the predictions phase
         self._rand = random.Random(0)
+        
+        # TODO Initiate the classifier using hydra
         self.rfc_kwargs = {
             'n_estimators': 2,
             'max_features': 'log2', 

@@ -61,14 +61,15 @@ trainer:
 
     optimizer:
       _target_: torch.optim.Adam
-      lr: 0.001
+      lr: 0.00003
       _partial_: True
 
   run_call:
-    epochs: 1000
+    epochs: 5000
     log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
       _target_: imfas.losses.spearman.SpearmanLoss
+  
     valid_loss_fns:
       spearman:
         _target_: imfas.losses.spearman.SpearmanLoss
