@@ -1,214 +1,187 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import math
 import torch
 import torch.nn as nn
-import wandb
 
 logger = logging.getLogger(__name__)
 
 
-# TODO write a test ensuring that each algorithm is ranked only once!
-
-
 class SuccessiveHalving(nn.Module):
-    """Non-parametric, myopic, learning curve aware Algorithm Selector."""
-
-    def __init__(self, budgets: List[int], eta: int, device: str = "cpu",
-                 budget_continue: bool = False):
+    def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", ):
         """
-        :param budgets: List[int] of budgets to be used in the successive halving run (actual
-        budget values available in the learning curve tensor provided during forward).
+        This class assumes a single batch (i.e. a single dataset!)
+        :param budgets: List[int] of budget 'labels' to be used in the successive halving run
+        (actual budget values available in the learning curve tensor provided during forward).
         :param eta: int, the reduction factor of the budget in each successive halving run.
-        :param device: str, the device to run the algorithm on.
-        :param budget_continue: bool, whether we would continue the training of an algorithm or
-        have to retrain it for the next budget level.
         """
         super(SuccessiveHalving, self).__init__()
-        self.budgets = budgets
-        self.min_budget = budgets[0]
-        self.max_budget = budgets[-1]
-        self.eta = eta
-        self.depletion_fn = [self.depleted_budget_retrain, self.depleted_budget_continuation][
-            budget_continue]
 
+        self.eta = eta
+        self.budgets = budgets
         self.device = device
+
+    def plan_budgets(self, budgets: List, mask: torch.Tensor):
+        """
+        Plan the successive halving run. This method is called once per run.
+        Idea is to calculate the schedule dynamically depending on the currently available budget.
+        :param budgets: List[int] of budget 'labels' to be used in the successive halving run,
+        amounting to the budget; e.g. epochs or dataset subset size.
+        :param mask: torch.Tensor (long), the mask of the learning curve tensor.
+        indicating which budgets are accessible. Assumes that max budget is available to all algos.
+
+        :return: torch.Tensor (long), the schedule of indices on the learning curve tensor for the
+        successive halving run.
+        """
+
+        assert len(budgets) == mask.shape[-1], "Budgets and mask do not match!"
+        max_fidelity_idx = mask.sum(dim=-1).max().long() - 1
+        min_budget = budgets[0]
+        max_budget = budgets[max_fidelity_idx]
 
         # Actual budget schedule (based on min_budget and eta)
         schedule = torch.tensor(
-            [self.min_budget * eta ** i for i in
-             range(int(math.log(self.max_budget / self.min_budget, eta)) + 1)]
+            [min_budget * self.eta ** i for i in
+             range(int(math.log(max_budget / min_budget, self.eta)) + 1)]
         )
 
         # translate the budget schedule to the index of the learning curve
-        # (find first surpassing index)
-        self.schedule_index = torch.tensor(
-            [(b <= torch.tensor(budgets)).nonzero(as_tuple=True)[0][0].tolist() for b in schedule]
+        # i.e. find first surpassing index
+        schedule_index = torch.tensor(
+            [next(x for x, val in enumerate(budgets) if val >= b)
+             for b in schedule]
         )
 
-    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, *args, **kwargs):
-        # FIXME: Refactor this nasty delegation (depending on whether or not we can achieve
-        #  the theoretical budget based on eta and the max_fidelity of the dataset)
+        # If more budget has been observed, make decision for final fidelity on the basis of
+        # the last observed budget. This is used to make sh comparable to other algorithms
+        # from the available max fidelity perspective (which likely is most informative).
+        if schedule[-1] < max_budget:
+            schedule_index = torch.cat(
+                (schedule_index, torch.tensor([max_fidelity_idx]))
+            )
 
-        # This method is a wrapper to hardcode the mask into the data!
+        return schedule_index
 
-        # determine max available fidelity and index not mask!
-        # assuming that mask is basically stack of a torch.ones & torch.zero tensor.
-        max_fidelity_idx = mask.sum(dim=-1).max().long()
-        logger.debug(f"Max fidelity: {max_fidelity_idx}")
-
-        # since masking might disrupt the schedule, we need to adjust the schedule
-        # i.e. capping and defaulting to the max budget available given the mask.
-        print(self.schedule_index, max_fidelity_idx)
-        self.schedule_index = self.schedule_index[self.schedule_index < max_fidelity_idx]
-
-        if self.schedule_index[-1] < max_fidelity_idx:
-            self.schedule_index = torch.cat(
-                (self.schedule_index, torch.tensor([max_fidelity_idx - 1])))
-
-        self.schedule_index = self.schedule_index
-        # FIXME: instead of this hack, make the indexing of _forward appropriate
-        if len(learning_curves.shape) == 3:
-            # batched
-            rankings = torch.zeros((learning_curves.shape[0], learning_curves.shape[1]))
-            for i in range(learning_curves.shape[0]):
-                rankings[i] = self._forward(
-                    learning_curves[i, :, :max_fidelity_idx].view(1, -1, max_fidelity_idx))
-            return rankings
-
-        else:
-            return self._forward(learning_curves[:, :max_fidelity_idx])
-
-    def depleted_budget_retrain(self, budget_idx: List[int], survivors):
+    def forward(
+            self,
+            learning_curves: torch.Tensor,
+            mask: torch.Tensor,
+            cost_curves: Optional[torch.Tensor] = None,
+    ):
         """
-        Return the actual budget that was used in this iteration, assuming,
-        that we need to retrain the model from scratch.
-        :param budget_idx: List[int], of len 2 the budget indices of the previous and current
-        budget.
+        SH execution.
+        :return: torch.Tensor (float), ranking of the algorithms.
         """
-        return self.budgets[budget_idx[-1]] * survivors.sum(dim=1).max()
 
-    def depleted_budget_continuation(self, budget_idx: List[int], survivors):
-        """
-        Return the actual budget that was used in this iteration, assuming,
-        that we can continue training the model.
-        :param budget_idx: List[int], of len 2 the budget indices of the previous and current
-        """
-        return (self.budgets[budget_idx[0]] - budgets[budget_idx[1]]) * survivors.sum(dim=1).max()
-
-    def _forward(self, learning_curves: torch.Tensor):
-        """
-        :param learning_curves: torch.Tensor of shape [batch, n_algos, n_fidelities] containing
-        the learning curves of the algorithms. SH assumes that the fidelity levels
-        are defined at linear budget intervals. This means, that the tensor contains
-        the entire learning curve, and we skip levels of budgets according to eta.
-        :return: torch.Tensor[int] of shape [batch, n_algos] A vector representing the
-        ranking of the algorithms with 0 being the lowest.
-        """
-        depleted_budget = 0  # amount of budget used for the entire sh run
-
-        # FIXME: check for batch (but optional)
-        batch = learning_curves.shape[0]
+        # batch = learning_curves.shape[0]
         n_algos = learning_curves.shape[1]
+        algos_idx = torch.arange(n_algos)
+        schedule_index = self.plan_budgets(self.budgets, mask)
 
+        # running variables
+        n_dead = 0
         rankings_idx = torch.zeros((n_algos,))
         rankings_values = torch.zeros((n_algos,))
+        survivors = torch.ones((n_algos), dtype=torch.int64)
+        self.elapsed_time = torch.zeros(1)
 
-        algos_idx = torch.arange(n_algos).view(1, -1)
-        survivors = torch.ones((batch, n_algos), dtype=torch.bool)
-        n_dead = 0
+        # is attribute for debugging (assertion)
+        self.schedule_index = self.plan_budgets(self.budgets, mask)
 
-        logger.debug(f"Budgets: {self.budgets}")
-        logger.debug(f"Schedule: {self.schedule_index}")
-        logger.debug(f"Learning curves: \n{learning_curves}")
-
-        for i, budget in enumerate(self.schedule_index.tolist(), start=1):
+        for level, budget in enumerate(self.schedule_index.tolist(), start=1):
             # number of survivors in this round
-            k = max(1, int(n_algos / self.eta ** i))
+            k = max(1, int(n_algos / self.eta ** level))
 
-            depleted_budget += self.depletion_fn([budget - 1, budget], survivors)
+            # final round to break all ties?
+            if level == len(self.schedule_index):
+                k = n_algos - n_dead
 
-            logger.debug(f"Budget {budget + 1}: {k} survivors")
+            # inquired cost  for the next evaluation round
+            if cost_curves is not None:
+                self.elapsed_time += cost_curves[:, :, budget][0, survivors == 1].sum(dim=0)
+            else:
+                self.elapsed_time += self.budgets[budget] * torch.sum(survivors)
+
+            logger.debug(f"Budget {budget}: {k} survivors")
 
             # dead in relative selection (index requires adjustment)
-            dead = torch.topk(learning_curves[:, :, budget][survivors], k, dim=0, largest=False)
+            slice = learning_curves[:, :, budget]
+            alive_idx = algos_idx[survivors == 1]
+            dead = torch.topk(slice[0, alive_idx], k, dim=0, largest=False)
 
             # translate to the algorithm index
-            new_dead_algo = algos_idx[survivors][dead.indices]
+            new_dead_algo = algos_idx[survivors == 1][dead.indices]
             logger.debug(f"Dead: {new_dead_algo}")
 
             # change the survivor flag
-            survivors[:, new_dead_algo] = False
-            logger.debug(f"Survivors: {learning_curves[:, :, budget] * survivors}")
+            survivors[new_dead_algo] = 0
+            logger.debug(f"Deceasceds'performances: "
+                         f"{learning_curves[:, :, budget][0, new_dead_algo]}")
+            logger.debug(f"Survivors'performances: {learning_curves[:, :, budget] * survivors}")
 
-            # add the (sorted by performance) dead to the ranking
+            # BOOKKEEPING: add the (sorted by performance) dead to the ranking
             rankings_idx[n_dead: n_dead + dead.indices.shape[-1]] = new_dead_algo
             rankings_values[n_dead: n_dead + dead.indices.shape[-1]] = dead.values
             n_dead += dead.indices.shape[-1]
 
             logger.debug(f"rankings: {rankings_idx}")
 
-        # resolve tie on the final ranking
-        if n_dead < n_algos:
-            # sort the remaining by performance. (starting at the worst)
-            remaining = survivors.sum()
-            dead = torch.topk(
-                learning_curves[:, :, budget][survivors],
-                k=remaining,
-                dim=0,
-                largest=False
-            )
-
-            rankings_idx[n_dead:] = algos_idx[survivors][dead.indices]
-            rankings_values[n_dead: n_dead + dead.indices.shape[-1]] = dead.values
-
-            depleted_budget += self.depletion_fn([budget - 1, budget], survivors)
-            logger.debug(f"rankings: {rankings_idx}")
-            logger.debug(f"rankings' values: {rankings_values}")
-
-        wandb.log({"depleted_budget": depleted_budget})
-
         return rankings_idx
+        # fixme: do we need to sort this ranking? based on the algorithms
+        #  original positions.
 
 
 if __name__ == "__main__":
     import torch
 
     logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
-    wandb.init()
+    # wandb.init()
+
     # Check Eta schedules and rankings
     # fixme: move to test!
+    batch = 1
+    n_algos = 10
+
     budgets = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
-    l = torch.arange(7 * 11).view(1, 7, 11)
+    fidelities = len(budgets)
+    lcs = torch.arange(batch * n_algos * fidelities).view(batch, n_algos, fidelities)
+    cost = torch.arange(batch * n_algos * fidelities).view(batch, n_algos, fidelities)
+    mask = torch.cat(
+        [torch.ones((batch, n_algos, fidelities - 4), dtype=torch.bool),
+         torch.zeros((batch, n_algos, 4), dtype=torch.bool)], axis=2)
 
     # SH with eta=3
     sh = SuccessiveHalving(budgets, 3)
-    assert torch.equal(sh.schedule_index, torch.tensor([0, 2, 8]))
-    assert torch.equal(torch.tensor(budgets)[sh.schedule_index], torch.tensor([5, 15, 45]))
-    assert torch.equal(sh._forward(learning_curves=l),
-                       torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
+
+    assert torch.equal(sh.forward(learning_curves=lcs, mask=mask, cost_curves=cost),
+                       torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
+    assert torch.equal(sh.elapsed_time[0].long(),
+                       torch.tensor([0, 11, 22, 33, 44, 55, 66, 77, 88, 99]).sum() + \
+                       torch.tensor([35, 46, 57, 68, 79, 90, 101]).sum() + \
+                       torch.tensor([50, 61, 72, 83, 94, 105]).sum())
+    assert torch.equal(sh.schedule_index, torch.tensor([0, 2, 6]))  # capped at 6 (last budget)
+    # because of the mask, which stops at 6 although eta=3 would expect 8 as last budget!
+    assert torch.equal(torch.tensor(budgets)[sh.schedule_index],
+                       torch.tensor([5, 15, 35]))  # capped at 35
+
+    assert torch.equal(sh.forward(learning_curves=lcs, mask=mask),
+                       torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
 
     # Same SH, but with eta=2
     sh = SuccessiveHalving(budgets, 2)
+
+    assert torch.equal(sh.forward(learning_curves=lcs, mask=mask),
+                       torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
     assert torch.equal(sh.schedule_index, torch.tensor([0, 1, 3, 7]))
-    assert torch.equal(sh._forward(learning_curves=l),
-                       torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
 
     # Check the foward call for batched data
 
     sh = SuccessiveHalving([1, 2, 3, 4, 5, 6, 7, 8, 9], 3)
 
-    batch = 2
-    n_algos = 10
-    fidelities = len(sh.budgets)
     lcs = torch.arange(batch * n_algos * fidelities).reshape(batch, n_algos, fidelities)
 
-    rankings = sh(
-        lcs, mask=torch.cat(
-            [torch.ones(n_algos - 4, dtype=torch.bool),
-             torch.zeros(4, dtype=torch.bool)]).view(1, -1)
-    )
+    rankings = sh(lcs, mask)
 
     assert torch.equal(
         rankings, torch.tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
