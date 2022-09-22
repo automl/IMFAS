@@ -36,12 +36,13 @@ trainer:
 
   run_call:
     epochs: 1 # since we only need a single test execution anyways (HACK)
+    train_loss_fn:
+      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
     valid_loss_fns:
       spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss # Fixme: replace this with
-      # fixme: add other dictionary items
+        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
 
-device: cpu
+device: 'cpu'
 
 wandb:
   notes: 'Successive Halving'

@@ -12,4 +12,4 @@ run_call:
   train_loss_fn: None
   valid_loss_fns:
     spearman:
-      _target_: imfas.losses.ranking_loss.SpearmanLoss # Fixme: replace this with
+      _target_: imfas.losses.spearman.SpearmanLoss # Fixme: replace this with

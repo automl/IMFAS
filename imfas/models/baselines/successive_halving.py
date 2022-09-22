@@ -1,8 +1,7 @@
+import logging
 from typing import List
 
-import logging
 import math
-
 import torch
 import torch.nn as nn
 import wandb
@@ -16,7 +15,8 @@ logger = logging.getLogger(__name__)
 class SuccessiveHalving(nn.Module):
     """Non-parametric, myopic, learning curve aware Algorithm Selector."""
 
-    def __init__(self, budgets: List[int], eta: int, device: str = "cpu", budget_continue: bool = False):
+    def __init__(self, budgets: List[int], eta: int, device: str = "cpu",
+                 budget_continue: bool = False):
         """
         :param budgets: List[int] of budgets to be used in the successive halving run (actual
         budget values available in the learning curve tensor provided during forward).
@@ -30,13 +30,15 @@ class SuccessiveHalving(nn.Module):
         self.min_budget = budgets[0]
         self.max_budget = budgets[-1]
         self.eta = eta
-        self.depletion_fn = [self.depleted_budget_retrain, self.depleted_budget_continuation][budget_continue]
+        self.depletion_fn = [self.depleted_budget_retrain, self.depleted_budget_continuation][
+            budget_continue]
 
         self.device = device
 
         # Actual budget schedule (based on min_budget and eta)
         schedule = torch.tensor(
-            [self.min_budget * eta**i for i in range(int(math.log(self.max_budget / self.min_budget, eta)) + 1)]
+            [self.min_budget * eta ** i for i in
+             range(int(math.log(self.max_budget / self.min_budget, eta)) + 1)]
         )
 
         # translate the budget schedule to the index of the learning curve
@@ -46,28 +48,33 @@ class SuccessiveHalving(nn.Module):
         )
 
     def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, *args, **kwargs):
-        # wrapper to hardcode the mask into the data!
+        # FIXME: Refactor this nasty delegation (depending on whether or not we can achieve
+        #  the theoretical budget based on eta and the max_fidelity of the dataset)
+
+        # This method is a wrapper to hardcode the mask into the data!
 
         # determine max available fidelity and index not mask!
         # assuming that mask is basically stack of a torch.ones & torch.zero tensor.
-        max_fidelity_idx = mask.sum(dim=-1).max()
-        max_fidelity_idx = torch.tensor(max_fidelity_idx, dtype=torch.long)
+        max_fidelity_idx = mask.sum(dim=-1).max().long()
         logger.debug(f"Max fidelity: {max_fidelity_idx}")
 
         # since masking might disrupt the schedule, we need to adjust the schedule
         # i.e. capping and defaulting to the max budget available given the mask.
+        print(self.schedule_index, max_fidelity_idx)
         self.schedule_index = self.schedule_index[self.schedule_index < max_fidelity_idx]
 
         if self.schedule_index[-1] < max_fidelity_idx:
-            self.schedule_index = torch.cat((self.schedule_index, torch.tensor([max_fidelity_idx - 1])))
+            self.schedule_index = torch.cat(
+                (self.schedule_index, torch.tensor([max_fidelity_idx - 1])))
 
-        self.schedule_index = self.schedule_index.tolist()
+        self.schedule_index = self.schedule_index
         # FIXME: instead of this hack, make the indexing of _forward appropriate
         if len(learning_curves.shape) == 3:
             # batched
             rankings = torch.zeros((learning_curves.shape[0], learning_curves.shape[1]))
             for i in range(learning_curves.shape[0]):
-                rankings[i] = self._forward(learning_curves[i, :, :max_fidelity_idx].view(1, -1, max_fidelity_idx))
+                rankings[i] = self._forward(
+                    learning_curves[i, :, :max_fidelity_idx].view(1, -1, max_fidelity_idx))
             return rankings
 
         else:
@@ -116,9 +123,9 @@ class SuccessiveHalving(nn.Module):
         logger.debug(f"Schedule: {self.schedule_index}")
         logger.debug(f"Learning curves: \n{learning_curves}")
 
-        for i, budget in enumerate(self.schedule_index, start=1):
+        for i, budget in enumerate(self.schedule_index.tolist(), start=1):
             # number of survivors in this round
-            k = max(1, int(n_algos / self.eta**i))
+            k = max(1, int(n_algos / self.eta ** i))
 
             depleted_budget += self.depletion_fn([budget - 1, budget], survivors)
 
@@ -136,8 +143,8 @@ class SuccessiveHalving(nn.Module):
             logger.debug(f"Survivors: {learning_curves[:, :, budget] * survivors}")
 
             # add the (sorted by performance) dead to the ranking
-            rankings_idx[n_dead : n_dead + dead.indices.shape[-1]] = new_dead_algo
-            rankings_values[n_dead : n_dead + dead.indices.shape[-1]] = dead.values
+            rankings_idx[n_dead: n_dead + dead.indices.shape[-1]] = new_dead_algo
+            rankings_values[n_dead: n_dead + dead.indices.shape[-1]] = dead.values
             n_dead += dead.indices.shape[-1]
 
             logger.debug(f"rankings: {rankings_idx}")
@@ -146,10 +153,15 @@ class SuccessiveHalving(nn.Module):
         if n_dead < n_algos:
             # sort the remaining by performance. (starting at the worst)
             remaining = survivors.sum()
-            dead = torch.topk(learning_curves[:, :, budget][survivors], k=remaining, dim=0, largest=False)
+            dead = torch.topk(
+                learning_curves[:, :, budget][survivors],
+                k=remaining,
+                dim=0,
+                largest=False
+            )
 
             rankings_idx[n_dead:] = algos_idx[survivors][dead.indices]
-            rankings_values[n_dead : n_dead + dead.indices.shape[-1]] = dead.values
+            rankings_values[n_dead: n_dead + dead.indices.shape[-1]] = dead.values
 
             depleted_budget += self.depletion_fn([budget - 1, budget], survivors)
             logger.debug(f"rankings: {rankings_idx}")
@@ -174,12 +186,14 @@ if __name__ == "__main__":
     sh = SuccessiveHalving(budgets, 3)
     assert torch.equal(sh.schedule_index, torch.tensor([0, 2, 8]))
     assert torch.equal(torch.tensor(budgets)[sh.schedule_index], torch.tensor([5, 15, 45]))
-    assert torch.equal(sh._forward(learning_curves=l), torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
+    assert torch.equal(sh._forward(learning_curves=l),
+                       torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
 
     # Same SH, but with eta=2
     sh = SuccessiveHalving(budgets, 2)
     assert torch.equal(sh.schedule_index, torch.tensor([0, 1, 3, 7]))
-    assert torch.equal(sh._forward(learning_curves=l), torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
+    assert torch.equal(sh._forward(learning_curves=l),
+                       torch.tensor([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]))
 
     # Check the foward call for batched data
 
@@ -191,9 +205,12 @@ if __name__ == "__main__":
     lcs = torch.arange(batch * n_algos * fidelities).reshape(batch, n_algos, fidelities)
 
     rankings = sh(
-        lcs, mask=torch.cat([torch.ones(n_algos - 4, dtype=torch.bool), torch.zeros(4, dtype=torch.bool)]).view(1, -1)
+        lcs, mask=torch.cat(
+            [torch.ones(n_algos - 4, dtype=torch.bool),
+             torch.zeros(4, dtype=torch.bool)]).view(1, -1)
     )
 
     assert torch.equal(
-        rankings, torch.tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]], dtype=torch.float)
+        rankings, torch.tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+                               dtype=torch.float)
     )
