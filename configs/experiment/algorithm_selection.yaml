@@ -54,8 +54,8 @@ trainer:
     
     valid_loss_fns:
       top1_regret:
-      _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-      k: 1
+        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
+        k: 1
 
       
 

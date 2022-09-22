@@ -2,7 +2,7 @@
     Interim trainer for  algorithm selectors
 
     NOTE: This can be potentially combined with slice_evaluator
-    
+
 
 '''
 
@@ -83,6 +83,8 @@ class NoOptTrainer(BaseTrainer):
         self,
         train_loader,
         test_loader,
+        epochs,
+        log_freq=5,
         valid_loss_fns: Dict[str, Callable] = None,
         aggregate_fn: Optional[Callable] = None,
     ):

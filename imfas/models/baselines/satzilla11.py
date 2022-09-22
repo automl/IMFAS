@@ -37,7 +37,7 @@ class SATzilla11(nn.Module):
         
         # TODO Initiate the classifier using hydra
         self.rfc_kwargs = {
-            'n_estimators': 2,
+            'n_estimators': 100,
             'max_features': 'log2', 
             'n_jobs': 5, 
             'random_state': 0
