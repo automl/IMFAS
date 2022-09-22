@@ -27,6 +27,7 @@ class BaseTrainer:
 
         if optimizer is not None:
             self.optimizer = optimizer(self.model.parameters())
+
         # self.callbacks_end = callbacks_end
 
     @property

@@ -1,0 +1,28 @@
+trainerobj:
+  _target_: imfas.trainer.no_opt.NoOptTrainer
+
+
+run_call:
+  epochs: 1 # This must be 1, because the model can only be evaluated on a single fidelity and only once
+  log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
+  
+  valid_loss_fns:
+    ndcg10:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 10
+
+    ndcg5:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 5
+
+    ndcg3:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 3
+
+    ndcg1:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 1
