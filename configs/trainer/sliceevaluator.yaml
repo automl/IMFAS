@@ -1,9 +1,9 @@
 trainerobj:
-  _target_: imfas.trainer.slice_evaluator.SliceEvaluatorSH # TO AVOID training
+  _target_: imfas.trainer.slice_evaluator.SliceEvaluator # TO AVOID training
   masking_fn:
     _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
     _partial_: True
-  max_fidelities: [ 2, 10 ] #  indices on refer to base.slice fidelities (in lcbench case)
+  max_fidelities: ${dataset.slices} #  indices on refer to base.slice fidelities (in lcbench case)
 
 
 run_call:
