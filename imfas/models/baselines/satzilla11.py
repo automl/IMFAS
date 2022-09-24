@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.utils import resample
 from collections import Counter
-
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -24,47 +24,49 @@ class SATzilla11(nn.Module):
     thus does not account for presolving or employing a backup solver.    
     """
 
-    def __init__(self, scenario: torch.Tensor, device: str = 'cpu'):
+    def __init__(self, max_fidelity, device = 'cpu'):
         super(SATzilla11, self).__init__()
         
         self._name = 'satzilla-11'
         self._models = {}
-        self.scenario = scenario
+        self.max_fidelity = max_fidelity
+        self.device = device
         
         # used to break ties during the predictions phase
         self._rand = random.Random(0)
-
-    def forward(self):
         
-        print(self.scenario)
-        pdb.set_trace()
+        # TODO Initiate the classifier using hydra
+        self.rfc_kwargs = {
+            'n_estimators': 100,
+            'max_features': 'log2', 
+            'n_jobs': 5, 
+            'random_state': 0
+
+        }
+
+    def forward(self, dataset_meta_features, fidelity):
 
         
 
-    def fit(self, scenario: torch.Tensor, mask: torch.Tensor, *args, **kwargs):
-        '''
-        Fit some random forests to given features and performances
+        
+        self.fit(dataset_meta_features.numpy()[0], fidelity.numpy()[0])
+        
+        self.predict(dataset_meta_features.numpy()[0])
 
-        '''
 
+    def fit(self, dataset_meta_features, fidelity):
 
-        self._num_algorithms = len(scenario.algorithms)
-        self._algorithm_cutoff_time = scenario.algorithm_cutoff_time
+        self._num_algorithms = np.shape(fidelity)[-1]
+        self._algo_ids = np.arange(0,self._num_algorithms,1)
 
-        # resample `amount_of_training_instances` instances and preprocess them accordingly
-        features, performances = self._resample_instances(
-                                                feature_data= scenario.feature_data.values, 
-                                                performance_data=scenario.performance_data.values, 
-                                                num_instances= num_instances, 
-                                                random_state=fold
-                                            )
-        features, performances = self._preprocess_scenario(scenario, features, performances)
+        features = dataset_meta_features.numpy()[0]
+        performances = fidelity.numpy()[0]
 
         # create and fit rfcs' for all pairwise comparisons between two algorithms
-        self._pairwise_indices = [(i, j) for i in range(
-            self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
+        self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
 
-        for (i, j) in self._pairwise_indices:
+
+        for (i, j) in tqdm(self._pairwise_indices):
             # determine pairwise target, initialize models and fit each RFC wrt. instance weights
             pair_target = self._get_pairwise_target((i, j), performances)
             sample_weights = self._compute_sample_weights((i, j), performances)
@@ -74,67 +76,68 @@ class SATzilla11(nn.Module):
             sample_weights = np.nan_to_num(sample_weights)
 
             # TODO: how to set the remaining hyperparameters? 
-            self._models[(i, j)] = RandomForestClassifier(
-                n_estimators=99, max_features='log2', n_jobs=1, random_state=fold)
-            self._models[(i, j)].fit(features, pair_target,
-                                     sample_weight=sample_weights)
+            self._models[(i, j)] = RandomForestClassifier(**self.rfc_kwargs)     # TODO set random state to the torch seed
+            self._models[(i, j)].fit(features, pair_target, sample_weight=sample_weights)
 
-    def predict(self, features, instance_id: int):
-        assert(features.ndim == 1), '`features` must be one dimensional'
-        features = np.expand_dims(features, axis=0)
-        features = self._imputer.transform(features)
-        features = self._scaler.transform(features)
 
-        # compute the most voted algorithms for the given instance
-        predictions = {(i, j): rfc.predict(features).item()
-                       for (i, j), rfc in self._models.items()}
+    def predict(self, dataset_meta_features, fidelity):
+        
+        batch_features = dataset_meta_features.numpy()[0]
+        
+        selections = []
+        # Selection an algorithm per task in the test-set
+        for features in batch_features:
+                       
+            assert(features.ndim == 1), '`features` must be one dimensional'
+            features = np.expand_dims(features, axis=0)
 
-        counter = Counter(predictions.values())
-        max_votes = max(counter.values())
-        most_voted = set(alg for alg, votes in counter.items()
-                         if votes >= max_votes)
-
-        # break ties according to solely focussing on votes of respective models that involve
-        # only algorithms with most received votes
-        if len(most_voted) > 1:
-            indices = [(i, j) for (
-                i, j) in self._pairwise_indices if i in most_voted and j in most_voted]
-            predictions = {(i, j): predictions[(i, j)] for (i, j) in indices}
+            # compute the most voted algorithms for the given instance
+            predictions = {(i, j): rfc.predict(features).item()
+                        for (i, j), rfc in self._models.items()}
+ 
             counter = Counter(predictions.values())
-            max_votes = max(counter.values())
-            most_voted = set(
-                alg for alg, votes in counter.items() if votes >= max_votes)
+            
+            for id in self._algo_ids:
+                if id not in counter.keys():
+                    counter[id] = 0
+                
+            
+            # TODO revisit the tie breaking procedure
+            # ranking = []
 
-            # break remaining ties in random fashion
-            if len(most_voted) > 1:
-                selection = self._rand.choice(list(most_voted))
+            
+            # for i in range(len(counter.most_common())):
+                
+            #     key, val  = counter.most_common()[i]
 
-            else:
-                selection = next(iter(most_voted))
+            #     if counter.most_common()[i+1][1] == val:
 
-        else:
-            selection = next(iter(most_voted))
+            #         ties  = [key]
 
-        # create ranking st. the selected algorithm has rank 0, any other algorithm has rank 1
-        ranking = np.ones(self._num_algorithms)
-        ranking[selection] = 0
-        return ranking
+            #         k = i+1
+            #         tie  = True
+            #         while tie:
+            #             ties.append(counter.most_common()[k][0])
 
-    def _resample_instances(self, feature_data, performance_data, num_instances, random_state):
-        num_instances = min(num_instances, np.size(performance_data, axis=0)) if num_instances > 0 else np.size(performance_data, axis=0)
-        return resample(feature_data, performance_data, n_samples=num_instances, random_state=random_state)
+            #             k += 1 
+            #             if counter.most_common()[k][1] != val:
+            #                 tie = False
 
-    def _preprocess_scenario(self, scenario, features, performances):
-        features = self._imputer.fit_transform(features)
-        features = self._scaler.fit_transform(features)
+            #         print(ties)        
+            #         [ranking.append(a) for a,_ in self._break_ties(ties, predictions)]
+            #     else:
+            ranking = [key for key, _ in counter.most_common()]            
+            
+            selections.append(ranking)
 
-        return features, performances
+        return torch.Tensor(selections)
 
     def _get_pairwise_target(self, pair, performances):
         i, j = pair
 
-        # label target as i if the runtime of algorithm i is <= the runtime of algorithm j, otherwise label it j
-        pair_target = np.full(performances.shape[0], fill_value=i)
+        # label target as i if the utility of algorithm i is <= the utility of algorithm j,
+        # otherwise label it j
+        pair_target = np.full(performances.shape[0], fill_value=i)        
         pair_target[performances[:, i] > performances[:, j]] = j
 
         return pair_target
@@ -147,6 +150,23 @@ class SATzilla11(nn.Module):
         weights = np.absolute(performances[:, i] - performances[:, j])
 
         return weights
+
+    # NOTE better method to break teis? 
+    def _break_ties(self, tied, predictions):
+        '''
+        Break ties between algorithms by checking the ones predicted by the algorithms in the ties
+        '''
+        indices = [(i, j) for (i, j) in self._pairwise_indices if i in tied and j in tied]
+        print(indices)
+
+        pred = {(i, j): predictions[(i, j)] for (i, j) in indices}
+        
+        counter = Counter(pred.values())
+
+        print('counter', counter)
+        pdb.set_trace()
+        
+        return counter.most_common()
 
 
 if __name__ == "__main__":
