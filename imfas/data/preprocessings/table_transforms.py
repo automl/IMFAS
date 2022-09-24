@@ -128,3 +128,16 @@ class Replace(Transform):
         for col in self.columns:
             X[col].replace(self.replacedict, inplace=True)
         return X
+
+
+class OneHot(Transform):
+    def __init__(self, columns, prefix=None, drop_first=False):
+        """wrapper to pd.get_dummies"""
+
+        self.columns = columns
+        self.prefix = prefix
+        self.drop_first = drop_first
+
+    def transform(self, X: pd.DataFrame):
+        return pd.get_dummies(X, columns=self.columns, prefix=self.prefix,
+                              drop_first=self.drop_first)

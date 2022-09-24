@@ -95,9 +95,13 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     local_config.set_data_path(orig_cwd / "data/raw/yahpo_data")
 
     dir_data.mkdir(parents=True, exist_ok=True)
-    dir_raw_dataset = dir_data / "raw" / (cfg.dataset_name + "_data")
+    dir_raw_dataset = dir_data / "raw" / "yahpo_data"
     dir_raw_dataset_bench = dir_raw_dataset / cfg.selection.bench
     dir_raw_dataset_bench.mkdir(parents=True, exist_ok=True)
+
+    dir_prep_dataset = dir_data / "preprocessed" / "yahpo_data"
+    dir_prep_dataset_bench = dir_prep_dataset / cfg.selection.bench
+    dir_prep_dataset_bench.mkdir(parents=True, exist_ok=True)
 
     log.debug(f"loading yahpo benchmark {cfg.selection.bench}")
     bench = BenchmarkSet(scenario=cfg.selection.bench, noisy=cfg.selection.noisy)
@@ -106,26 +110,33 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
 
     # EDA: which ids are in fact available on openml -----------------
 
-    dataset_meta_features = collect_dataset_meta_features(bench)
     algo_configs, algorithm_meta_features = collect_algorithms(
         bench, cfg,
         cfg.selection.fidelity_type
     )
 
-    lc = collect_lctensor(algo_configs, bench, cfg.lc_metric, cfg.selection.fidelty_type,
-                          cfg.selection.slices)
+    lc = collect_lctensor(
+        algo_configs,
+        bench,
+        cfg.selection.lc_metric,
+        cfg.fidelity_type,
+        cfg.selection.slices
+    )
+    dataset_meta_features = collect_dataset_meta_features(bench)
 
     log.info("writing out to files")
 
     # FIXME: rename these file names (& lcbench's as well connsistently)
-    algorithm_meta_features.to_csv(dir_raw_dataset_bench / "config_subset.csv")
-    dataset_meta_features.to_csv(dir_raw_dataset_bench / "meta_features.csv")
-    lc.to_hdf(dir_raw_dataset_bench / "logs_subset.h5", key="dataset", mode="w")
+    algorithm_meta_features.to_csv(dir_prep_dataset_bench / "config_subset.csv")
+    dataset_meta_features.to_csv(dir_prep_dataset_bench / "meta_features.csv")
+    lc.to_hdf(dir_prep_dataset_bench / "logs_subset.h5", key="dataset", mode="w")
 
 
 def collect_lctensor(algo_configs, bench, metric, fidelity_type, slices):
     # gather per dataset the respective performances for all configs
     slices_dict = {}
+    # Consider: collecting all the metrics in a tensor -- such that the dataset_lc class
+    #  later on can actively decide which metric to use
     for inst in bench.instances:
         bench.set_instance(str(inst))
         log.debug(f"collecting learning curve")
@@ -227,10 +238,11 @@ def collect_algorithms(bench, cfg, fidelity_type):
     algorithm_meta_features = pd.DataFrame.from_dict(
         {i: c.get_dictionary() for i, c in enumerate(configs)})
     algorithm_meta_features.columns.set_names("AlgoID")
-    algorithm_meta_features.drop(
-        index=["OpenML_task_id", fidelity_type],
-        inplace=True
-    )
+    # fixme: check where these are still in the algo meta features
+    # algorithm_meta_features.drop(
+    #     index=["OpenML_task_id", fidelity_type],
+    #     inplace=True
+    # )
     algorithm_meta_features = algorithm_meta_features.T
 
     return configs, algorithm_meta_features

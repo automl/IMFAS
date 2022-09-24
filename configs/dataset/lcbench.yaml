@@ -1,18 +1,25 @@
+defaults: # fixme: override base.yaml defaults wrt dataset - dataset/lcbench!
+  - dataset_meta: lcbench_minimal
+  - lc_meta: multi_slice
+  - algo_meta: lcbench_minimal
+
 name: LCBench
 
+
+
 path:
-  algo_meta: ${dir_data_raw}/${dataset.name}/config_subset.csv
-  data_meta: ${dir_data_raw}/${dataset.name}/meta_features.csv
-  lc_meta: ${dir_data_raw}/${dataset.name}/logs_subset.h5
+  algo_meta: ${dir_data_processed}/${dataset.name}/config_subset.csv
+  data_meta: ${dir_data_processed}/${dataset.name}/meta_features.csv
+  lc_meta: ${dir_data_processed}/${dataset.name}/logs_subset.h5
 
-  # fixme: move to dataset_raw?
-lc_metric: Train/val_accuracy # to be extracted & used (see dataset_raw/lcbench for options)
-slices: [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51 ] #  FIXME: ${range:1,51,1} does not work
+slices: ${range:1,52,1} # [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51 ] #  FIXME: ${range:1,51,1} does not work
 
+# fixme: look at multi-slice behaviour
+lc_meta:
+  metric: ${dataset.dataset_raw.selection.lc_metric}
 
 dataset_raw:
   _target_: imfas.data.lcbench.raw_pipe.raw_pipe
-  dataset_name: LCBench
 
   #TODO Change to relative
   dir_data: data

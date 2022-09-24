@@ -12,4 +12,7 @@ transforms:
       slices: ${dataset.slices}
     # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
 
-metric: ${dataset.lc_metric}
+# fixme: currently LCbecnch and yahpo differ in Dataset_LC.metric behaviour
+#  lcbench stores the entire tensor including all metrics, so we need to select from them
+#  yahpo stores only the loss iteself, so there is no metric column to select.
+#metric: ${dataset.dataset_raw.selection.lc_metric}

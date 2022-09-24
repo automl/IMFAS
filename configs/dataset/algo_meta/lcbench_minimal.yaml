@@ -1,4 +1,4 @@
-_target_: imfas.data.AlgorithmMetaFeatures
+_target_: imfas.data.algorithm_meta_features.AlgorithmMetaFeatures
 path: ${dataset.path.algo_meta}
 index_col: 0 # pd.read argument
 

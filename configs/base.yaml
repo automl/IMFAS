@@ -2,11 +2,8 @@
 
 defaults:
   - train_test_split: classic_split
-  - dataset: lcbench
-  - dataset/dataset_meta: lcbench_minimal
-  - dataset/lc_meta: multi_slice
-  - dataset/algo_meta: lcbench_minimal
-  #    - model: imfas_wp
+  - dataset/yahpo
+  - model: empty
   - trainer: basetrainer
   - _self_
 
@@ -23,15 +20,6 @@ output_dir: ./tmp
 num_workers: 2
 device: 'cpu'
 
-
-dataset:
-  train_dataloader_class:
-    shuffle: True
-    batch_size: 1
-
-  test_dataloader_class:
-    shuffle: False
-    batch_size: 1
 
 wandb:
   id: null
@@ -56,7 +44,7 @@ hydra:
 root: ${hydra:runtime.cwd}
 dir_data: ${root}/data
 dir_data_raw: ${dir_data}/raw
-dir_data_processed: ${dir_data}/processed
+dir_data_processed: ${dir_data}/preprocessed
 
 # saving models specification
 #save_models: False # Fixme: currently disabled

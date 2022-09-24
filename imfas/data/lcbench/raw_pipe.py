@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 def raw_pipe(*args, **kwargs):
     """
-    Do heavy computation on the raw datasets - and move them to the data/preprocessing
+    Do heavy computation on the raw datasets - and move them to the data/preprocessed
     folder.
 
     For instance do Subset the HP-configurations by subsetting or ensembling.
@@ -30,7 +30,11 @@ def raw_pipe(*args, **kwargs):
     orig_cwd = pathlib.Path(hydra.utils.get_original_cwd())
     dir_data = pathlib.Path(orig_cwd).parent / 'AlgoSelectionMF' / cfg.dir_data
     dir_downloads = dir_data / "downloads"
-    dir_raw_dataset = dir_data / "raw" / cfg.dataset_name
+    dir_raw_dataset = dir_data / "raw" / "LCBench"
+
+    dir_prep_dataset = dir_data / "preprocessed" / "LCBench"
+    dir_prep_dataset.mkdir(parents=True, exist_ok=True)
+
     # todcheck if already downloaded the data
     if cfg.re_download:
         # TODO check me (and change the dir!)
@@ -75,31 +79,50 @@ def raw_pipe(*args, **kwargs):
 
     # (0.1) final_performances
     # notice, that we could also get them as slices from logs!
-
-    df = results[cfg.selection.metric].unstack().T
+    df = results[cfg.selection.lc_metric].unstack().T
 
     # (0.1.1) select based on final performance
     candidates, candidate_performances = call(cfg.selection.algo, df)
+
     candidates = list(sorted(candidates))
 
     # select the index rows # FIXME: this is inefficient
-    config = pd.DataFrame(
-        [
-            config.loc[element] if config.index.dtype == str
-            else config.loc[element]
-            for element in candidates
-        ]
-    )
-    df.index = df.index.astype(str)
-    config.to_csv(dir_raw_dataset / "config_subset.csv")
+    config.index = config.index.astype(str)
+    config = config.loc[candidates]
+    # config.index = config.index.astype(int)
+    # config = pd.DataFrame(
+    #     [
+    #         config.loc[element] if config.index.dtype == str
+    #         else config.loc[element]
+    #         for element in candidates
+    #     ]
+    # )
+    # df.index = df.index.astype(str)
 
     # selecting the subset of algorithms!
     logs = subset(logs, "algorithm", candidates)
     results = subset(results, "algorithm", candidates)
 
-    # subset(logs, 'logged', cfg.learning_curves.metrics)
+    # subset(logs, 'logged', cfg.learning_curves.metrics) # to select multiple metrics at once
 
-    logs.to_hdf(dir_raw_dataset / "logs_subset.h5", key="dataset", mode="w")
-    results.to_hdf(dir_raw_dataset / "results_subset.h5", key="dataset", mode="w")
+    config.to_csv(dir_prep_dataset / "config_subset.csv")
+    logs.to_hdf(dir_prep_dataset / "logs_subset.h5", key="dataset", mode="w")
+    results.to_hdf(dir_prep_dataset / "results_subset.h5", key="dataset", mode="w")
 
-    # log.debug("Written out all files to raw dir.")
+    log.debug("Written out all LCBench files to raw dir.")
+
+
+# TODO rewrite download --> preprocessing folder
+# TODO split raw_pipe into these parts
+# TODO ensure that the download also works
+# fixme: none of these actually need bench:
+def collect_lctensor(algo_configs, bench, metric, fidelity_type, slices):
+    pass
+
+
+def collect_dataset_meta_features(bench):
+    pass
+
+
+def collect_algorithms(bench, cfg, fidelity_type):
+    pass

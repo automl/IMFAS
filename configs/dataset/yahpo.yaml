@@ -1,9 +1,14 @@
+defaults:
+  - dataset_meta: lcbench_minimal
+  - lc_meta: multi_slice
+  - algo_meta: yahpo_lcbench_minimal
+
 name: yahpo
 
 path:
-  algo_meta: ${dir_data_raw}/yahpo_data/${dataset.dataset_raw.selection.bench}/config_subset.csv
-  data_meta: ${dir_data_raw}/yahpo_data/${dataset.dataset_raw.selection.bench}/meta_features.csv
-  lc_meta: ${dir_data_raw}/yahpo_data/${dataset.dataset_raw.selection.bench}/logs_subset.h5
+  algo_meta: ${dir_data_processed}/yahpo_data/${dataset.dataset_raw.selection.bench}/config_subset.csv
+  data_meta: ${dir_data_processed}/yahpo_data/${dataset.dataset_raw.selection.bench}/meta_features.csv
+  lc_meta: ${dir_data_processed}/yahpo_data/${dataset.dataset_raw.selection.bench}/logs_subset.h5
 
 
 
@@ -38,14 +43,13 @@ slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ] # ${range:0.1, 1.1, 
 
 # For LC Bench, use the slices [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
 
-
-lc_metric: f1 # fixme: be consistent with lc_bench with this argument
-
+# fixme: look at multi-slice behaviour
+#lc_meta:
+#  metric: None
 
 dataset_raw:
   _target_: imfas.data.yahpo.raw_pipe.raw_pipe
-  dataset_name: yahpo
-  enable: True  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
+  enable: False  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
   dir_data: data
   fidelity_type: trainsize
 
@@ -78,7 +82,7 @@ dataset_raw:
     # fidelity depends on fidelity type & ranges for respective benchmark
     slices: ${dataset.slices}
 
-    metric: ${dataset.lc_metric}
+    lc_metric: f1 # fixme: be consistent with lc_bench with this argument
     # lcbench options:
     # time , val_accuracy , val_cross_entropy , val_balanced_accuracy ,
     # test_cross_entropy , test_balanced_accuracy
