@@ -64,6 +64,10 @@ setuptools.setup(
         "torchsort==0.1.8",  # fixme: import fails?
         "pandas==1.4.2",
         "omegaconf==2.2.3",
+        "yahpo_gym",  # fixme: versions?
+        "openml",
+        "ConfigSpace",
+        "smac==1.4.0"
         # "pytorch_forecasting",
         # "pytables",
     ],

@@ -34,12 +34,12 @@ test_dataloader_class:
 
 
 # fidelity space slices
-slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ] # ${range:0.1, 1.0, 0.1} fixme: check if that worked!
+slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ] # ${range:0.1, 1.1, 0.1} fixme: check if that worked!
 
 # For LC Bench, use the slices [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
 
 
-metric: f1 # fixme: be consistent with lc_bench with this argument
+lc_metric: f1 # fixme: be consistent with lc_bench with this argument
 
 
 dataset_raw:
@@ -57,7 +57,7 @@ dataset_raw:
     # carefull, iaml_* do not have a proper openmlid and are therefor not available:
     # iaml_ranger, iaml_rpart, iaml_glmnet, iaml_xgboost, iaml_super,
 
-    fidelity_type: ${dataset_raw.fidelity_type}
+    fidelity_type: ${dataset.dataset_raw.fidelity_type}
     # options: 'trainsize', 'repl' for iaml_* & rbv2_*
     # 'epoch' for lcbench
 
