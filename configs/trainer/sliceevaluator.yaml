@@ -7,9 +7,10 @@ trainerobj:
 
 
 run_call:
-  epochs: 1 # since we only need a single test execution anyways (HACK)
-
-  train_loss_fn: None
-  valid_loss_fns:
+  epochs: 0 # since we only need a single test execution anyways (HACK)
+  log_freq: 0
+  train_loss_fn: null
+  valid_loss_fns: null
+  test_loss_fns:
     spearman:
       _target_: imfas.losses.spearman.SpearmanLoss # Fixme: replace this with

@@ -11,11 +11,12 @@ from imfas.data.lc_dataset import Dataset_LC
 class Dataset_Join_Dmajor(Dataset):
     def __init__(
             self,
+            learning_curves: Dataset_LC,
             meta_dataset: DatasetMetaFeatures,
-            lc: Dataset_LC,
             meta_algo: Optional[AlgorithmMetaFeatures] = None,
             split: List[int] = None,
             masking_fn: Optional[Callable] = None,
+            **kwargs
     ):
         """
         Dataset, joining Dataset Meta features, Algorithm Meta features and the
@@ -23,14 +24,22 @@ class Dataset_Join_Dmajor(Dataset):
         presenting the getitem index refers to the dataset to be fetched.
         Args:
             meta_dataset: meta features with size [n_datasets, n_features]
-            lc: lc bench dataset with size [n_dataset, n_features, n_fidelites]
+            learning_curves: dataset_LC with size [n_dataset, n_features, n_fidelites]
             meta_algo:
-            split:
+            split: list of indicies, that this dataset will have access to (i.e. which
+            datasets are available)
         """
+
+        self.lcs = learning_curves
         self.meta_dataset = meta_dataset
         self.meta_algo = meta_algo
-        self.lc = lc
         self.masking_fn = masking_fn
+        self.kwargs = kwargs
+
+        assert all([v.shape == self.lcs.shape for v in kwargs.values()])
+        assert self.lcs.shape[0] == meta_dataset.shape[0]
+        if meta_algo is not None:
+            assert self.lcs.shape[1] == meta_algo.shape[1]
 
         if split is not None:
             self.split = split
@@ -48,21 +57,23 @@ class Dataset_Join_Dmajor(Dataset):
 
         # if masking strategy is supplied:
         if self.masking_fn is not None:
-            lc_tensor, mask = self.masking_fn(self.lc[it])
+            lc_tensor, mask = self.masking_fn(self.lcs[it])
 
         else:
-            lc_tensor = self.lc[it]
+            lc_tensor = self.lcs[it]
             mask = torch.ones_like(lc_tensor, dtype=torch.bool)
 
         X = {
             "dataset_meta_features": self.meta_dataset[it],
             "learning_curves": lc_tensor,
             "mask": mask,
+            **self.kwargs
+
             # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
-            #  columnwise
+
         }
 
-        y = {"final_fidelity": self.lc[it, :, -1]}
+        y = {"final_fidelity": self.lcs[it, :, -1]}
 
         return X, y
 
@@ -71,12 +82,32 @@ class Dataset_Join_Dmajor(Dataset):
 
     def __repr__(self):
         message = f"Dataset_Join_Dmajor(split: {self.split})\n" \
-                  f"Shapes: \n\tDatasetMeta: {self.meta_dataset.shape} \n\tDatasetLC: {self.lc.shape}"
+                  f"Shapes: " \
+                  f"\n\tDatasetMeta: {self.meta_dataset.shape} " \
+                  f"\n\tDatasetLC: {self.lcs.shape}"
 
         if self.meta_algo is not None:
             message += f"\n\tAlgorithmMeta: {self.meta_algo.shape}"
 
         return message
+
+
+class Dataset_Join_Test(Dataset_Join_Dmajor):
+    def __init__(self, test_curves, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.test_curves = test_curves
+
+    def __getitem__(self, item):
+        """
+        :item: int. Index of dataset to be fetched
+        :return: tuple[dict[str,torch.Tensor], dict[str,torch.Tensor]]: X, y,
+        Notably, y is enriched with the final test_slice of the learning curve,
+        to check the generalization performance of the model.
+        """
+        it = self.split[item]
+        X, y = super().__getitem__(item)
+        y = {"final_fidelity": self.test_curves[it, :, -1]}
+        return X, y
 
 
 if __name__ == "__main__":

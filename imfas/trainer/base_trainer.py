@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Callable, Dict, Optional, Union
 
 import torch.nn as nn
@@ -6,6 +7,8 @@ import wandb
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from tqdm import tqdm
+
+from imfas.utils.masking import mask_lcs_to_max_fidelity
 
 
 class BaseTrainer:
@@ -48,7 +51,6 @@ class BaseTrainer:
             self.optimizer.zero_grad()
 
             y_hat = self.model.forward(**X)
-
             loss = loss_fn(y_hat, y["final_fidelity"])
             # print(y, y_hat, loss)
             loss.backward()
@@ -62,12 +64,13 @@ class BaseTrainer:
 
         self._step += 1
 
-    def evaluate(self, test_loader, valid_loss_fn, function_name):
-        """evaluate the model on the test set after epoch ends for a single validation function"""
+    def validate(self, valid_loader, valid_loss_fn, function_name):
+        """evaluate the model on the validationset after epoch ends for a single validation
+        function"""
 
         with torch.no_grad():
-            losses = torch.zeros(len(test_loader))
-            for i, data in enumerate(test_loader):
+            losses = torch.zeros(len(valid_loader))
+            for i, data in enumerate(valid_loader):
                 X, y = data
                 self.to_device(X)
                 self.to_device(y)
@@ -77,14 +80,45 @@ class BaseTrainer:
 
             wandb.log({function_name: losses.mean()}, step=self.step)
 
+    def test(self, test_loader, test_loss_fn, fn_name):
+        """
+        Slice Evaluation Protocol;
+        Evaluate the model on the testset after training is done.
+        1. Mask the testset to the (currently) maximum fidelity
+        2. Evaluate the model on the masked testset & record the loss
+        3. Repeat 1 & 2 for all available fidelities in the test set
+
+        """
+        max_fidelity = test_loader.lcs.shape[-1]
+        for fidelity in range(max_fidelity):
+            test_loader.dataset.masking_fn = partial(
+                mask_lcs_to_max_fidelity,
+                max_fidelity=fidelity
+            )
+
+            # TODO: make one fwd pass and compute all validation losses on the fwd pass
+            #  to drastically reduce the number of fwd passes!
+            losses = torch.zeros(len(test_loader))
+            for i, (X, y) in enumerate(test_loader):
+                self.to_device(X)
+                self.to_device(y)
+
+                y_hat = self.model.forward(**X)
+                losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+
+            wandb.log({f"max fidelity: {fn_name}": losses.mean(), 'fidelity': fidelity})
+
     def run(
             self,
-            train_loader: torch.utils.data.DataLoader,
-            test_loader: torch.utils.data.DataLoader,
-            epochs: int,
-            train_loss_fn: Union[Callable, DictConfig],
+            train_loader: torch.utils.data.DataLoader = None,
+            valid_loader: torch.utils.data.DataLoader = None,
+            test_loader: torch.utils.data.DataLoader = None,
+            epochs: int = 0,
             log_freq: int = 5,
+            train_loss_fn: Union[Callable, DictConfig] = None,
             valid_loss_fns: Dict[str, Callable] = None,
+            test_loss_fns: Dict[str, Callable] = None,
+
     ):
         """
         Main loop including training & test evaluation, all of which report to wandb
@@ -104,11 +138,20 @@ class BaseTrainer:
             # for k, t in self.model.state_dict().items():
             #     wandb.log({k: wandb.Histogram(torch.flatten(t))}, step=self.step)
 
+            # validation loss during training
             if valid_loss_fns is not None and self.step % log_freq == 0:
                 for fn_name, fn in valid_loss_fns.items():
                     if isinstance(fn, DictConfig):  # fixme: can we remove this?
                         fn = instantiate(fn)
 
                     self.model.eval()
-                    self.evaluate(test_loader, fn, fn_name)
+                    self.validate(valid_loader, fn, fn_name)
                     self.model.train()
+
+        # Test loss for comparison of selectors
+        self.model.eval()
+        for fn_name, fn in tqdm(test_loss_fns.items(), desc='Training epochs'):
+            if isinstance(fn, DictConfig):  # fixme: can we remove this?
+                fn = instantiate(fn)
+
+            self.test(test_loader, fn, fn_name)

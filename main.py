@@ -78,16 +78,18 @@ def pipe_train(cfg: DictConfig) -> None:
     dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
 
     # train test split by dataset major
-    train_split, test_split = call(
+    train_split, valid_split, test_split = call(
         cfg.train_test_split,
         n=len(dataset_meta_features)
     )
 
     # Create the dataloaders
     train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
+    valid_set = instantiate(cfg.dataset.valid_dataset_class, split=train_split)
     test_set = instantiate(cfg.dataset.test_dataset_class, split=test_split)
 
     train_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=train_set)
+    valid_loader = instantiate(cfg.dataset.valid_dataloader_class, dataset=valid_set)
     test_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=test_set)
 
     # Dynamically computed configurations.
@@ -111,6 +113,7 @@ def pipe_train(cfg: DictConfig) -> None:
     trainer = instantiate(cfg.trainer.trainerobj, model)
     trainer.run(
         train_loader=train_loader,
+        valid_loader=valid_loader,
         test_loader=test_loader,
         **cfg.trainer.run_call,
     )

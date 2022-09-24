@@ -12,6 +12,7 @@ class Dataset_LC(Dataset):
         """
         self.path = path
         self.df = pd.read_hdf(path, mode="r")
+        self.metric = metric
 
         if metric is not "None":
             self.df = self.df.xs(key=metric)
@@ -48,7 +49,7 @@ class Dataset_LC(Dataset):
         return self.transformed_df.shape
 
     def __repr__(self):
-        return f"DatasetLC(path={self.path}) , " \
+        return f"DatasetLC(path={self.path}, metric={self.metric}) , " \
                f"shape={self.shape}"
 
 

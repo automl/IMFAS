@@ -11,18 +11,17 @@ path:
   lc_meta: ${dir_data_processed}/yahpo_data/${dataset.dataset_raw.selection.bench}/logs_subset.h5
 
 
-
 train_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
-  lc: ${dataset.lc_meta}
   meta_algo: ${dataset.algo_meta}
+  lc: ${dataset.lc_meta}
 
 test_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
-  lc: ${dataset.lc_meta}
   meta_algo: ${dataset.algo_meta}
+  lc: ${dataset.lc_meta}
 
 
 train_dataloader_class:
@@ -37,6 +36,9 @@ test_dataloader_class:
   shuffle: False
   num_workers: ${num_workers}
 
+
+
+# (Raw Dataset choices) ----------------------------------------------------------------------------
 
 # fidelity space slices
 slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ] # ${range:0.1, 1.1, 0.1} fixme: check if that worked!

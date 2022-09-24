@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - train_test_split: classic_split
+  - train_test_split: trainvalidtest
   - dataset: yahpo
   - model: empty
   - trainer: basetrainer
