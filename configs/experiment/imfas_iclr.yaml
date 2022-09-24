@@ -81,9 +81,6 @@ trainer:
         _target_: imfas.evaluation.topk_regret.TopkMaxRegret
         k: 3
 
-      plackett_luce:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-        k: 3
 
 
 wandb:

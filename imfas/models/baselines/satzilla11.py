@@ -135,10 +135,10 @@ class SATzilla11(nn.Module):
     def _get_pairwise_target(self, pair, performances):
         i, j = pair
 
-        # label target as i if the utility of algorithm i is <= the utility of algorithm j,
+        # label target as i if the utility of algorithm i is > the utility of algorithm j,
         # otherwise label it j
         pair_target = np.full(performances.shape[0], fill_value=i)        
-        pair_target[performances[:, i] > performances[:, j]] = j
+        pair_target[performances[:, i] > performances[:, j]] = i
 
         return pair_target
 

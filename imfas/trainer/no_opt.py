@@ -18,9 +18,9 @@ from imfas.trainer.base_trainer import BaseTrainer
 
 import pdb
 
-class NoOptTrainer(BaseTrainer):
+class NoOptTrainer():
     def __init__(self, model: torch.nn.Module, *args, **kwargs):
-        super().__init__(model, *args, **kwargs)
+        # super().__init__(model, *args, **kwargs)
         
         """
 
@@ -31,6 +31,7 @@ class NoOptTrainer(BaseTrainer):
         self._step = 0  # FIXME: @Aditya: why exactly doesn't it suffice to have the epoch?
         self.model = model
         self.device = self.model.device
+        self.optimizer = None
 
     @property
     def step(self):
