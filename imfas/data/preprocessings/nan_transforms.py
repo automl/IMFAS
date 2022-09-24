@@ -1,5 +1,3 @@
-import pdb
-
 import pandas as pd
 
 from imfas.data.preprocessings.table_transforms import Transform
@@ -39,8 +37,8 @@ class Column_Mean(Transform):
         super(Column_Mean, self).__init__()
 
     def transform(self, X: pd.DataFrame):
-
         for col in X.columns:
+            # Fixme: this seems not to be intended behaviour
             X[col].fillna(X[col].mean(), inplace=True)
 
         return X

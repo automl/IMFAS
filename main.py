@@ -18,7 +18,6 @@ OmegaConf.register_new_resolver("len", lambda l: len(l))
 
 OmegaConf.register_new_resolver("range", lambda start, stop, step: list(range(start, stop, step)))
 
-import pdb
 import os
 
 import random
@@ -49,7 +48,7 @@ def pipe_train(cfg: DictConfig) -> None:
     )
     cfg.wandb.id = hydra_job + "_" + id_generator()  # FIXME: necessary?
 
-    run = wandb.init(**cfg.wandb, config=dict_cfg)
+    wandb.init(**cfg.wandb, config=dict_cfg)
 
     # FIXME: SLURM ID???
     hydra_cfg = HydraConfig.get()

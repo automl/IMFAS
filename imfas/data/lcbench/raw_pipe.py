@@ -103,12 +103,12 @@ def raw_pipe(*args, **kwargs):
     logs = subset(logs, "algorithm", candidates)
     results = subset(results, "algorithm", candidates)
 
-    # subset(logs, 'logged', cfg.learning_curves.metrics) # to select multiple metrics at once
+    # subset(logs, 'logged', cfg.learning_curves.metrics)  # to select multiple metrics at once
 
     config.to_csv(dir_prep_dataset / "config_subset.csv")
     logs.to_hdf(dir_prep_dataset / "logs_subset.h5", key="dataset", mode="w")
     results.to_hdf(dir_prep_dataset / "results_subset.h5", key="dataset", mode="w")
-
+    meta_features.to_csv(dir_prep_dataset / "meta_features.csv")
     log.debug("Written out all LCBench files to raw dir.")
 
 

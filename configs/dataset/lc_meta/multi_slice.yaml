@@ -5,7 +5,7 @@ path: ${dataset.path.lc_meta}
 transforms:
   _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
   modulelist:
-    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
+    #    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
     - _target_: imfas.data.preprocessings.table_transforms.Convert # novelty
     # - _target_: imfas.data.preprocessings.table_transforms.Scalar
     - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices

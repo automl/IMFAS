@@ -2,7 +2,7 @@
 
 defaults:
   - train_test_split: classic_split
-  - dataset/yahpo
+  - dataset: yahpo
   - model: empty
   - trainer: basetrainer
   - _self_
