@@ -12,7 +12,7 @@ path:
 
 
 
-train_dataset_class:
+train_dataset_class: # -----------------------------------------------------------------------------
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   #  meta_algo: ${dataset.algo_meta}
@@ -21,44 +21,18 @@ train_dataset_class:
     _target_: imfas.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
-    # the important part!
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        #    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
-        - _target_: imfas.data.preprocessings.table_transforms.Convert # novelty
-        # - _target_: imfas.data.preprocessings.table_transforms.Scalar
+        - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
-        # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
-    metric: Train/val_cross_entropy
-
-
-valid_dataset_class:
-  _target_: imfas.data.Dataset_Join_Dmajor
-  meta_dataset: ${dataset.dataset_meta}
-  #  meta_algo: ${dataset.algo_meta}
-  learning_curves: # ${dataset.lc_meta}
-    # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.Dataset_LC
-    path: ${dataset.path.lc_meta}
-
-    # the important part!
-    transforms:
-      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
-      modulelist:
-        #    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
-        - _target_: imfas.data.preprocessings.table_transforms.Convert # novelty
-        # - _target_: imfas.data.preprocessings.table_transforms.Scalar
-        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
-          slices: ${dataset.slices}
-        # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
     metric: Train/val_cross_entropy
 
 
 
-test_dataset_class:
-  _target_: imfas.data.Dataset_Join_Dmajor
+valid_dataset_class: # -----------------------------------------------------------------------------
+  _target_: imfas.data.Dataset_Join_Test
   meta_dataset: ${dataset.dataset_meta}
   #  meta_algo: ${dataset.algo_meta}
   learning_curves: # ${dataset.lc_meta}  # validation
@@ -66,38 +40,70 @@ test_dataset_class:
     _target_: imfas.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
-    # the important part!
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        #    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
-        - _target_: imfas.data.preprocessings.table_transforms.Convert # novelty
-        # - _target_: imfas.data.preprocessings.table_transforms.Scalar
+        - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
-        # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
-    metric: Train/val_accuracy
+    metric: Train/val_cross_entropy
 
-  test_lc: # ${dataset.lc_meta}
+  test_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
     _target_: imfas.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
-    # the important part!
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        #    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
-        - _target_: imfas.data.preprocessings.table_transforms.Convert # novelty
-        # - _target_: imfas.data.preprocessings.table_transforms.Scalar
+        - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
-        # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
+
+    metric: Train/test_cross_entropy
+
+
+
+test_dataset_class: # ------------------------------------------------------------------------------
+  _target_: imfas.data.Dataset_Join_Test
+  meta_dataset: ${dataset.dataset_meta}
+  #  meta_algo: ${dataset.algo_meta}
+  learning_curves: # ${dataset.lc_meta}  # validation
+    # FIXME: move this back to lc_meta (but make metric accessible from here!
+    _target_: imfas.data.Dataset_LC
+    path: ${dataset.path.lc_meta}
+
+    transforms:
+      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.Convert
+        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+          slices: ${dataset.slices}
+    metric: Train/val_cross_entropy
+
+  test_curves: # ${dataset.lc_meta}
+    # FIXME: move this back to lc_meta (but make metric accessible from here!
+    _target_: imfas.data.Dataset_LC
+    path: ${dataset.path.lc_meta}
+
+    transforms:
+      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.Convert
+        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+          slices: ${dataset.slices}
+
     metric: Train/test_cross_entropy
 
 
 
 train_dataloader_class:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 5
+  shuffle: True
+  num_workers: ${num_workers}
+
+valid_dataloader_class:
   _target_: torch.utils.data.DataLoader
   batch_size: 1
   shuffle: True
@@ -174,13 +180,13 @@ dataset_raw:
       #       'Train/gradient_norm', 'Train/gradient_q10', 'Train/gradient_q25',
       #       'Train/gradient_q75', 'Train/gradient_q90', 'Train/gradient_std',
       #       'Train/layer_wise_gradient_max_layer_0',
-      #       'Train/layer_wise_gradient_max_layer_1',
-      #       'Train/layer_wise_gradient_max_layer_2',
-      #       'Train/layer_wise_gradient_max_layer_3',
-      #       'Train/layer_wise_gradient_mean_layer_0',
-      #       'Train/layer_wise_gradient_mean_layer_1',
-      #       'Train/layer_wise_gradient_mean_layer_2',
-      #       'Train/layer_wise_gradient_mean_layer_3',
+    #       'Train/layer_wise_gradient_max_layer_1',
+    #       'Train/layer_wise_gradient_max_layer_2',
+    #       'Train/layer_wise_gradient_max_layer_3',
+    #       'Train/layer_wise_gradient_mean_layer_0',
+    #       'Train/layer_wise_gradient_mean_layer_1',
+    #       'Train/layer_wise_gradient_mean_layer_2',
+    #       'Train/layer_wise_gradient_mean_layer_3',
     #       'Train/layer_wise_gradient_median_layer_0',
     #       'Train/layer_wise_gradient_median_layer_1',
     #       'Train/layer_wise_gradient_median_layer_2',

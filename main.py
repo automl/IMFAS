@@ -85,7 +85,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # Create the dataloaders
     train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
-    valid_set = instantiate(cfg.dataset.valid_dataset_class, split=train_split)
+    valid_set = instantiate(cfg.dataset.valid_dataset_class, split=valid_split)
     test_set = instantiate(cfg.dataset.test_dataset_class, split=test_split)
 
     train_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=train_set)
@@ -95,20 +95,21 @@ def pipe_train(cfg: DictConfig) -> None:
     # Dynamically computed configurations.
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
     cfg.dynamically_computed.n_data_meta_features = dataset_meta_features.df.columns.size
-    cfg.dynamically_computed.n_algos = train_set.lc.shape[1]
-    cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
+    cfg.dynamically_computed.n_algos = train_set.lcs.shape[1]
+    # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
+    cfg.dynamically_computed.n_algo_meta_features = train_set.lcs.transformed_df.shape[1]
 
     wandb.config.update(
         {
-            "dynamically_computed.n_algos": train_set.meta_algo.transformed_df.shape[-1],
-            "dynamically_computed.n_data_meta_features": dataset_meta_features.df.columns.size,
+            "dynamically_computed.n_algos": cfg.dynamically_computed.n_algo_meta_features,
+            "dynamically_computed.n_data_meta_features": cfg.dynamically_computed.n_data_meta_features,
         }
     )
 
     # CLASSICAL MODELS -----------------------------------------------------------------------------
     model = instantiate(cfg.model, device=cfg.device)
     model.to(cfg.device)
-    torch.device(cfg.device)
+    torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
     trainer.run(

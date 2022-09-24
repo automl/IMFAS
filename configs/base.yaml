@@ -3,7 +3,6 @@
 defaults:
   - train_test_split: trainvalidtest
   - dataset: yahpo
-  - model: empty
   - trainer: basetrainer
   - _self_
 

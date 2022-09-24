@@ -78,7 +78,7 @@ class BaseTrainer:
                 y_hat = self.model.forward(**X)
                 losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
 
-            wandb.log({function_name: losses.mean()}, step=self.step)
+            wandb.log({f'Validation: {function_name}': losses.mean()}, step=self.step)
 
     def test(self, test_loader, test_loss_fn, fn_name):
         """
@@ -89,24 +89,28 @@ class BaseTrainer:
         3. Repeat 1 & 2 for all available fidelities in the test set
 
         """
-        max_fidelity = test_loader.lcs.shape[-1]
-        for fidelity in range(max_fidelity):
-            test_loader.dataset.masking_fn = partial(
-                mask_lcs_to_max_fidelity,
-                max_fidelity=fidelity
-            )
+        with torch.no_grad():
+            max_fidelity = test_loader.dataset.lcs.shape[-1]
+            for fidelity in range(max_fidelity):
+                test_loader.dataset.masking_fn = partial(
+                    mask_lcs_to_max_fidelity,
+                    max_fidelity=fidelity
+                )
 
-            # TODO: make one fwd pass and compute all validation losses on the fwd pass
-            #  to drastically reduce the number of fwd passes!
-            losses = torch.zeros(len(test_loader))
-            for i, (X, y) in enumerate(test_loader):
-                self.to_device(X)
-                self.to_device(y)
+                # fixme: make one fwd pass and compute all validation losses on the fwd pass
+                #  to drastically reduce the number of fwd passes!
+                losses = torch.zeros(len(test_loader))
+                for i, (X, y) in enumerate(test_loader):
+                    self.to_device(X)
+                    self.to_device(y)
 
-                y_hat = self.model.forward(**X)
-                losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+                    y_hat = self.model.forward(**X)
+                    losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
 
-            wandb.log({f"max fidelity: {fn_name}": losses.mean(), 'fidelity': fidelity})
+                wandb.log(
+                    {f"Test, Slice Evaluation: {fn_name}": losses.mean(),
+                     'fidelity': fidelity}
+                )
 
     def run(
             self,
@@ -150,8 +154,41 @@ class BaseTrainer:
 
         # Test loss for comparison of selectors
         self.model.eval()
-        for fn_name, fn in tqdm(test_loss_fns.items(), desc='Training epochs'):
+        for fn_name, fn in tqdm(test_loss_fns.items(), desc='Test functions'):
             if isinstance(fn, DictConfig):  # fixme: can we remove this?
                 fn = instantiate(fn)
 
             self.test(test_loader, fn, fn_name)
+
+
+class ASTrainer(BaseTrainer):
+    def __init__(self, model):
+
+        self.model = model
+
+    def run(self, train_loader, valid_loader, test_loader,
+            train_loss_fn: Union[Callable, DictConfig] = None,
+            test_loss_fns: Dict[str, Callable] = None):
+
+        self.model.train()
+        X, y = next(train_loader)
+
+        # fixme: how to make use of trainloss?
+        self.model.forward(**X, **y)
+        # Deliberately leave out the valid_loss loader (to make models comparable)
+
+        self.model.eval()
+        X, y = next(test_loader)
+        y_hat = self.model.forward(**X)
+
+        for fn_name, fn in tqdm(test_loss_fns.items(), desc='Test functions'):
+            if isinstance(fn, DictConfig):
+                fn = instantiate(fn)
+                loss = fn(y_hat, y)
+
+                wandb.log({f"Test: {fn_name}": loss.mean()})
+
+# TODO transformer in basetrainer.
+# TODO SH baseline in basetrainer (config)
+# TODO AS baseline in basetrainer (check how)
+# TODO LCDB with test curves.
