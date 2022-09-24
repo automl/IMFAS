@@ -6,7 +6,7 @@
 defaults:
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
+  # - override /dataset/algo_meta: lcbench_minimal
   - override /model: imfas_transformer
   - override /trainer: basetrainer
 

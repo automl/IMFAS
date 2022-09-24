@@ -94,11 +94,11 @@ def pipe_train(cfg: DictConfig) -> None:
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
     cfg.dynamically_computed.n_data_meta_features = dataset_meta_features.df.columns.size
     cfg.dynamically_computed.n_algos = train_set.lc.shape[1]
-    cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
+    cfg.dynamically_computed.n_algo_meta_features = 0 # train_set.meta_algo.transformed_df.shape[-1]
 
     wandb.config.update(
         {
-            "dynamically_computed.n_algos": train_set.meta_algo.transformed_df.shape[-1],
+            "dynamically_computed.n_algos": 0, # train_set.meta_algo.transformed_df.shape[-1],
             "dynamically_computed.n_data_meta_features": dataset_meta_features.df.columns.size,
         }
     )

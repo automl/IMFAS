@@ -1,7 +1,7 @@
 defaults:
   - dataset_meta: lcbench_minimal
   - lc_meta: multi_slice
-  - algo_meta: yahpo_lcbench_minimal
+  # - algo_meta: yahpo_lcbench_minimal
 
 name: yahpo
 
@@ -16,13 +16,13 @@ train_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   lc: ${dataset.lc_meta}
-  meta_algo: ${dataset.algo_meta}
+  # meta_algo: ${dataset.algo_meta}
 
 test_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   lc: ${dataset.lc_meta}
-  meta_algo: ${dataset.algo_meta}
+  # meta_algo: ${dataset.algo_meta}
 
 
 train_dataloader_class:
