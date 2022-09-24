@@ -807,7 +807,8 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
         cfg.selection.fidelity_type
     )
 
-    lc = collect_lctensor(algo_configs, bench, cfg)
+    lc = collect_lctensor(algo_configs, bench, cfg.lc_metric, cfg.selection.fidelty_type,
+                          cfg.selection.slices)
 
     # Algorithm Meta Features
     algo_meta_features = pd.DataFrame.from_dict({i: c.get_dictionary() for i, c in enumerate(configs)})
@@ -823,34 +824,34 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     lc.to_hdf(dir_raw_dataset_bench / "logs_subset.h5", key="dataset", mode="w")
 
 
-def collect_lctensor(algo_configs, bench, cfg):
+def collect_lctensor(algo_configs, bench, metric, fidelity_type, slices):
     # gather per dataset the respective performances for all configs
-    slices = {}
+    slices_dict = {}
     for inst in bench.instances:
         bench.set_instance(str(inst))
         log.debug(f"collecting learning curve")
 
         sl = {}
-        for s in cfg.selection.slices:
+        for s in slices:
             conf = [c.get_dictionary() for c in algo_configs]
             # update conf
             d = {
                 "OpenML_task_id": str(inst),
                 "task_id": str(inst),
                 # add in the changing fidelity parameter!
-                cfg.selection.fidelity_type: s,
+                fidelity_type: s,
                 # add in the other fidelity parameters
                 **{k: hp.upper for k, hp in bench.get_fidelity_space().items() if
-                   k != cfg.selection.fidelity_type},
+                   k != fidelity_type},
             }
 
             [c.update(d) for c in conf]
 
-            sl[s] = pd.DataFrame.from_dict(bench.objective_function(conf))[cfg.selection.metric]
+            sl[s] = pd.DataFrame.from_dict(bench.objective_function(conf))[metric]
 
-        slices[inst] = pd.concat(sl, axis=1)
+        slices_dict[inst] = pd.concat(sl, axis=1)
     # create multiindex learningcurve tensor
-    lc = pd.concat(slices, axis=0)
+    lc = pd.concat(slices_dict, axis=0)
     lc.index.set_names(("Dataset", "Algo_HP"))
     lc.columns.set_names("Fidelity")
     return lc
