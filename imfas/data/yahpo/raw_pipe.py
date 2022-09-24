@@ -800,8 +800,64 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     log.info("collecting meta data")
 
     # EDA: which ids are in fact available on openml -----------------
-    missing = []
 
+    dataset_meta_features = collect_dataset_meta_features(bench)
+    algo_configs, algorithm_meta_features = collect_algorithms(
+        bench, cfg,
+        cfg.selection.fidelity_type
+    )
+
+    lc = collect_lctensor(algo_configs, bench, cfg)
+
+    # Algorithm Meta Features
+    algo_meta_features = pd.DataFrame.from_dict({i: c.get_dictionary() for i, c in enumerate(configs)})
+    algo_meta_features.columns.set_names("AlgoID")
+    algo_meta_features.drop(index=["OpenML_task_id", cfg.selection.fidelity_type], inplace=True)
+    algo_meta_features = algo_meta_features.T
+
+    log.info("writing out to files")
+
+    # FIXME: rename these file names (& lcbench's as well connsistently)
+    algorithm_meta_features.to_csv(dir_raw_dataset_bench / "config_subset.csv")
+    dataset_meta_features.to_csv(dir_raw_dataset_bench / "meta_features.csv")
+    lc.to_hdf(dir_raw_dataset_bench / "logs_subset.h5", key="dataset", mode="w")
+
+
+def collect_lctensor(algo_configs, bench, cfg):
+    # gather per dataset the respective performances for all configs
+    slices = {}
+    for inst in bench.instances:
+        bench.set_instance(str(inst))
+        log.debug(f"collecting learning curve")
+
+        sl = {}
+        for s in cfg.selection.slices:
+            conf = [c.get_dictionary() for c in algo_configs]
+            # update conf
+            d = {
+                "OpenML_task_id": str(inst),
+                "task_id": str(inst),
+                # add in the changing fidelity parameter!
+                cfg.selection.fidelity_type: s,
+                # add in the other fidelity parameters
+                **{k: hp.upper for k, hp in bench.get_fidelity_space().items() if
+                   k != cfg.selection.fidelity_type},
+            }
+
+            [c.update(d) for c in conf]
+
+            sl[s] = pd.DataFrame.from_dict(bench.objective_function(conf))[cfg.selection.metric]
+
+        slices[inst] = pd.concat(sl, axis=1)
+    # create multiindex learningcurve tensor
+    lc = pd.concat(slices, axis=0)
+    lc.index.set_names(("Dataset", "Algo_HP"))
+    lc.columns.set_names("Fidelity")
+    return lc
+
+
+def collect_dataset_meta_features(bench):
+    missing = []
     try:
         tasks = get_tasks(
             bench.instances,
@@ -840,6 +896,10 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     qualities = {m.id: m.qualities for m in ms}
     dataset_meta_features = pd.DataFrame.from_dict(qualities).T
 
+    return dataset_meta_features
+
+
+def collect_algorithms(bench, cfg, fidelity_type):
     # collect lcs from surrogate ---------------------------
     # assuming constant hp across taskids
     # get the Configurations that we will look at across all algorithms
@@ -853,7 +913,8 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     # config_space.pop(cfg.selection.fidelity_type)
     cs = ConfigSpace.ConfigurationSpace()
     cs.add_hyperparameters(
-        [HP for k, HP in config_space.items() if k not in ["task_id", *bench.config.fidelity_params]]
+        [HP for k, HP in config_space.items() if
+         k not in ["task_id", *bench.config.fidelity_params]]
     )
     # cs.add_hyperparameters(config_space.values())
     cs.add_conditions(bench.config_space.get_conditions())
@@ -862,45 +923,14 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     design = call(cfg.selection.algo, cs=cs, traj_logger=log)
     configs = design._select_configurations()
 
-    # gather per dataset the respective performances for all configs
-    slices = {}
-    for inst in bench.instances:
-        bench.set_instance(str(inst))
-        log.debug(f"collecting learning curve")
-
-        sl = {}
-        for s in cfg.selection.slices:
-            conf = [c.get_dictionary() for c in configs]
-            # update conf
-            d = {
-                "OpenML_task_id": str(inst),
-                "task_id": str(inst),
-                # add in the changing fidelity parameter!
-                cfg.selection.fidelity_type: s,
-                # add in the other fidelity parameters
-                **{k: hp.upper for k, hp in bench.get_fidelity_space().items() if k != cfg.selection.fidelity_type},
-            }
-
-            [c.update(d) for c in conf]
-
-            sl[s] = pd.DataFrame.from_dict(bench.objective_function(conf))[cfg.selection.metric]
-
-        slices[inst] = pd.concat(sl, axis=1)
-
-    # create multiindex learningcurve tensor
-    lc = pd.concat(slices, axis=0)
-    lc.index.set_names(("Dataset", "Algo_HP"))
-    lc.columns.set_names("Fidelity")
-
     # Algorithm Meta Features
-    algo_meta_features = pd.DataFrame.from_dict({i: c.get_dictionary() for i, c in enumerate(configs)})
-    algo_meta_features.columns.set_names("AlgoID")
-    algo_meta_features.drop(index=["OpenML_task_id", cfg.selection.fidelity_type], inplace=True)
-    algo_meta_features = algo_meta_features.T
+    algorithm_meta_features = pd.DataFrame.from_dict(
+        {i: c.get_dictionary() for i, c in enumerate(configs)})
+    algorithm_meta_features.columns.set_names("AlgoID")
+    algorithm_meta_features.drop(
+        index=["OpenML_task_id", fidelity_type],
+        inplace=True
+    )
+    algorithm_meta_features = algorithm_meta_features.T
 
-    log.info("writing out to files")
-
-    # FIXME: rename these file names (& lcbench's as well connsistently)
-    algo_meta_features.to_csv(dir_raw_dataset_bench / "config_subset.csv")
-    dataset_meta_features.to_csv(dir_raw_dataset_bench / "meta_features.csv")
-    lc.to_hdf(dir_raw_dataset_bench / "logs_subset.h5", key="dataset", mode="w")
+    return configs, algorithm_meta_features

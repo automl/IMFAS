@@ -73,12 +73,12 @@ dataset_raw:
 
       # unimportant parameters!
       ta_run_limit: 9999
-      init_budget: ${dataset_raw.selection.n_algos}
+      init_budget: ${dataset.dataset_raw.selection.n_algos}
 
     # fidelity depends on fidelity type & ranges for respective benchmark
     slices: ${dataset.slices}
 
-    metric: ${dataset.metric}
+    metric: ${dataset.lc_metric}
     # lcbench options:
     # time , val_accuracy , val_cross_entropy , val_balanced_accuracy ,
     # test_cross_entropy , test_balanced_accuracy
