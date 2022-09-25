@@ -60,7 +60,7 @@ if __name__ == '__main__':
     from imfas.utils.masking import mask_lcs_to_max_fidelity, mask_lcs_randomly
     from imfas.data.lcbench.example_data import data_path, pipe_lc, \
         pipe_meta
-    from imfas.evaluation.topk_regret import TopkMaxRegret
+    from imfas.evaluation.topkregret import TopkMaxRegret
 
     from imfas.utils.util import seed_everything
 

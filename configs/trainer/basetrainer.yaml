@@ -13,48 +13,72 @@ run_call:
 
   valid_loss_fns: Null
 
-  # TODO enable for experimentation
-  #    ndcg10:
-  #      _target_: sklearn.metrics.ndcg_score
-  #      _partial_: True
-  #      k: 10
-  #
-  #    ndcg5:
-  #      _target_: sklearn.metrics.ndcg_score
-  #      _partial_: True
-  #      k: 5
-  #
-  #    ndcg3:
-  #      _target_: sklearn.metrics.ndcg_score
-  #      _partial_: True
-  #      k: 3
-  #
-  #    ndcg1:
-  #      _target_: sklearn.metrics.ndcg_score
-  #      _partial_: True
-  #      k: 1
+    # TODO enable for experimentation
+    ndcg10:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 10
+
+    ndcg5:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 5
+
+    ndcg3:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 3
+
+    ndcg1:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 1
+
+    top1_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 1
+
+    top3_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 3
 
   test_loss_fns: Null
 
-# TODO enable for experimentation
-#    ndcg10:
-#      _target_: sklearn.metrics.ndcg_score
-#      _partial_: True
-#      k: 10
-#
-#    ndcg5:
-#      _target_: sklearn.metrics.ndcg_score
-#      _partial_: True
-#      k: 5
-#
-#    ndcg3:
-#      _target_: sklearn.metrics.ndcg_score
-#      _partial_: True
-#      k: 3
-#
-#    ndcg1:
-#      _target_: sklearn.metrics.ndcg_score
-#      _partial_: True
-#      k: 1
+    # TODO enable for experimentation
+    ndcg10:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 10
+
+    ndcg5:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 5
+
+    ndcg3:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 3
+
+    ndcg1:
+      _target_: sklearn.metrics.ndcg_score
+      _partial_: True
+      k: 1
+
+    top1_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 1
+
+    top3_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 3
+
+    plackett_luce1:
+      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+      k: 1
+
+    plackett_luce3:
+      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+      k: 3
 
 

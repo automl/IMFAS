@@ -12,7 +12,6 @@ def plot_dataset_curves(dataset: Dataset_Join_Dmajor, idx: int, ax=None, major='
         lcs = dataset.lc.transformed_df[:, idx, :]
 
     pd.DataFrame(lcs.numpy().T).plot(legend=False, ax=ax)
-    # plt.legend(loc='right')  # fixme: remove curves
 
 
 def plot_alldataset_curves(dataset: Dataset_Join_Dmajor, dataset_name, major='D', **kwargs):
@@ -38,8 +37,6 @@ def plot_alldataset_curves(dataset: Dataset_Join_Dmajor, dataset_name, major='D'
 
 
 # TODO : make this a method of DatasetLC?
-
-# TODO: look at the algorithm marginal
 
 
 if __name__ == '__main__':

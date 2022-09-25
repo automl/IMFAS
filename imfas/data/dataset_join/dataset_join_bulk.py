@@ -36,7 +36,7 @@ class Dataset_join_classicAS(Dataset_Join_Dmajor):
 
 if __name__ == "__main__":
     from pathlib import Path
-    import imfas.data.preprocessings as prep
+    from imfas.data.lcbench.example_data import pipe_meta, pipe_lc
     from imfas.data.dataset_meta_features import DatasetMetaFeatures
     from imfas.data import Dataset_LC
 
@@ -44,25 +44,6 @@ if __name__ == "__main__":
 
     dataset_name = "LCBench"
     data_path = root / 'data' / 'raw' / dataset_name
-
-    pipe_lc = prep.TransformPipeline(
-        [prep.Column_Mean(), prep.Convert(), prep.LC_TimeSlices(slices=[3])]
-    )
-
-    pipe_meta = prep.TransformPipeline(
-        [prep.Zero_fill(), prep.Convert(), prep.ToTensor(), prep.ScaleStd()]
-    )
-
-    pipe_algo = prep.TransformPipeline(
-        [prep.Zero_fill(),
-         prep.Drop(
-             ['imputation_strategy', 'learning_rate_scheduler', 'loss', 'network',
-              'normalization_strategy', 'optimizer', 'activation', 'mlp_shape', ]),
-         prep.Replace(columns=['num_layers'], replacedict={'True': 1}),
-         prep.Convert(),
-         prep.ToTensor(),
-         prep.ScaleStd()]
-    )
 
     D = Dataset_join_classicAS(
         meta_dataset=DatasetMetaFeatures(

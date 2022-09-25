@@ -6,6 +6,7 @@
 
 defaults:
   - /model: successive_halving
+  - override /train_test_split: trainvalidtest
 
 wandb:
   group: 'Baseline: SH'

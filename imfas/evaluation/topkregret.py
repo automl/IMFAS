@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class TopkMaxRegret(nn.Module):
+class TopkRegret(nn.Module):
     def __init__(self, k):
         super().__init__()
         self.k = k
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     y_pred = torch.randperm(10)[:10].view(1, -1).double()
     y_true = torch.randperm(10)[:10].view(1, -1).double()
-    regret = TopkMaxRegret(k=1)
+    regret = TopkRegret(k=1)
     assert regret(y_pred, y_true) == torch.tensor(3.0)
 
     # batch test
@@ -44,9 +44,9 @@ if __name__ == "__main__":
 
     y_pred = torch.randperm(10)[:10].view(2, -1).double()
     y_true = torch.randperm(10)[:10].view(2, -1).double()
-    regret = TopkMaxRegret(k=1)
+    regret = TopkRegret(k=1)
     assert torch.equal(regret(y_pred, y_true), torch.tensor(3.5).double())
 
     # batch test: k=2 the next candidates are both worse.
-    regret = TopkMaxRegret(k=2)
+    regret = TopkRegret(k=2)
     assert torch.equal(regret(y_pred, y_true), torch.tensor(3.5).double())
