@@ -67,9 +67,13 @@ setuptools.setup(
         "yahpo_gym",  # fixme: versions?
         "openml",
         "ConfigSpace",
-        "smac==1.4.0"
+        "smac==1.4.0",
         # "pytorch_forecasting",
         # "pytables",
+
+        # f*"§=& mohr dependencies
+        "lcdb=0.1.0",
+        "func_timeout=4.3.5"
     ],
     extras_require=extras_require,
     test_suite="pytest",

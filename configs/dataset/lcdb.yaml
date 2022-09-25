@@ -1,0 +1,24 @@
+defaults:
+  - dataset_meta: lcbench_minimal
+  - lc_meta: multi_slice
+  - algo_meta: yahpo_lcbench_minimal
+
+name: lcdb
+
+
+
+path:
+  algo_meta: ${dir_data_processed}/lcdb #/${dataset.dataset_raw.selection.bench}/config_subset.csv
+  data_meta: ${dir_data_processed}/lcdb #/${dataset.dataset_raw.selection.bench}/meta_features.csv
+  lc_meta: ${dir_data_processed}/lcdb #/${dataset.dataset_raw.selection.bench}/logs_subset.h5
+
+
+slices:  # ${range:0.1, 1.1, 0.1} fixme: check if that worked!
+
+dataset_raw:
+  _target_: imfas.data.lcdb.raw_pipe.raw_pipe
+  enable: True
+
+
+  slices: ${dataset.slices}
+  metric: accuracy  # options ["accuracy", "logloss", "f1", "auc"]

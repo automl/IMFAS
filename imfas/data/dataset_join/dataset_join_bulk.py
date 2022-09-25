@@ -1,6 +1,9 @@
 from imfas.data.dataset_join.dataset_join_Dmajor import Dataset_Join_Dmajor
 
 
+# fixme: depreciate this! give AS a normal dataset_loader and extract in AS
+# [n_datasets, n_algos, n_fidelities] with learning_curves
+
 # TODO rewrite this as a single batch (of size self.split) with the fidelity slice as yaml config
 #  dataset.slices = [52] for instance. with dataset.dataloader.batch_size = len(self.split) -->
 #  which would need to be dynamically computed though.
