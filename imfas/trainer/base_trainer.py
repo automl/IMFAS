@@ -1,3 +1,4 @@
+import logging
 from functools import partial
 from typing import Callable, Dict, Optional, Union
 
@@ -9,6 +10,8 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 
 from imfas.utils.masking import mask_lcs_to_max_fidelity
+
+log = logging.getLogger(__name__)
 
 
 class BaseTrainer:
@@ -107,7 +110,14 @@ class BaseTrainer:
                     self.to_device(y)
 
                     y_hat = self.model.forward(**X)
-                    losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+
+                    # Successive halving will inf for zero available fidelities.
+                    # Some test loss functions may take an issue with that.
+                    # This is a save-guard to prevent this (intended) behaviour.
+                    try:
+                        losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+                    except Exception as e:
+                        log.error(f"Error in test loss fn {fn_name}:\n{e}")
 
                 wandb.log(
                     {f"Test, Slice Evaluation: {fn_name}": losses.mean(),
