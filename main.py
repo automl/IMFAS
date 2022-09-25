@@ -96,6 +96,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
     trainer.run(**loaders, **cfg.trainer.run_call)
+    log.info("Done!")
 
 
 def housekeeping(cfg: DictConfig) -> None:

@@ -15,13 +15,15 @@ train_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   meta_algo: ${dataset.algo_meta}
-  lc: ${dataset.lc_meta}
+  learning_curves: ${dataset.lc_meta}
 
-test_dataset_class:
+valid_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   meta_algo: ${dataset.algo_meta}
-  lc: ${dataset.lc_meta}
+  learning_curves: ${dataset.lc_meta}
+
+# test_dataset_class: # unavailable! because yahpo did not collect these
 
 
 train_dataloader_class:
@@ -30,7 +32,7 @@ train_dataloader_class:
   shuffle: True
   num_workers: ${num_workers}
 
-test_dataloader_class:
+valid_dataloader_class:
   _target_: torch.utils.data.DataLoader
   batch_size: 1
   shuffle: False

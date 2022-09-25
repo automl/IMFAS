@@ -6,21 +6,16 @@
 
 defaults:
   - /model: successive_halving
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
-  - override /trainer: sliceevaluator
-
 
 wandb:
+  group: 'Baseline: SH'
+  job_type: 'sh_eta2'
   notes: 'Successive Halving'
 
 device: 'cpu'
 
 model:
-  _target_: imfas.models.baselines.successive_halving.SuccessiveHalving
   eta: 2
-  budgets: ${dataset.slices} # ${range:1,51,1} # FIXME: adjust to the values of dataset.slices up until the
 
 dataset:
   test_dataloader_class:

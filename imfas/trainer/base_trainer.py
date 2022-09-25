@@ -84,7 +84,8 @@ class BaseTrainer:
         """
         Slice Evaluation Protocol;
         Evaluate the model on the testset after training is done.
-        1. Mask the testset to the (currently) maximum fidelity
+        1. Mask the testset to the (currently) maximum fidelity (minimum is 1,
+           giving at least on e)
         2. Evaluate the model on the masked testset & record the loss
         3. Repeat 1 & 2 for all available fidelities in the test set
 
@@ -92,6 +93,7 @@ class BaseTrainer:
         with torch.no_grad():
             max_fidelity = test_loader.dataset.lcs.shape[-1]
             for fidelity in range(max_fidelity):
+
                 test_loader.dataset.masking_fn = partial(
                     mask_lcs_to_max_fidelity,
                     max_fidelity=fidelity

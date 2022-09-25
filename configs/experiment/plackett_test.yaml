@@ -3,13 +3,6 @@
 # MLP(D) ---> PlackettLuceLoss
 defaults:
   - /model: mlp_D
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
-  - override /trainer: basetrainer
-
-
-
 
 
 wandb:

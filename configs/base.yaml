@@ -2,7 +2,7 @@
 
 defaults:
   - train_test_split: trainvalidtest
-  - dataset: yahpo
+  - dataset: lcbench
   - trainer: basetrainer
   - _self_
 

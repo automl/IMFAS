@@ -96,7 +96,7 @@ test_dataset_class: # ----------------------------------------------------------
     metric: Train/test_cross_entropy
 
 
-
+# Dataloaders ------------------------------------------------------------------------------------
 train_dataloader_class:
   _target_: torch.utils.data.DataLoader
   batch_size: 5
@@ -175,7 +175,7 @@ dataset_raw:
       #       'Train/test_result', 'Train/train_accuracy',
       #       'Train/train_balanced_accuracy', 'Train/train_cross_entropy',
       #       'Train/val_accuracy', 'Train/val_balanced_accuracy',
-      #       'Train/val_cross_entropy', 'epoch', 'time'
+    #       'Train/val_cross_entropy', 'epoch', 'time'
     #       'Train/gradient_max', 'Train/gradient_mean', 'Train/gradient_median',
     #       'Train/gradient_norm', 'Train/gradient_q10', 'Train/gradient_q25',
     #       'Train/gradient_q75', 'Train/gradient_q90', 'Train/gradient_std',

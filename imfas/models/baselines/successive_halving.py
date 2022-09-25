@@ -39,9 +39,18 @@ class SuccessiveHalving(nn.Module):
         """
 
         assert len(budgets) == mask.shape[-1], "Budgets and mask do not match!"
+
+        # determine min & max budget
         max_fidelity_idx = mask.sum(dim=-1).max().long() - 1
-        min_budget = budgets[0]
+        if isinstance(max_fidelity_idx, torch.Tensor):  # depending on the mask dtype!
+            max_fidelity_idx = max_fidelity_idx.item()  # convert to int
+
+        if max_fidelity_idx == -1:
+            logger.debug("No budget available, returning empty schedule!")
+            return torch.tensor([], dtype=torch.long, device=self.device)
+
         max_budget = budgets[max_fidelity_idx]
+        min_budget = budgets[0]
 
         # Actual budget schedule (based on min_budget and eta)
         schedule = torch.tensor(
@@ -112,6 +121,10 @@ class SuccessiveHalving(nn.Module):
         # is attribute for debugging (assertion)
         self.schedule_index = self.plan_budgets(self.budgets, mask)
 
+        if self.schedule_index.shape[0] == 0:
+            # no fidelity information available (safeguard)
+            return torch.tensor([torch.inf for _ in range(n_algos)]).view(1, -1)
+
         for level, budget in enumerate(self.schedule_index.tolist(), start=1):
             # number of survivors in this round
             k = max(1, int(n_algos / self.eta ** level))
@@ -174,7 +187,7 @@ if __name__ == "__main__":
     sh = SuccessiveHalving(budgets, 3)
 
     assert torch.equal(sh.forward(learning_curves=lcs, mask=mask, cost_curves=cost),
-                       torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
+                       torch.tensor([[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]]))
     assert torch.equal(sh.elapsed_time[0].long(),
                        torch.tensor([0, 11, 22, 33, 44, 55, 66, 77, 88, 99]).sum() + \
                        torch.tensor([35, 46, 57, 68, 79, 90, 101]).sum() + \
@@ -185,13 +198,13 @@ if __name__ == "__main__":
                        torch.tensor([5, 15, 35]))  # capped at 35
 
     assert torch.equal(sh.forward(learning_curves=lcs, mask=mask),
-                       torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
+                       torch.tensor([[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]]))
 
     # Same SH, but with eta=2
     sh = SuccessiveHalving(budgets, 2)
 
     assert torch.equal(sh.forward(learning_curves=lcs, mask=mask),
-                       torch.tensor([0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]))
+                       torch.tensor([[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]]))
     assert torch.equal(sh.schedule_index, torch.tensor([0, 1, 3, 6]))  # due to mask: capping at 6
 
     # Check the foward call for different budgets
@@ -206,10 +219,12 @@ if __name__ == "__main__":
         [torch.ones((batch, n_algos, fidelities - 4), dtype=torch.bool),
          torch.zeros((batch, n_algos, 4), dtype=torch.bool)], axis=2)
 
-    rankings = sh(lcs, mask)
+    rankings = sh.forward(lcs, mask)
     assert torch.equal(sh.schedule_index, torch.tensor([0, 2, 5]))
     sh.elapsed_time
-    assert torch.equal(
-        rankings, torch.tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
-                               dtype=torch.float)
-    )
+
+    # No longer supports batch capabilities
+    # assert torch.equal(
+    #     rankings, torch.tensor([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
+    #                            dtype=torch.float)
+    # )
