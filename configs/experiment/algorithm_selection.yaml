@@ -21,7 +21,7 @@ defaults:
 
 
 dataset:
-  slices: [10] # FIXME: fidelity slice to evaluate on!
+  slices: [ 10 ] # FIXME: fidelity slice to evaluate on!
   train_dataset_class:
     _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
 
@@ -46,18 +46,18 @@ model:
 
 trainer:
   trainerobj:
-    _target_: imfas.trainer.no_opt.NoOptTrainer
+    _target_: imfas.trainer.as_trainer.ASTrainer
 
   run_call:
-    epochs: 1 # This must be 1, because the model can only be evaluated on a single fidelity and only once
-    log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
-    
     valid_loss_fns:
       top1_regret:
         _target_: imfas.evaluation.topk_regret.TopkMaxRegret
         k: 1
+      top3_regret:
+        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
+        k: 3
 
-      
+
 
 
 
