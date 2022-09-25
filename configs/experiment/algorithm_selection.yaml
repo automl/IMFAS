@@ -20,6 +20,14 @@ defaults:
   - override /trainer: no_opt
 
 
+
+wandb:
+  notes: 'satzilla_11'
+  mode: 'offline'
+
+
+
+
 dataset:
   slices: [ 10 ] # FIXME: fidelity slice to evaluate on!
   train_dataset_class:
@@ -58,10 +66,4 @@ trainer:
         k: 3
 
 
-
-
-
-wandb:
-  notes: 'satzilla_11'
-  mode: 'offline'
 

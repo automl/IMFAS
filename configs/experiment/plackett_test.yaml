@@ -7,6 +7,14 @@ defaults:
   - override /dataset/algo_meta: lcbench_minimal
   - override /trainer: basetrainer
 
+
+
+
+
+wandb:
+  notes: 'plackett test'
+
+
 dataset:
   train_dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
@@ -78,8 +86,3 @@ trainer:
         k: 1
 
 
-
-
-
-wandb:
-  notes: 'plackett test'

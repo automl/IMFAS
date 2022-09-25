@@ -11,6 +11,11 @@ defaults:
   - override /model: successive_halving
   - override /trainer: sliceevaluator
 
+
+wandb:
+  notes: 'Successive Halving'
+
+
 model:
   _target_: imfas.models.baselines.successive_halving.SuccessiveHalving
   eta: 2
@@ -43,7 +48,4 @@ trainer:
         _target_: imfas.losses.plackett_luce.PlackettLuceLoss
 
 device: 'cpu'
-
-wandb:
-  notes: 'Successive Halving'
 

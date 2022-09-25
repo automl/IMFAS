@@ -8,7 +8,12 @@ defaults:
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
   - override /trainer: basetrainer
-  - override /model:
+  - override /model: imfas_wp
+
+
+wandb:
+  notes: 'neuralNDCG test'
+
 
 dataset:
   train_dataset_class:
@@ -55,7 +60,7 @@ trainer:
       _partial_: True
 
   run_call:
-    epochs: 1000
+    epochs: 10
     train_loss_fn:
       #      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
       #      k: 10
@@ -115,6 +120,3 @@ trainer:
 
 
 
-
-wandb:
-  notes: 'neuralNDCG test'

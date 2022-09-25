@@ -19,6 +19,11 @@ defaults:
   - override /dataset/algo_meta: lcbench_minimal
   - override /trainer: basetrainer
 
+
+wandb:
+  notes: 'imfas wp'
+
+
 seed: 1
 
 dataset: # TODO : make this the standard protocol !
@@ -114,8 +119,4 @@ trainer:
         _partial_: True
         k: 1
 
-
-
-wandb:
-  notes: 'imfas wp'
 
