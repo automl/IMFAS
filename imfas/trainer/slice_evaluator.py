@@ -6,6 +6,8 @@ import torch
 
 from imfas.trainer.base_trainer import BaseTrainer
 
+warnings.warn("Slice_evaluator module is deprecated. ", DeprecationWarning)
+
 
 class SliceEvaluator(BaseTrainer):
     def __init__(self, model, max_fidelities: List, masking_fn: Callable, *args, **kwargs):
@@ -26,6 +28,8 @@ class SliceEvaluator(BaseTrainer):
         for fidelity in self.max_fidelities:
             test_loader.dataset.masking_fn = partial(self.masking_fn, max_fidelity=fidelity)
 
+            # TODO: make one fwd pass and compute all validation losses on the fwd pass
+            #  to drastically reduce the number of fwd passes!
             losses = torch.zeros(len(test_loader))
             for i, (X, y) in enumerate(test_loader):
                 self.to_device(X)
@@ -53,58 +57,120 @@ if __name__ == '__main__':
 
     from imfas.models.baselines.successive_halving import SuccessiveHalving
     from imfas.losses.spearman import SpearmanLoss
-    from imfas.utils.masking import mask_lcs_to_max_fidelity
-    from imfas.data.lcbench.example_data import train_dataset, test_dataset
+    from imfas.utils.masking import mask_lcs_to_max_fidelity, mask_lcs_randomly
+    from imfas.data.lcbench.example_data import data_path, pipe_lc, \
+        pipe_meta
+    from imfas.evaluation.topk_regret import TopkMaxRegret
+
+    from imfas.utils.util import seed_everything
 
     import wandb
 
-    wandb.init(entity="tnt", mode='online', project='imfas-iclr', job_type='train')
+    for seed in range(35):  # to vary across datasets & learning processes.
+        seed_everything(seed)
 
-    # (evaluate SH) ---------------------------------------------
-    model = SuccessiveHalving(budgets=[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51], eta=2)
-    test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)  # batch=1, because of SH
+        from imfas.data import Dataset_Join_Dmajor, Dataset_LC, DatasetMetaFeatures
+        from imfas.utils.traintestsplit import leave_one_out
 
-    sliceevaluator = SliceEvaluator(
-        model,
-        max_fidelities=[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51],
-        # creates a learning curve for these fidelities
-        masking_fn=mask_lcs_to_max_fidelity
-    )
+        # train_split, test_split = train_test_split(n=35, share=0.8)
+        train_split, test_split = leave_one_out(n=35, idx=[seed])
+        test_dataset = Dataset_Join_Dmajor(
+            meta_dataset=DatasetMetaFeatures(
+                path=data_path / 'meta_features.csv',
+                transforms=pipe_meta),
+            lc=Dataset_LC(
+                path=data_path / 'logs_subset.h5',
+                transforms=pipe_lc,
+                metric='Train/train_accuracy'),
+            split=test_split,
+        )
 
-    # sliceevaluator.evaluate(test_loader, valid_loss_fn=SpearmanLoss(), fn_name='spearman')
+        # Show, that we can also input another model and train it beforehand.
+        train_dataset = Dataset_Join_Dmajor(
+            meta_dataset=DatasetMetaFeatures(
+                path=data_path / 'meta_features.csv',
+                transforms=pipe_meta),
+            lc=Dataset_LC(
+                path=data_path / 'logs_subset.h5',
+                transforms=pipe_lc,
+                metric='Train/train_accuracy'),
+            split=train_split,
+            masking_fn=mask_lcs_randomly
+        )
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+        train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
-    # (Train + evaluate another model) ----------------------------
-    from imfas.models.imfas_wp import IMFAS_WP
-    from imfas.utils.mlp import MLP
+        # (evaluate SH) ---------------------------------------------
+        budgets = list(range(1, 52))
+        wandb.init(
+            entity="tnt",
+            mode='online',
+            project='imfas-iclr',
+            job_type='base: sh, leave one out',
+            group='sh'
+        )
+        model = SuccessiveHalving(budgets=budgets, eta=2)
+        test_loader = DataLoader(test_dataset, batch_size=1,
+                                 shuffle=False)  # batch=1, because of SH
 
-    n_algos = 58
-    n_meta_features = 107
-    model = IMFAS_WP(
-        encoder=MLP(hidden_dims=[n_meta_features, 300, 200]),
-        decoder=MLP(hidden_dims=[200, n_algos]),
-        input_dim=n_algos,
-        n_layers=2
-    )
-    # model = PlackettTest(encoder=MLP(hidden_dims=[n_meta_features, 100, n_algos])) # constant in
-    # fidelity
-    sliceevaluator = SliceEvaluator(
-        model,
-        max_fidelities=[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51],
-        masking_fn=mask_lcs_to_max_fidelity,
-        optimizer=partial(torch.optim.Adam, lr=1e-3),
-    )
+        sliceevaluator = SliceEvaluator(
+            model,
+            max_fidelities=budgets,
+            # creates a learning curve for these fidelities
+            masking_fn=mask_lcs_to_max_fidelity
+        )
 
-    # NOTICE: for wandb tracking to be sensible, we need to train the model fully first.
-    epochs = 1000
-    sliceevaluator.run(
-        train_loader,
-        test_loader,
-        train_loss_fn=SpearmanLoss(),
-        valid_loss_fns={"spearman": SpearmanLoss()},
-        epochs=epochs,  # <----
-        log_freq=epochs  # <----
-    )
+        # sliceevaluator.evaluate(test_loader, valid_loss_fn=SpearmanLoss(), fn_name='spearman')
+        epochs = 1
+        sliceevaluator.run(
+            train_loader,  # FIXME: make this optional! (since sh won't need it)
+            test_loader,
+            train_loss_fn=SpearmanLoss(),
+            valid_loss_fns={
+                "spearman": SpearmanLoss(),
+                "top1_regret": TopkMaxRegret(1),
+                "top3_regret": TopkMaxRegret(3)},
+            epochs=epochs,  # <----
+            log_freq=epochs  # <----
+        )
+        wandb.finish()
 
+        # (Train + evaluate another model) ----------------------------
+        from imfas.models.imfas_wp import IMFAS_WP
+        from imfas.utils.mlp import MLP
+
+        wandb.init(entity="tnt", mode='online', project='imfas-iclr',
+                   job_type='base: imfas_wp rnd. masking, leave one out',
+                   group='imfas_wp')
+
+        n_algos = 58
+        n_meta_features = 107
+        model = IMFAS_WP(
+            encoder=MLP(hidden_dims=[n_meta_features, 300, 200]),
+            decoder=MLP(hidden_dims=[200, n_algos]),
+            input_dim=n_algos,
+            n_layers=2
+        )
+        # model = PlackettTest(encoder=MLP(hidden_dims=[n_meta_features, 100, n_algos])) # constant in
+        # fidelity
+        sliceevaluator = SliceEvaluator(
+            model,
+            max_fidelities=budgets,
+            masking_fn=mask_lcs_to_max_fidelity,
+            optimizer=partial(torch.optim.Adam, lr=1e-3),
+        )
+
+        # NOTICE: for wandb tracking to be sensible, we need to train the model fully first.
+        epochs = 1000
+        sliceevaluator.run(
+            train_loader,
+            test_loader,
+            train_loss_fn=SpearmanLoss(),
+            valid_loss_fns={"spearman": SpearmanLoss(), "top1_regret": TopkMaxRegret(1),
+                            "top3_regret":
+                                TopkMaxRegret(3)},
+            epochs=epochs,  # <----
+            log_freq=epochs  # <----
+        )
+        wandb.finish()
     print('done')

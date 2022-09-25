@@ -1,0 +1,34 @@
+# @package _global_
+
+
+defaults:
+  - /model: successive_halving
+  - override /dataset: lcbench
+  - override /dataset/dataset_meta: lcbench_minimal
+  - override /dataset/algo_meta: lcbench_minimal
+  - override /trainer: sliceevaluator
+
+wandb:
+  group: 'Baseline: SH'
+  job_type: 'sh_eta2'
+  notes: 'Successive Halving'
+
+
+device: 'cpu'
+
+
+model:
+  eta: 2
+  budgets: ${dataset.slices} # FIXME: adjust to the values of dataset.slices up until the
+
+dataset:
+  test_dataloader_class:
+    batch_size: 1 # has to be one for successive halving. aggregate over test set in trainer.evaluate
+    shuffle: False # to k
+
+trainer:
+  run_call:
+    epochs: 0 # since we only need a single test execution anyway (HACK)
+
+
+
