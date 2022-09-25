@@ -56,6 +56,7 @@ def pipe_train(cfg: DictConfig) -> None:
         n=len(dataset_meta_features)
     )
 
+    cfg.dynamically_computed.n_datasets = dataset_meta_features.shape[0]
     del dataset_meta_features
 
     loaders = {}

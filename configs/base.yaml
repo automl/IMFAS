@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - train_test_split: trainvalidtest
+  - train_test_split: leave_one_out
   - dataset: lcbench
   - trainer: basetrainer
   - _self_
@@ -9,9 +9,11 @@ defaults:
 # placeholder for attributes to be computed
 dynamically_computed:
   n_algos: None
+  n_datasets: None
   n_data_meta_features: None
   n_algo_meta_features: None
   len_lc: None
+
 
 seed: 0
 output_dir: ./tmp

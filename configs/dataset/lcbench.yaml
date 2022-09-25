@@ -99,19 +99,19 @@ test_dataset_class: # ----------------------------------------------------------
 # Dataloaders ------------------------------------------------------------------------------------
 train_dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: 5
+  batch_size: 5  # introduce randomness for iterative algos
   shuffle: True
   num_workers: ${num_workers}
 
 valid_dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: 10
+  batch_size: ${dynamically_computed.n_datasets} # average over validation datasets in one go
   shuffle: True
   num_workers: ${num_workers}
 
 test_dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: 1
+  batch_size: ${dynamically_computed.n_datasets} # average over test datasets in one go
   shuffle: False
   num_workers: ${num_workers}
 
@@ -172,9 +172,9 @@ dataset_raw:
       #       'Train/loss',
       #       'Train/lr',
       #       'Train/test_balanced_accuracy', 'Train/test_cross_entropy',
-      #       'Train/test_result', 'Train/train_accuracy',
-      #       'Train/train_balanced_accuracy', 'Train/train_cross_entropy',
-      #       'Train/val_accuracy', 'Train/val_balanced_accuracy',
+    #       'Train/test_result', 'Train/train_accuracy',
+    #       'Train/train_balanced_accuracy', 'Train/train_cross_entropy',
+    #       'Train/val_accuracy', 'Train/val_balanced_accuracy',
     #       'Train/val_cross_entropy', 'epoch', 'time'
     #       'Train/gradient_max', 'Train/gradient_mean', 'Train/gradient_median',
     #       'Train/gradient_norm', 'Train/gradient_q10', 'Train/gradient_q25',

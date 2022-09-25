@@ -7,4 +7,4 @@
 #   +experiment=imfas_wp seed=2 train_test_split=leave_one_out train_test_split.idx=[2] ...
 
 _target_: imfas.utils.traintestsplit.leave_one_out
-idx: [ 0 ] # TODO, when running the experiment run this for the length of datasets, each with a new (seed, idx) pair!
+idx: [ 0 ] # ${remainder:${seed},${dynamically_computed.n_datasets}} # TODO, when running the experiment run this for the length of datasets, each with a new (seed, idx) pair!

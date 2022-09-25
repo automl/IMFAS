@@ -34,7 +34,7 @@ train_dataloader_class:
 
 valid_dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: 1
+  batch_size: ${dynamically_computed.n_datasets}
   shuffle: False
   num_workers: ${num_workers}
 
