@@ -15,7 +15,7 @@ dataset_name = "LCBench"
 data_path = root / 'data' / 'raw' / dataset_name
 pipe_lc = prep.TransformPipeline(
     [prep.Column_Mean(), prep.Convert(),
-     prep.LC_TimeSlices(slices=[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51])]
+     prep.LC_TimeSlices(slices=list(range(51)))]
 )
 
 pipe_meta = prep.TransformPipeline(

@@ -3,12 +3,11 @@ from typing import List, Optional
 
 import math
 import torch
-import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
 
-class SuccessiveHalving(nn.Module):
+class SuccessiveHalving:
     def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", budget_type='additive'):
         """
         This class assumes a single batch (i.e. a single dataset!)
@@ -21,6 +20,7 @@ class SuccessiveHalving(nn.Module):
         self.eta = eta
         self.budgets = budgets
         self.device = device
+        self.budget_type = budget_type
 
         self.update_costs = self.update_costs_additive if budget_type == 'additive' \
             else self.update_costs_cumulative
@@ -100,6 +100,7 @@ class SuccessiveHalving(nn.Module):
             learning_curves: torch.Tensor,
             mask: torch.Tensor,
             cost_curves: Optional[torch.Tensor] = None,
+            **kwargs  # to capture all the other data, competitors might have available
     ):
         """
         SH execution.
@@ -159,9 +160,22 @@ class SuccessiveHalving(nn.Module):
 
             logger.debug(f"rankings: {rankings_idx}")
 
-        return rankings_idx
+        ranking = torch.tensor([rankings_idx.long().tolist().index(i) for i in range(n_algos)])
+        return ranking.float().view(1, -1)
         # fixme: do we need to sort this ranking? based on the algorithms
         #  original positions.
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
+
+    def eval(self):
+        pass
+
+    def train(self):
+        pass
+
+    def to(self, device):
+        pass
 
 
 if __name__ == "__main__":
