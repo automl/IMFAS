@@ -1,14 +1,12 @@
-from typing import List
-
 import os
 import random
 import warnings
+from typing import List
 
 import numpy as np
 import pandas as pd
 import torch
 import wandb
-
 # from networkx import Graph, minimum_spanning_edges
 from omegaconf import DictConfig, OmegaConf
 
@@ -37,14 +35,6 @@ def freeze(listoflayers, frosty=True):
 def freeze_tensors(listoftensors, frosty=True):
     for t in listoftensors:
         t.requires_grad = not frosty
-
-
-def train_test_split(n, share):
-    train_split = random.sample(list(range(n)), k=int(n * share))
-
-    test_split = list(set(range(n)) - set(train_split))
-
-    return train_split, test_split
 
 
 def calc_min_eucl_spanning_tree(d_test: torch.tensor):

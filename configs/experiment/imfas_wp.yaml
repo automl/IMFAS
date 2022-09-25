@@ -13,57 +13,48 @@
 #MLP2: h_dim -> mlp2_hidden_dims -> algo_dim
 
 defaults:
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
-  - override /model: imfas_wp
-  - override /trainer: basetrainer
+  - /model: imfas_wp
 
 
-dataset:
+wandb:
+  notes: 'imfas wp'
+
+
+seed: 1
+
+dataset: # TODO : make this the standard protocol !
   train_dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
     masking_fn:
-      _target_: imfas.utils.masking.mask_lcs_randomly
+      _target_: imfas.utils.masking.mask_lcs_randomly  # To activate masking protocol
       _partial_: True
 
-  test_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
+  #  valid_dataset_class:
+  #    _target_: imfas.data.Dataset_Join_Test
+  #    masking_fn:
+  #      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity  # To activate masking protocol
+  #      max_fidelity: 5  # How many indicies in the learning curve are available!
+  #      _partial_: True
+
+
 
   train_dataloader_class:
     shuffle: True
-    batch_size: 5 # must be greater than 1 due to mlp batchnorm
+    batch_size: 5
+
+  valid_dataloader_class:
+    shuffle: False
+    batch_size: 1 # since there is only one validation curve
 
   test_dataloader_class:
     shuffle: False
-    batch_size: 5
-
-
-model:
-  encoder:
-    hidden_dims:
-    - ${ dynamically_computed.n_data_meta_features }
-    - 300
-    - 200
-
-  input_dim: ${dynamically_computed.n_algos}
-  n_layers: 2
-
-  decoder:
-    hidden_dims:
-    - 200
-    - ${dynamically_computed.n_algos}
+    batch_size: 1 # since there is only one test curve
 
 
 
 trainer:
   trainerobj:
     _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
-    #    masking_fn:
-    #      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
-    #
-    #      _partial_: True
-    #      max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
 
     optimizer:
       _target_: torch.optim.Adam
@@ -71,36 +62,8 @@ trainer:
       _partial_: True
 
   run_call:
-    epochs: 1000
+    epochs: 5
+    log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
-      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-    valid_loss_fns:
-      spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss
-
-      ndcg10:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 10
-
-      ndcg5:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 5
-
-      ndcg3:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 3
-
-      ndcg1:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 1
-
-
-
-wandb:
-  group: imfas_wp
-  notes: 'imfas wp'
-  mode: 'offline'
+      _target_: imfas.losses.spearman.SpearmanLoss
+    #      _target_: imfas.losses.plackett_luce.PlackettLuceLoss

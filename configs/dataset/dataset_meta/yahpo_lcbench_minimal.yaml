@@ -1,4 +1,4 @@
-_target_: imfas.data.DatasetMetaFeatures
+_target_: imfas.data.dataset_meta_features.DatasetMetaFeatures
 path: ${dataset.path.data_meta}
 index_col: 0
 

@@ -3,7 +3,6 @@ import torch.nn as nn
 
 from imfas.utils.mlp import MLP
 
-import pdb
 
 class IMFAS_WP(nn.Module):
     def __init__(
@@ -29,7 +28,7 @@ class IMFAS_WP(nn.Module):
         Args:
             encoder: MLP to encode the datasets meta-features
             deocder: MLP to decode the hidden state of the LSTM to values that can be ranked
-            input_dim: dimension of the learning curve that is fed as input to the LSTM
+            input_dim: dimension of the learning curves that is fed as input to the LSTM
             n_layers: number of layers of the LSTM
             device: device to run the model on
 
@@ -43,8 +42,8 @@ class IMFAS_WP(nn.Module):
         self.n_layers = n_layers
 
         # The hidden dims of the LSTM are the output features of the encoder
-        self.hidden_dim = [l for l in self.encoder.layers if isinstance(l, nn.Linear)][
-            -1].out_features
+        self.hidden_dim = [l for l in self.encoder.layers
+                           if isinstance(l, nn.Linear)][-1].out_features
 
         # LSTM layer of the network
         # batch_first=True causes input/output tensors to be of shape
@@ -80,8 +79,8 @@ class IMFAS_WP(nn.Module):
         # (1, 58, 11)
 
         # Initialize the hidden state with the output of the encoder
-        h0 = torch.stack([self.encoder(dataset_meta_features) for _ in
-                          range(self.n_layers)]).requires_grad_().double()
+        h0 = torch.stack([self.encoder(dataset_meta_features)
+                          for _ in range(self.n_layers)]).requires_grad_().double()
 
         # Initialize cell state with 0s
         c0 = (
@@ -97,7 +96,7 @@ class IMFAS_WP(nn.Module):
         # Feed the learning curves as a batched sequence so that at every rollout step, a fidelity
         # is fed as an input to the LSTM
 
-        out, (hn, cn) = self.lstm(learning_curves.permute(0,2,1).double(), (h0, c0))
+        out, (hn, cn) = self.lstm(learning_curves.permute(0, 2, 1).double(), (h0, c0))
 
         out = self.decoder(out[:, -1, :].float())
 

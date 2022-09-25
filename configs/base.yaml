@@ -1,20 +1,19 @@
 # @package _global_
 
 defaults:
+  - train_test_split: leave_one_out
   - dataset: lcbench
-  - dataset/dataset_meta: lcbench_minimal
-  - dataset/lc_meta: multi_slice
-  - dataset/algo_meta: lcbench_minimal
-  - model: imfas_wp
   - trainer: basetrainer
   - _self_
 
 # placeholder for attributes to be computed
 dynamically_computed:
   n_algos: None
+  n_datasets: None
   n_data_meta_features: None
   n_algo_meta_features: None
   len_lc: None
+
 
 seed: 0
 output_dir: ./tmp
@@ -23,20 +22,11 @@ num_workers: 2
 device: 'cpu'
 
 
-dataset:
-  train_dataloader_class:
-    shuffle: True
-    batch_size: 1
-
-  test_dataloader_class:
-    shuffle: False
-    batch_size: 1
-
 wandb:
   id: null
-  # entity: tnt
-  # project: gravitas
-  mode: 'disabled'    # Change to offline or debug mode
+  entity: tnt
+  project: imfas-iclr
+  mode: 'offline'    # Change to offline or debug mode
   job_type: train
   tags: [ ]
   notes: null
@@ -55,8 +45,8 @@ hydra:
 root: ${hydra:runtime.cwd}
 dir_data: ${root}/data
 dir_data_raw: ${dir_data}/raw
-dir_data_processed: ${dir_data}/processed
+dir_data_processed: ${dir_data}/preprocessed
 
 # saving models specification
-save_models: False # Fixme: currently disabled
+#save_models: False # Fixme: currently disabled
 #save_path: ${output_dir}/${now:%Y-%m-%d}/${now:%H-%M-%S}_${dataset.name}_${model.name}_${seed}
