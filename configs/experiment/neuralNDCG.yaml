@@ -4,11 +4,12 @@
 # FIXME: requires a 'python -m pip install git+https://github.com/allegro/allRank' install
 
 defaults:
+  - /model: mlp_D
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
   - override /trainer: basetrainer
-  - override /model: imfas_wp
+
 
 
 wandb:
@@ -16,15 +17,6 @@ wandb:
 
 
 dataset:
-  train_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
-    masking_fn:
-      _target_: imfas.utils.masking.mask_lcs_randomly
-      _partial_: True
-
-  test_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
-    # TODO @TIM alex proposed to hold it fix for test, but do the imfas procedure
 
   train_dataloader_class:
     batch_size: 10
@@ -34,30 +26,13 @@ dataset:
     batch_size: 10
     shuffle: False
 
-model:
-  _target_: imfas.models.plackett_test.PlackettTest
-  encoder:
-    # linear model:
-    _target_: imfas.utils.mlp.MLP
-    hidden_dims:
-      - ${dynamically_computed.n_data_meta_features}
-      - 100
-      - ${dynamically_computed.n_algos}
-    activation: 'relu'
-
 
 hydra:
   job:
     env_set:
       CUDA_VISIBLE_DEVICES: ""
-trainer:
-  trainerobj:
-    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
 
-    optimizer:
-      _target_: torch.optim.Adam
-      lr: 0.001
-      _partial_: True
+trainer:
 
   run_call:
     epochs: 10
@@ -92,31 +67,4 @@ trainer:
       n_samples: 32
       beta: 0.1
       log_scores: True
-
-    valid_loss_fns:
-      top1_regret:
-        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-        k: 1
-      top3_regret:
-        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-        k: 3
-      plackett_luce3:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-        k: 3
-      plackett_luce10:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-        k: 10
-      #      spearman:
-      #        _target_: imfas.losses.spearman.SpearmanLoss  # torchsort does not work with cpu!
-      ndcg3:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 3
-      ndcg1:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 1
-
-
-
 

@@ -1,7 +1,6 @@
 import torch
 from torch.nn.modules.loss import _Loss as Loss
 
-import pdb
 
 class PlackettLuceLoss(Loss):
     def __init__(self, reduction: str = "mean", k=999) -> None:
@@ -30,15 +29,12 @@ class PlackettLuceLoss(Loss):
         y_orders = torch.argsort(y, dim=1)
         yhat_reordered = torch.gather(y_hat, -1, y_orders)
 
-
         # TODO remove this:
         # yhat_reordered = yhat_reordered.log_softmax(1)  # FIXME: this is incorrect: we
         # need the "without replacement" option of this. meaning, when we do the
         # softmax, we will have to do a shifted softmax on the reordered tensor.
 
-        x = self.shifted_softmax(yhat_reordered)
-
-        return -torch.sum(x)
+        return -torch.sum(self.shifted_softmax(yhat_reordered))
 
     def shifted_softmax(self, ordered_ranking: torch.Tensor):
         """Shifted softmax, to account for the "without replacement property" of the Plackett Luce Model
@@ -57,7 +53,8 @@ class PlackettLuceLoss(Loss):
             # TODO analyze impact on optimization procedure
             # Safeguarding NaN and infs with value impuation in torch
 
-            shifted[:, i] = torch.nan_to_num(torch.log(torch.exp(a[:, 0]) / torch.exp(a).sum(axis=1))) 
+            shifted[:, i] = torch.nan_to_num(
+                torch.log(torch.exp(a[:, 0]) / torch.exp(a).sum(axis=1)))
 
         return shifted
 

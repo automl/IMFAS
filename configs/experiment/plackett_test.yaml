@@ -2,6 +2,7 @@
 
 # MLP(D) ---> PlackettLuceLoss
 defaults:
+  - /model: mlp_D
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
@@ -34,25 +35,7 @@ dataset:
     batch_size: 10
     shuffle: False
 
-model:
-  _target_: imfas.models.plackett_test.PlackettTest
-  encoder:
-    # linear model:
-    _target_: imfas.utils.mlp.MLP
-    hidden_dims:
-      - ${dynamically_computed.n_data_meta_features}
-      - 100
-      - ${dynamically_computed.n_algos}
-    activation: 'relu'
-
 trainer:
-  trainerobj:
-    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
-
-    optimizer:
-      _target_: torch.optim.Adam
-      lr: 0.001
-      _partial_: True
 
   run_call:
     epochs: 1000
@@ -60,29 +43,4 @@ trainer:
       _target_: imfas.losses.plackett_luce.PlackettLuceLoss
       k: 10
     #      _target_: imfas.losses.spearman.SpearmanLoss
-
-    valid_loss_fns:
-      top1_regret:
-        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-        k: 1
-      top3_regret:
-        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-        k: 3
-      plackett_luce3:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-        k: 3
-      plackett_luce10:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-        k: 10
-      spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss
-      ndcg3:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 3
-      ndcg1:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 1
-
 

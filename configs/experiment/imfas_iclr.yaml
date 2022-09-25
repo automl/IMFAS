@@ -4,32 +4,35 @@
 # d = MLP_d(D), t = TransformerEncoder(lcs_DA), output = MLP(concat(d,t))
 
 defaults:
+  - /model: imfas_transformer
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
-  - override /model: imfas_transformer
   - override /trainer: basetrainer
-
 
 
 
 wandb:
   notes: 'imfas transformer'
-  mode: 'offline'
 
 
 dataset:
   train_dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
+    # enable masking
     masking_fn:
       _partial_: True
       _target_: imfas.utils.masking.mask_lcs_randomly
 
-  test_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
 
-  dataloader_class:
+  train_dataloader_class:
     batch_size: 10
+
+  valid_dataloader_class:
+    batch_size: 100
+
+  test_dataloader_class:
+    batch_size: 100
 
 model:
   encoder:
@@ -41,13 +44,6 @@ model:
   n_algos: ${dynamically_computed.n_algos}
   n_layers: 2
 
-  decoder:
-    hidden_dims:
-      # - ${add:dynamically_computed.n_algos,dynamically_computed.n_algos} 
-      - 328               # FIXME: dynamically compute based on the 
-                          # concat dim before the tensor comes to the decoder
-      - ${dynamically_computed.n_algos}
-
   transformer_layer:
     _target_: torch.nn.TransformerEncoderLayer
     d_model: 128
@@ -58,38 +54,17 @@ model:
     batch_first: True
     norm_first: True
 
+  decoder:
+    hidden_dims:
+      # - ${add:dynamically_computed.n_algos,dynamically_computed.n_algos}
+      - 328               # FIXME: dynamically compute based on the
+      # concat dim before the tensor comes to the decoder
+      - ${dynamically_computed.n_algos}
+
+
 trainer:
-  trainerobj:
-    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
-    #    masking_fn:
-    #      _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
-    #
-    #      _partial_: True
-    #      max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
-
-    optimizer:
-      _target_: torch.optim.Adam
-      lr: 0.00003
-      _partial_: True
-
   run_call:
     epochs: 5000
     log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
       _target_: imfas.losses.spearman.SpearmanLoss
-  
-    valid_loss_fns:
-      spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss
-
-      topk1_regret:
-        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-        k: 1
-      topk3_regret:
-        _target_: imfas.evaluation.topk_regret.TopkMaxRegret
-        k: 3
-
-      plackett_luce:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-        k: 3
-

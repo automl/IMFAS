@@ -14,9 +14,6 @@
 
 defaults:
   - /model: imfas_wp
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
   - override /trainer: basetrainer
 
 
@@ -33,12 +30,12 @@ dataset: # TODO : make this the standard protocol !
       _target_: imfas.utils.masking.mask_lcs_randomly  # To activate masking protocol
       _partial_: True
 
-  valid_dataset_class:
-    _target_: imfas.data.Dataset_Join_Test
-    masking_fn:
-      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity  # To activate masking protocol
-      max_fidelity: 5  # How many indicies in the learning curve are available!
-      _partial_: True
+  #  valid_dataset_class:
+  #    _target_: imfas.data.Dataset_Join_Test
+  #    masking_fn:
+  #      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity  # To activate masking protocol
+  #      max_fidelity: 5  # How many indicies in the learning curve are available!
+  #      _partial_: True
 
 
 
@@ -71,52 +68,3 @@ trainer:
     train_loss_fn:
       _target_: imfas.losses.spearman.SpearmanLoss
     #      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-    valid_loss_fns:
-      spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss
-
-      ndcg10:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 10
-
-      ndcg5:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 5
-
-      ndcg3:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 3
-
-      ndcg1:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 1
-
-    test_loss_fns:
-      spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss
-
-      ndcg10:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 10
-
-      ndcg5:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 5
-
-      ndcg3:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 3
-
-      ndcg1:
-        _target_: sklearn.metrics.ndcg_score
-        _partial_: True
-        k: 1
-
-

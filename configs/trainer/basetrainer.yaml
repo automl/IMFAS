@@ -6,17 +6,60 @@ trainerobj:
     lr: 0.001
 
 run_call:
-  epochs: 1000
+  epochs: 2
+  log_freq: 2
 
   train_loss_fn:
     _target_: imfas.losses.spearman.SpearmanLoss
-#    reduction: 'mean'
-#    ranking_fn: torchsort.soft_rank
-#    ts_kwargs: { }
+
+  valid_loss_fns:
+    spearman:
+      _target_: imfas.losses.spearman.SpearmanLoss
+
+  # TODO enable for experimentation
+  #    ndcg10:
+  #      _target_: sklearn.metrics.ndcg_score
+  #      _partial_: True
+  #      k: 10
+  #
+  #    ndcg5:
+  #      _target_: sklearn.metrics.ndcg_score
+  #      _partial_: True
+  #      k: 5
+  #
+  #    ndcg3:
+  #      _target_: sklearn.metrics.ndcg_score
+  #      _partial_: True
+  #      k: 3
+  #
+  #    ndcg1:
+  #      _target_: sklearn.metrics.ndcg_score
+  #      _partial_: True
+  #      k: 1
+
+  test_loss_fns:
+    spearman:
+      _target_: imfas.losses.spearman.SpearmanLoss
+
+# TODO enable for experimentation
+#    ndcg10:
+#      _target_: sklearn.metrics.ndcg_score
+#      _partial_: True
+#      k: 10
 #
-#  valid_loss_fns:
-#    Spearman: # Name for wandb, can specify other losses in dict format!
-#      _target_: imfas.losses.ranking_loss.SpearmanLoss
-#      reduction: 'mean'
-#      ranking_fn: torchsort.soft_rank
-#      ts_kwargs: { }
+#    ndcg5:
+#      _target_: sklearn.metrics.ndcg_score
+#      _partial_: True
+#      k: 5
+#
+#    ndcg3:
+#      _target_: sklearn.metrics.ndcg_score
+#      _partial_: True
+#      k: 3
+#
+#    ndcg1:
+#      _target_: sklearn.metrics.ndcg_score
+#      _partial_: True
+#      k: 1
+
+

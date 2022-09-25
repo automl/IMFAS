@@ -5,16 +5,17 @@
 # Since we only ever care for its baseline (test) performance, this pipe is a bit hacky.
 
 defaults:
+  - /model: successive_halving
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   - override /dataset/algo_meta: lcbench_minimal
-  - override /model: successive_halving
   - override /trainer: sliceevaluator
 
 
 wandb:
   notes: 'Successive Halving'
 
+device: 'cpu'
 
 model:
   _target_: imfas.models.baselines.successive_halving.SuccessiveHalving
@@ -22,30 +23,17 @@ model:
   budgets: ${dataset.slices} # ${range:1,51,1} # FIXME: adjust to the values of dataset.slices up until the
 
 dataset:
-  test_dataset_class:
-    masking_fn:
-      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity
-      _partial_: True
-      max_fidelities: [ 1, 10 ]
-
-  train_dataloader_class:
+  test_dataloader_class:
     batch_size: 1 # has to be one for successive halving. aggregate over test set in trainer.evaluate
     shuffle: False # to know on which dataset in test we perform badly
 
 trainer:
-  trainerobj:
-    masking_fn:
-      _target_: imfas.utils.masking.mask_lcs_to_max_fidelity
-      _partial_: True
-    max_fidelities: [ 2, 10 ] # TODO indices on refer to base.slice fidelities (in lcbench case)
-
   run_call:
-    epochs: 1 # since we only need a single test execution anyways (HACK)
-    train_loss_fn:
-      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
-    valid_loss_fns:
-      spearman:
-        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+    epochs: 0 # since we only need a single test execution anyways (HACK)
 
-device: 'cpu'
+    test_loss_fns:
+      spearman:
+        #        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+        _target_: imfas.losses.spearman.SpearmanLoss
+
 

@@ -105,7 +105,7 @@ train_dataloader_class:
 
 valid_dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: 1
+  batch_size: 10
   shuffle: True
   num_workers: ${num_workers}
 
@@ -136,7 +136,7 @@ dataset_raw:
 
 
   selection:
-    metric: final_test_cross_entropy
+    lc_metric: final_test_accuracy #final_test_cross_entropy
     # options :
     #       'model_parameters', 'final_train_cross_entropy', 'final_train_accuracy',
     #       'final_train_balanced_accuracy', 'final_val_cross_entropy',
@@ -147,7 +147,7 @@ dataset_raw:
 
     algo: # fixme: move this to separate yaml
       _target_: imfas.data.ensemble.topk.ensemble
-      k: 3
+      k: 10
 
     bench: lcbench
 
@@ -176,10 +176,10 @@ dataset_raw:
       #       'Train/train_balanced_accuracy', 'Train/train_cross_entropy',
       #       'Train/val_accuracy', 'Train/val_balanced_accuracy',
       #       'Train/val_cross_entropy', 'epoch', 'time'
-      #       'Train/gradient_max', 'Train/gradient_mean', 'Train/gradient_median',
-      #       'Train/gradient_norm', 'Train/gradient_q10', 'Train/gradient_q25',
-      #       'Train/gradient_q75', 'Train/gradient_q90', 'Train/gradient_std',
-      #       'Train/layer_wise_gradient_max_layer_0',
+    #       'Train/gradient_max', 'Train/gradient_mean', 'Train/gradient_median',
+    #       'Train/gradient_norm', 'Train/gradient_q10', 'Train/gradient_q25',
+    #       'Train/gradient_q75', 'Train/gradient_q90', 'Train/gradient_std',
+    #       'Train/layer_wise_gradient_max_layer_0',
     #       'Train/layer_wise_gradient_max_layer_1',
     #       'Train/layer_wise_gradient_max_layer_2',
     #       'Train/layer_wise_gradient_max_layer_3',
