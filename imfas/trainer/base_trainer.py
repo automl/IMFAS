@@ -132,7 +132,10 @@ class BaseTrainer:
                     # Some test loss functions may take an issue with that.
                     # This is a save-guard to prevent this (intended) behaviour.
                     try:
-                        losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+                        if hasattr(self.model, 'no_opt'):
+                            losses[i] = test_loss_fn(y_hat, y["final_fidelity"][0])
+                        else:    
+                            losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
                     except Exception as e:
                         log.error(f"Error in test loss fn {fn_name}:\n{e}")
 

@@ -131,7 +131,7 @@ class SATzilla11(nn.Module):
             
             selections.append(ranking)
 
-        return torch.unsqueeze(torch.Tensor(selections), 0)
+        return torch.Tensor(selections)
 
     def _get_pairwise_target(self, pair, performances):
         i, j = pair
