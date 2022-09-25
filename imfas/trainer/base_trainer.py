@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from imfas.utils.masking import mask_lcs_to_max_fidelity
 
+import pdb
 
 class BaseTrainer:
     def __init__(
@@ -27,7 +28,9 @@ class BaseTrainer:
         self.model = model
         self.device = self.model.device
 
-        if isinstance(self.model, nn.Module):
+        self.optimizer = None
+        
+        if isinstance(self.model, nn.Module) and not hasattr(self.model, 'no_opt'):
             # partial instantiation from hydra!
             self.optimizer = optimizer(self.model.parameters())
 
@@ -48,15 +51,21 @@ class BaseTrainer:
             self.to_device(X)
             self.to_device(y)
 
-            self.optimizer.zero_grad()
+            if self.optimizer:
+                self.optimizer.zero_grad()
 
             y_hat = self.model.forward(**X)
-            loss = loss_fn(y_hat, y["final_fidelity"])
-            # print(y, y_hat, loss)
-            loss.backward()
+            
+            if not hasattr(self.model, 'no_opt'):
+                loss = loss_fn(y_hat, y["final_fidelity"])
+                # print(y, y_hat, loss)
+                loss.backward()
 
-            # FIXME: y needs to be explicit or have a strong conventioN
-            self.optimizer.step()
+                # FIXME: y needs to be explicit or have a strong conventioN
+                if self.optimizer:
+                    self.optimizer.step()
+            else:
+                loss = 0
 
         # Log the training loss at the end of the epoch
         if self.step % log_freq == 0:
@@ -74,6 +83,11 @@ class BaseTrainer:
                 X, y = data
                 self.to_device(X)
                 self.to_device(y)
+
+
+                # print(X.keys())
+                # print(y.keys())
+                # pdb.set_trace()
 
                 y_hat = self.model.forward(**X)
                 losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
@@ -106,8 +120,15 @@ class BaseTrainer:
                     self.to_device(X)
                     self.to_device(y)
 
+                    if hasattr(self.model, 'no_opt'):
+                        self.model.training = False
+
                     y_hat = self.model.forward(**X)
-                    losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+
+                    print(y_hat.shape)
+                    print(y['final_fidelity'].shape)
+
+                    losses[i] = test_loss_fn(y_hat[0], y["final_fidelity"])
 
                 wandb.log(
                     {f"Test, Slice Evaluation: {fn_name}": losses.mean(),
@@ -150,7 +171,9 @@ class BaseTrainer:
                     if isinstance(fn, DictConfig):  # fixme: can we remove this?
                         fn = instantiate(fn)
 
-                    self.model.eval()
+                    if hasattr(self.model, 'no_opt'):
+                        self.model.training = False 
+                    
                     self.validate(valid_loader, fn, fn_name)
                     self.model.train()
 

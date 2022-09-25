@@ -31,27 +31,28 @@ class SATzilla11(nn.Module):
         self._models = {}
         self.max_fidelity = max_fidelity
         self.device = device
-        
+        self.no_opt = True
+
+        self.training = True
+
         # used to break ties during the predictions phase
         self._rand = random.Random(0)
         
         # TODO Initiate the classifier using hydra
         self.rfc_kwargs = {
-            'n_estimators': 100,
+            'n_estimators': 2,
             'max_features': 'log2', 
             'n_jobs': 5, 
             'random_state': 0
 
         }
 
-    def forward(self, dataset_meta_features, fidelity):
+    def forward(self, dataset_meta_features, fidelity, *args, **kwargs):
 
-        
-
-        
-        self.fit(dataset_meta_features.numpy()[0], fidelity.numpy()[0])
-        
-        self.predict(dataset_meta_features.numpy()[0])
+        if self.training:
+            return self.fit(dataset_meta_features[0], fidelity[0])
+        else:
+            return self.predict(dataset_meta_features[0])
 
 
     def fit(self, dataset_meta_features, fidelity):
@@ -59,8 +60,8 @@ class SATzilla11(nn.Module):
         self._num_algorithms = np.shape(fidelity)[-1]
         self._algo_ids = np.arange(0,self._num_algorithms,1)
 
-        features = dataset_meta_features.numpy()[0]
-        performances = fidelity.numpy()[0]
+        features = dataset_meta_features.numpy()
+        performances = fidelity.numpy()
 
         # create and fit rfcs' for all pairwise comparisons between two algorithms
         self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
@@ -80,9 +81,9 @@ class SATzilla11(nn.Module):
             self._models[(i, j)].fit(features, pair_target, sample_weight=sample_weights)
 
 
-    def predict(self, dataset_meta_features, fidelity):
+    def predict(self, dataset_meta_features):
         
-        batch_features = dataset_meta_features.numpy()[0]
+        batch_features = dataset_meta_features
         
         selections = []
         # Selection an algorithm per task in the test-set
@@ -130,7 +131,7 @@ class SATzilla11(nn.Module):
             
             selections.append(ranking)
 
-        return torch.Tensor(selections)
+        return torch.unsqueeze(torch.Tensor(selections), 0)
 
     def _get_pairwise_target(self, pair, performances):
         i, j = pair
@@ -168,6 +169,11 @@ class SATzilla11(nn.Module):
         
         return counter.most_common()
 
+    def train(self):
+        self.training = True
+    
+    def eval(self):
+        self.training = False
 
 if __name__ == "__main__":
 

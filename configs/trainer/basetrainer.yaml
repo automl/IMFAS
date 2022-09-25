@@ -9,12 +9,9 @@ run_call:
   epochs: 2
   log_freq: 2
 
-  train_loss_fn:
-    _target_: imfas.losses.spearman.SpearmanLoss
+  train_loss_fn: Null
 
-  valid_loss_fns:
-    spearman:
-      _target_: imfas.losses.spearman.SpearmanLoss
+  valid_loss_fns: Null
 
   # TODO enable for experimentation
   #    ndcg10:
@@ -37,9 +34,7 @@ run_call:
   #      _partial_: True
   #      k: 1
 
-  test_loss_fns:
-    spearman:
-      _target_: imfas.losses.spearman.SpearmanLoss
+  test_loss_fns: Null
 
 # TODO enable for experimentation
 #    ndcg10:

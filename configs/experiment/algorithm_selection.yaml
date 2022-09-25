@@ -16,7 +16,7 @@ defaults:
   - /model: satzilla11
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
+  # - override /dataset/algo_meta: lcbench_minimal
 
 
 wandb:
@@ -28,6 +28,7 @@ dataset:
   train_dataset_class:
     _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
 
+  valid_dataset_class: Null
 
   test_dataset_class:
     _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
@@ -37,6 +38,8 @@ dataset:
     # batch will be smaller (since len(dataset) < batch_size)
     # and getitem will be called at most len(dataset)
     batch_size: ${dynamically_computed.n_datasets}
+  
+  valid_dataloader_class: Null 
 
   test_dataloader_class:
     shuffle: False
@@ -53,17 +56,18 @@ model:
 
 trainer:
   trainerobj:
-    _target_: imfas.trainer.as_trainer.ASTrainer
+    _target_: imfas.trainer.base_trainer.BaseTrainer
 
   run_call:
-    # FIXME: is a train_loss needed?
-    valid_loss_fns:
+    epochs: 1
+    log_freq: 1
+
+    test_loss_fns:
       top1_regret:
         _target_: imfas.evaluation.topk_regret.TopkMaxRegret
         k: 1
       top3_regret:
         _target_: imfas.evaluation.topk_regret.TopkMaxRegret
         k: 3
-
 
 
