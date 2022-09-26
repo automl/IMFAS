@@ -27,7 +27,7 @@ train_dataset_class: # ---------------------------------------------------------
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
-    metric: Train/val_cross_entropy
+    metric: final_train_accuracy
 
 
 
@@ -46,7 +46,7 @@ valid_dataset_class: # ---------------------------------------------------------
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
-    metric: Train/val_cross_entropy
+    metric: final_val_accuracy
 
   test_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
@@ -60,7 +60,7 @@ valid_dataset_class: # ---------------------------------------------------------
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
 
-    metric: Train/test_cross_entropy
+    metric: final_test_accuracy
 
 
 
@@ -130,8 +130,8 @@ dataset_raw:
   #TODO Change to relative
   dir_data: data
   extract: data_2k_lw  # json file
-  enable: False # whether to override the preprocessing
-  re_download: False
+  enable: True # whether to override the preprocessing
+  re_download: True
   reload_from_downloads: False # will override the '*subset' files
 
 
