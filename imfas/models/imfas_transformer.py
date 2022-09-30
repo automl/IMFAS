@@ -104,17 +104,17 @@ class AbstractIMFASTransformer(nn.Module):
         learning_curves_embedding = self.positional_encoder(self.lc_proj_layer(learning_curves))
         return learning_curves_embedding, lc_values_observed
 
-    def forward(self, dataset_meta_features, learning_curves, lc_values_observed):
+    def forward(self, dataset_meta_features, learning_curves, mask):
         # FIXME: Consider How to encode Missing values here
         encoded_D = self.encoder(dataset_meta_features)
 
-        learning_curves, lc_values_observed, lc_shape_info = self.preprocessing_lcs(learning_curves, lc_values_observed)
+        learning_curves, lc_values_observed, lc_shape_info = self.preprocessing_lcs(learning_curves, mask)
 
         learning_curves_embedding, lc_values_observed = self.embeds_lcs(learning_curves, lc_values_observed)
 
         encoded_lcs = self.encode_lc_embeddings(learning_curves_embedding, lc_values_observed, lc_shape_info)
 
-        return self.decoder(torch.cat(((encoded_lcs, encoded_D), 1)))
+        return self.decoder(torch.cat((encoded_lcs, encoded_D), 1))
 
     def encode_lc_embeddings(
         self,
@@ -150,8 +150,8 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
     def build_lc_embedding_layer(self, n_algos: int, d_model_transformer: int):
         return nn.Linear(n_algos, d_model_transformer)
 
-    def encode_lc_embeddings(self, learning_curves_embedding, lc_values_observed):
-        lc_length_embedding = self.lc_length_embedding(lc_values_observed.sum(1)).unsqueeze(1)
+    def encode_lc_embeddings(self, learning_curves_embedding, mask, lc_shape_info):
+        lc_length_embedding = self.lc_length_embedding(mask.sum(1)).unsqueeze(1)
 
         # lc_values_observed = lc_values_observed.transpose(1, 2)
         encoded_lcs = self.transformer_encoder(

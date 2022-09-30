@@ -53,19 +53,21 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests"]),
     python_requires=">=3.8",
     install_requires=[
-        "torch",
-        "wandb",  # fixme: does not install properly?
-        "tqdm",
-        "absl-py",
-        "networkx",
-        "matplotlib",
+        "torch==1.12.1",
+        "wandb==0.12.14",  # fixme: does not install properly?
+        "tqdm==4.62.3",
+        "absl-py==1.2.0",
+        "hydra-core==1.2.0",
+        "matplotlib==3.5.2",
         "tables",
-        "sklearn",
-        "torchsort",  # fixme: import fails?
-        "hydra-core",
-        "pandas",
-        "omegaconf",
-        "hydra-core",  # fixme might require an --upgrade
+        "scikit-learn",
+        "torchsort==0.1.8",  # fixme: import fails?
+        "pandas==1.4.2",
+        "omegaconf==2.2.3",
+        "yahpo_gym",  # fixme: versions?
+        "openml",
+        "ConfigSpace",
+        "smac==1.4.0"
         # "pytorch_forecasting",
         # "pytables",
     ],

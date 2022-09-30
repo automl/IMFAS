@@ -4,37 +4,40 @@
 # d = MLP_d(D), t = TransformerEncoder(lcs_DA), output = MLP(concat(d,t))
 
 defaults:
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
-  - override /model: imfas_transformer
-  - override /trainer: basetrainer
+  - /model: imfas_transformer
+
+
+wandb:
+  notes: 'imfas transformer'
+
 
 dataset:
   train_dataset_class:
     _target_: imfas.data.Dataset_Join_Dmajor
+    # enable masking
     masking_fn:
       _partial_: True
       _target_: imfas.utils.masking.mask_lcs_randomly
 
-  test_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
-    # TODO @TIM alex proposed to hold it fix for test, but do the imfas procedure
 
-  dataloader_class:
+  train_dataloader_class:
     batch_size: 10
 
+  valid_dataloader_class:
+    batch_size: 100
+
+  test_dataloader_class:
+    batch_size: 100
+
 model:
-  n_algos:
-    ${dynamically_computed.n_algos}
-
   encoder:
-    mlp_dims: # [ 107, 100 ]
-      - ${dynamically_computed.n_data_meta_features}
-      - 100
+    hidden_dims:
+      - ${ dynamically_computed.n_data_meta_features }
+      - 300
+      - 200
 
-  decoder:
-    mlp_dims: [ 100, 100 ]
+  n_algos: ${dynamically_computed.n_algos}
+  n_layers: 2
 
   transformer_layer:
     _target_: torch.nn.TransformerEncoderLayer
@@ -46,8 +49,17 @@ model:
     batch_first: True
     norm_first: True
 
+  decoder:
+    hidden_dims:
+      # - ${add:dynamically_computed.n_algos,dynamically_computed.n_algos}
+      - 328               # FIXME: dynamically compute based on the
+      # concat dim before the tensor comes to the decoder
+      - ${dynamically_computed.n_algos}
 
-wandb:
-  group: imfas_wp
-  notes: 'imfas wp'
-  mode: 'offline'
+
+trainer:
+  run_call:
+    epochs: 5000
+    log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
+    train_loss_fn:
+      _target_: imfas.losses.spearman.SpearmanLoss

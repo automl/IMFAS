@@ -28,7 +28,7 @@ class IMFAS_WP(nn.Module):
         Args:
             encoder: MLP to encode the datasets meta-features
             deocder: MLP to decode the hidden state of the LSTM to values that can be ranked
-            input_dim: dimension of the learning curve that is fed as input to the LSTM
+            input_dim: dimension of the learning curves that is fed as input to the LSTM
             n_layers: number of layers of the LSTM
             device: device to run the model on
 
@@ -42,8 +42,8 @@ class IMFAS_WP(nn.Module):
         self.n_layers = n_layers
 
         # The hidden dims of the LSTM are the output features of the encoder
-        self.hidden_dim = [l for l in self.encoder.layers if isinstance(l, nn.Linear)][
-            -1].out_features
+        self.hidden_dim = [l for l in self.encoder.layers
+                           if isinstance(l, nn.Linear)][-1].out_features
 
         # LSTM layer of the network
         # batch_first=True causes input/output tensors to be of shape
@@ -77,8 +77,8 @@ class IMFAS_WP(nn.Module):
         learning_curves = learning_curves.double()
 
         # Initialize the hidden state with the output of the encoder
-        h0 = torch.stack([self.encoder(dataset_meta_features) for _ in
-                          range(self.n_layers)]).requires_grad_().double()
+        h0 = torch.stack([self.encoder(dataset_meta_features)
+                          for _ in range(self.n_layers)]).requires_grad_().double()
 
         # Initialize cell state with 0s
         c0 = (

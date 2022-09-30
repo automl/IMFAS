@@ -132,3 +132,5 @@ dmypy.json
 # Others
 tmp
 data/*
+/.idea/
+imfas/data/*

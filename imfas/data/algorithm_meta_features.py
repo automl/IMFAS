@@ -4,14 +4,15 @@ from imfas.data.preprocessings.transformpipeline import TransformPipeline
 
 
 class AlgorithmMetaFeatures(DatasetMetaFeatures):
-    def __init__(self, path, transforms: TransformPipeline = None, *args, **kwargs):
-        super(AlgorithmMetaFeatures, self).__init__(path, transforms, *args, **kwargs)
+    def __init__(self, path, transforms: TransformPipeline = None, index_col=0, *args, **kwargs):
+        super(AlgorithmMetaFeatures, self).__init__(path, transforms, index_col=index_col, *args,
+                                                    **kwargs)
 
 
 if __name__ == "__main__":
     # TODO Make exactly this config into a config file!
     path = "/home/ruhkopf/PycharmProjects/AlgoSelectionMF/data/raw/LCBench/config.csv"
-    metafeatures = AlgorithmMetaFeatures(path, index_col=0)
+    metafeatures = AlgorithmMetaFeatures(path)
 
     # check if a single transform works as expected
     df = TransformPipeline([Scalar(columns=["batch_size", "max_dropout"])]).fit(metafeatures.df)

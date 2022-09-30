@@ -2,12 +2,11 @@
 
 # MLP(D) ---> PlackettLuceLoss
 defaults:
-  - _self_
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
-  - override /dataset/algo_meta: lcbench_minimal
-  - override /trainer: basetrainer
-  - override /model: imfas_wp
+  - /model: mlp_D
+
+
+wandb:
+  notes: 'plackett test'
 
 
 dataset:
@@ -23,36 +22,18 @@ dataset:
 
   train_dataloader_class:
     batch_size: 10
+    shuffle: True
 
   test_dataloader_class:
     batch_size: 10
-
-model:
-  _target_: imfas.models.plackett_test.PlackettTest
-  encoder:
-    _target_: imfas.utils.mlp.MLP
-    hidden_dims:
-      - ${dynamically_computed.n_data_meta_features}
-      - ${dynamically_computed.n_algos}
+    shuffle: False
 
 trainer:
-  trainerobj:
-    _target_: imfas.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
-
-    optimizer:
-      _target_: torch.optim.Adam
-      lr: 0.001
-      _partial_: True
 
   run_call:
     epochs: 1000
     train_loss_fn:
       _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+      k: 10
+    #      _target_: imfas.losses.spearman.SpearmanLoss
 
-
-
-
-wandb:
-  group: imfas_wp
-  notes: 'plackett test'
-  mode: 'offline'
