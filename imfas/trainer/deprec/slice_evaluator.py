@@ -16,7 +16,7 @@ class SliceEvaluator(BaseTrainer):
         different length. In particular, it evaluates the model's capability to "forsee" the future
         conditioned on only partial learning curves
         This class is designed to ev aluate the modelduring test time on a fixed
-        number of fidelities (i.e. there is a highest accessible fidelity (via masking).
+        number of _fidelities (i.e. there is a highest accessible fidelity (via masking).
 
         In particular it is build with successive halving in mind. Consider its definition.
         """
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         sliceevaluator = SliceEvaluator(
             model,
             max_fidelities=budgets,
-            # creates a learning curve for these fidelities
+            # creates a learning curve for these _fidelities
             masking_fn=mask_lcs_to_max_fidelity
         )
 

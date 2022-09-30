@@ -145,9 +145,11 @@ dataset_raw:
     #       'final_test_balanced_accuracy', 'OpenML_task_id', 'test_split',
     #       'budget', 'seed', 'instances', 'classes', 'features'
 
-    algo: # fixme: move this to separate yaml
-      _target_: imfas.data.ensemble.topk.ensemble
-      k: 10
+    algo: # fixme: move this to separate yaml + changable to random
+      _target_: imfas.data.ensemble.random.random_ensemble
+      n: 50
+
+
 
     bench: lcbench
 
@@ -169,9 +171,9 @@ dataset_raw:
       #      - time
 
       # options:
-      #       'Train/loss',
-      #       'Train/lr',
-      #       'Train/test_balanced_accuracy', 'Train/test_cross_entropy',
+    #       'Train/loss',
+    #       'Train/lr',
+    #       'Train/test_balanced_accuracy', 'Train/test_cross_entropy',
     #       'Train/test_result', 'Train/train_accuracy',
     #       'Train/train_balanced_accuracy', 'Train/train_cross_entropy',
     #       'Train/val_accuracy', 'Train/val_balanced_accuracy',

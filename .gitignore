@@ -133,3 +133,5 @@ dmypy.json
 tmp
 data/*
 /.idea/
+/others/
+

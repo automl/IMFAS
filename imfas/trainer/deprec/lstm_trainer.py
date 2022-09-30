@@ -28,7 +28,7 @@ class Trainer_Ensemble_lstm(BaseTrainer):
             # Seperate labels into indices of slices
             D0 = data[0].to(self.model.device)
 
-            # Only feed limited fidelities for test
+            # Only feed limited _fidelities for test
             labels = data[1][:, : self.test_lim, :].to(self.model.device)
 
             # Get Embeddings
@@ -42,7 +42,7 @@ class Trainer_Ensemble_lstm(BaseTrainer):
                 lstm_loss = self.loss_fn(input=lstm_D0, target=data[1][:, -1, :])
 
                 # For using the trained model, used the state_duict of the decoder to readout
-                # the penultimate fidelities
+                # the penultimate _fidelities
                 self.readout.load_state_dict(self.model.seq_network.readout.state_dict())
                 D0_rank = self.readout.forward(shared_D0.detach())
 

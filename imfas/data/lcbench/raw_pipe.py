@@ -82,7 +82,7 @@ def raw_pipe(*args, **kwargs):
     df = results[cfg.selection.lc_metric].unstack().T
 
     # (0.1.1) select based on final performance
-    candidates, candidate_performances = call(cfg.selection.algo, df)
+    candidates, candidate_performances = call(cfg.selection.algo, df=df)
 
     candidates = list(sorted(candidates))
 

@@ -77,16 +77,16 @@ from imfas.data.lc_dataset import Dataset_LC
 class Dataset_Joint_Taskwise2(Dataset):
     #
     def __init__(
-        self,
-        meta_dataset: DatasetMetaFeatures,
-        lc: Dataset_LC,
-        meta_algo: Optional[AlgorithmMetaFeatures] = None,
-        split=None,
+            self,
+            meta_dataset: DatasetMetaFeatures,
+            lc: Dataset_LC,
+            meta_algo: Optional[AlgorithmMetaFeatures] = None,
+            split=None,
     ):
         """
         A Dataset, assuming there is a cuboid, where the vertical dim are the algorithms,
         the horizontal dim are the datasets and the depth dim is their learning curve observed
-        at different fidelities.
+        at different _fidelities.
 
         :split: list of dataset indicies, that are accessible to this Dataset class. This is
         used to create a holdout /test set

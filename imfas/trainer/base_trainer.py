@@ -90,7 +90,7 @@ class BaseTrainer:
         1. Mask the testset to the (currently) maximum fidelity (minimum is 1,
            giving at least on e)
         2. Evaluate the model on the masked testset & record the loss
-        3. Repeat 1 & 2 for all available fidelities in the test set
+        3. Repeat 1 & 2 for all available _fidelities in the test set
 
         """
         with torch.no_grad():
@@ -111,7 +111,7 @@ class BaseTrainer:
 
                     y_hat = self.model.forward(**X)
 
-                    # Successive halving will inf for zero available fidelities.
+                    # Successive halving will inf for zero available _fidelities.
                     # Some test loss functions may take an issue with that.
                     # This is a save-guard to prevent this (intended) behaviour.
                     try:

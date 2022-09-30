@@ -1,7 +1,7 @@
 # @package _global_
 # FIXME: currently only the current configuration dataset is cached
 #  any alteration to this config require a dataset_raw.enable: true to then cache
-#  a better way to do it would be to once get all the available fidelities in one df
+#  a better way to do it would be to once get all the available _fidelities in one df
 #  and then lazily load from there! This will reduce the burdon of recompute!
 defaults:
   - override /dataset: lcbench

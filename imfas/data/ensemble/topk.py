@@ -11,7 +11,8 @@ except ModuleNotFoundError:
     PACKAGE_FOUND = False
 
 
-def ensemble(df, k, plot_regret_distribution=False):
+# fixme: rename this to top-k_ensemble
+def topk(df, k, plot_regret_distribution=False):
     """
     Forward selection procedure.
     build a set of candidate algorithms, by choosing the top-k performing algorithms
