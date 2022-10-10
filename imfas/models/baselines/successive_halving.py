@@ -15,8 +15,6 @@ class SuccessiveHalving:
         (actual budget values available in the learning curve tensor provided during forward).
         :param eta: int, the reduction factor of the budget in each successive halving run.
         """
-        super(SuccessiveHalving, self).__init__()
-
         self.eta = eta
         self.budgets = budgets
         self.device = device
@@ -110,7 +108,6 @@ class SuccessiveHalving:
         # batch = learning_curves.shape[0]
         n_algos = learning_curves.shape[1]
         algos_idx = torch.arange(n_algos)
-        schedule_index = self.plan_budgets(self.budgets, mask)
 
         # running variables
         n_dead = 0
