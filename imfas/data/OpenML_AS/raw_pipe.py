@@ -9,6 +9,7 @@ from pandas import read_sql_query
 log = logging.getLogger(__name__)
 
 
+# FIXME: this is an API. still need to write the actual raw_pipe
 class OpenML_ASLC_Sqlite:
 
     def __init__(self, root: Path):
