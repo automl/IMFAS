@@ -47,6 +47,7 @@ class ParametricLC(ModelInterface):
         :param restarts: int, the number of times to restart the optimization. I.e. use
         different random initializations
         """
+        super().__init__()
         assert function in self.functionals.keys(), f"Function {function} not implemented!"
         self.function = function
         self.functional = self.functionals[function]
@@ -125,22 +126,27 @@ class ParametricLC(ModelInterface):
     def predict(self, x: np.ndarray) -> np.ndarray:
         return np.array([self.functional(x, *params) for params in self.parameters_lc])
 
-    def forward(self, lc_tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, **kwargs) -> torch.Tensor:
         """
-        :param lc_tensor: torch.Tensor, the tensor containing the learning curves observed on a
+        :param learning_curves: torch.Tensor, the tensor containing the learning curves observed on a
         single dataset.
         :param mask: torch.Tensor, the mask indicating how far the learning curves are observed.
         :return: torch.Tensor, ranking score (i.e. performance for each algorithm observed
         at maximum fidelity
         """
         # fidelity available for training the curve
-        self.max_fidelity = mask.sum(dim=-1).max().item()
+        self.max_fidelity = int(mask.sum(dim=-1).max().item())
 
-        # fit the parametric learning curve to the data.
-        self.fit(self.budgets, lc_tensor[:, :, :self.max_fidelity].cpu().numpy())
+        # saveguard for the case that the learning curve is not observed sufficiently (n<p)
+        if self.max_fidelity + 1 < self.n_parameters:
+            return torch.ones(learning_curves.shape[:-1]) * float('nan')
+
+        if self.training:
+            # fit the parametric learning curve to the data.
+            self.fit(self.budgets, learning_curves[:, :, :self.max_fidelity].cpu().numpy())
 
         # Predict for every curve on max-fidelity (extrapolation)
-        return torch.tensor(self.predict(self.budgets[-1]))
+        return torch.tensor(self.predict(self.budgets[-1])).view(1, -1)
 
     def plot_curves(self, x, y, ax):
         y_hats = self.predict(x)
@@ -155,71 +161,8 @@ class ParametricLC(ModelInterface):
         pass
 
 
-class BestParametricLC(ModelInterface):
-    def __init__(self, budgets: List[int], restarts: int = 10):
-        self.budgets = np.array(budgets, dtype=np.float64)
-        self.parametric_lcs = {
-            name: ParametricLC(name, budgets, restarts=restarts)
-            for name in ParametricLC.functionals.keys()
-        }
-
-    def fit(self, x: np.ndarray, Y: np.ndarray) -> None:
-        for parametric_lc in self.parametric_lcs.values():
-            parametric_lc.fit(x, Y)
-
-        # find the best parametric learning curve for each learning curve by cost
-        self.costs = np.array(
-            [parametric_lc.cost for parametric_lc in self.parametric_lcs.values()])
-
-        # find out which parametric lc is the best for which algorithm
-        self.curve_name = np.array(list(self.parametric_lcs.keys()))[np.argmin(self.costs, axis=0)]
-        self.curve = np.nanargmin(self.costs, axis=0, )  # is the curve with the lowest cost for
-        # each
-        # algorithm. we want this curve as predictor for the extrapolation
-
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        predictions = np.array(
-            [parametric_lc.predict(x)
-             for parametric_lc in self.parametric_lcs.values()]
-        )
-        # fancy indexing to get the final prediction of the best (lowest cost during training) curve
-        # for each algorithm.
-        final_performance = predictions[self.curve, list(range(predictions.shape[1]))]
-
-        return final_performance
-
-    def forward(self, lc_tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        self.max_fidelity = mask.sum(dim=-1).max().item()
-
-        # fit the parametric learning curve to the data.
-        self.fit(self.budgets, lc_tensor[:, :, :self.max_fidelity].cpu().numpy())
-        return torch.tensor(self.predict(self.budgets[-1]))
-
-    # def plot_curves(self, x, y, ax):
-    #     y_hats = self.predict(x)
-    #     for y, y_hat, curve, curve_name in zip(y[0], y_hats, self.curve, self.curve_name):
-    #         ax.plot(x, y_hat, color=curve, alpha=0.5, linewidth=1., label='fitted lc')
-    #         ax.plot(x, y, color='grey', alpha=0.5, linewidth=0.5, label='actual lc')
-    #     ax.set_title('Best Parametric LC for each Algorithm')
-    #     ax.set_xlabel('Budget')
-    #     ax.set_ylabel('Performance')
-    #     plt.legend()
-
-    def plot_curves(self, x, y, ax):
-        y_hats = self.predict(x)
-        for y_, y_hat in zip(y[0], y_hats):
-            ax.plot(x, y_hat, color='red', alpha=0.5, linewidth=1., )
-            ax.plot(x, y_, color='grey', alpha=0.5, linewidth=0.5, )
-        ax.set_title('Best Parametric LC for each Algorithm')
-        ax.set_xlabel('Budget')
-        ax.set_ylabel('Performance')
-        # plt.legend()
-        plt.ylim(*(y.min().item(), y.max().item()))
-
-
 if __name__ == '__main__':
     from imfas.data.lcbench.example_data import train_dataset
-    import matplotlib.pyplot as plt
 
     lc_predictor = ParametricLC('exp3', budgets=list(range(1, 52)))
     print(lc_predictor.n_parameters)
@@ -234,17 +177,9 @@ if __name__ == '__main__':
     mask[:, :, threshold:] = 0  # only partially available learning curves
     ranking = y['final_fidelity'][20:30].view(1, shape[0])
 
-    # print(lc_predictor.forward(lc_tensor, mask))
+    y_hat = lc_predictor.forward(lc_tensor, mask)
 
-    # lc_predictor.plot_curves(x=lc_predictor.budgets, y=lc_tensor, ax=plt.gca())
-    # plt.show()
+    from imfas.evaluation.topkregret import TopkRegret
 
-    # BestParametricLC(lc_predictor.budgets).fit(lc_predictor.budgets, lc_tensor.cpu().numpy())
-
-    lc_predictor = BestParametricLC(list(range(1, 52)), restarts=10)
-    final_performance = lc_predictor.forward(lc_tensor, mask)
-
-    lc_predictor.plot_curves(x=lc_predictor.budgets, y=lc_tensor, ax=plt.gca())
-    plt.show()
-
-    print()
+    topkregret = TopkRegret(k=1)
+    topkregret(y_hat, ranking)

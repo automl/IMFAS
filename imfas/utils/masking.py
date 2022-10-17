@@ -26,7 +26,7 @@ def mask_lcs_to_max_fidelity(lc_tensor, max_fidelity, *args, **kwargs):
     :param dataset: if necessary, this allows access to the dataset object.
     :return: [n_algos, max_fidelity], the mask of the tensor
     """
-    # n_algos, n_fidelities = lc_tensor.shape
+    # n_algos, n_fidelities = learning_curves.shape
     mask = torch.zeros_like(lc_tensor)
     mask[:, 0:max_fidelity] = 1
     return lc_tensor * mask, mask.bool()

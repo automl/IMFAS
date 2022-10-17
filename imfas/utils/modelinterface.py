@@ -5,14 +5,17 @@ import torch
 
 class ModelInterface:
 
+    def __init__(self):
+        self.training = True
+
     def eval(self):
-        pass
+        self.training = False
 
     def train(self):
-        pass
+        self.training = True
 
     def to(self, device):
-        pass
+        self.device = device
 
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)

@@ -5,7 +5,6 @@
 # Since we only ever care for its baseline (test) performance, this pipe is a bit hacky.
 
 defaults:
-  - /model: successive_halving
   - override /train_test_split: trainvalidtest
 
 wandb:
@@ -16,7 +15,9 @@ wandb:
 device: 'cpu'
 
 model:
+  _target_: imfas.models.baselines.successive_halving.SuccessiveHalving
   eta: 2
+  budgets: ${dataset.slices}
 
 dataset:
   test_dataloader_class:

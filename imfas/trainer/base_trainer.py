@@ -13,7 +13,6 @@ from imfas.utils.masking import mask_lcs_to_max_fidelity
 
 log = logging.getLogger(__name__)
 
-import pdb
 
 class BaseTrainer:
     def __init__(
@@ -32,7 +31,7 @@ class BaseTrainer:
         self.device = self.model.device
 
         self.optimizer = None
-        
+
         if isinstance(self.model, nn.Module) and not hasattr(self.model, 'no_opt'):
             # partial instantiation from hydra!
             self.optimizer = optimizer(self.model.parameters())
@@ -58,7 +57,7 @@ class BaseTrainer:
                 self.optimizer.zero_grad()
 
             y_hat = self.model.forward(**X)
-            
+
             if not hasattr(self.model, 'no_opt'):
                 loss = loss_fn(y_hat, y["final_fidelity"])
                 # print(y, y_hat, loss)
@@ -87,7 +86,6 @@ class BaseTrainer:
                 self.to_device(X)
                 self.to_device(y)
 
-
                 # print(X.keys())
                 # print(y.keys())
                 # pdb.set_trace()
@@ -97,7 +95,7 @@ class BaseTrainer:
 
             wandb.log({f'Validation: {function_name}': losses.mean()}, step=self.step)
 
-    def test(self, test_loader, test_loss_fn, fn_name):
+    def test(self, test_loader, test_loss_fns, ):
         """
         Slice Evaluation Protocol;
         Evaluate the model on the testset after training is done.
@@ -107,9 +105,10 @@ class BaseTrainer:
         3. Repeat 1 & 2 for all available fidelities in the test set
 
         """
+
         with torch.no_grad():
             max_fidelity = test_loader.dataset.lcs.shape[-1]
-            for fidelity in range(max_fidelity):
+            for fidelity in tqdm(range(max_fidelity), desc='Fidelity'):
 
                 test_loader.dataset.masking_fn = partial(
                     mask_lcs_to_max_fidelity,
@@ -118,31 +117,46 @@ class BaseTrainer:
 
                 # fixme: make one fwd pass and compute all validation losses on the fwd pass
                 #  to drastically reduce the number of fwd passes!
-                losses = torch.zeros(len(test_loader))
+                losses = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
+
                 for i, (X, y) in enumerate(test_loader):
                     self.to_device(X)
                     self.to_device(y)
 
-                    if hasattr(self.model, 'no_opt'):
-                        self.model.training = False
+                    for j, (fn_name, fn) in enumerate(test_loss_fns.items()):
+                        if isinstance(fn, DictConfig):  # fixme: can we remove this?
+                            fn = instantiate(fn)
 
-                    y_hat = self.model.forward(**X)
+                        if hasattr(self.model, 'no_opt'):  # FIXME: @Aditya: remove me
+                            self.model.training = False
 
-                    # Successive halving will inf for zero available fidelities.
-                    # Some test loss functions may take an issue with that.
-                    # This is a save-guard to prevent this (intended) behaviour.
-                    try:
-                        if hasattr(self.model, 'no_opt'):
-                            losses[i] = test_loss_fn(y_hat, y["final_fidelity"][0])
-                        else:    
-                            losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
-                    except Exception as e:
-                        log.error(f"Error in test loss fn {fn_name}:\n{e}")
+                        if j == 0:  # for all those baselines that don't have a online training
+                            # phase (parametric LC & Satzilla)
+                            self.model.train()
 
-                wandb.log(
-                    {f"Test, Slice Evaluation: {fn_name}": losses.mean(),
-                     'fidelity': fidelity}
-                )
+                        y_hat = self.model.forward(**X)
+
+                        if j == 0:
+                            self.model.eval()
+
+                        # Successive halving will inf for zero available fidelities.
+                        # Some test loss functions may take an issue with that.
+                        # This is a save-guard to prevent this (intended) behaviour.
+                        try:
+                            if hasattr(self.model, 'no_opt'):
+                                losses[fn_name][i] = fn(y_hat, y["final_fidelity"][0])
+                                # FIXME: @Aditya: remove this hack
+                            else:
+                                losses[fn_name][i] = fn(y_hat, y["final_fidelity"])
+                        except Exception as e:
+                            log.error(f"Error in test loss fn {fn_name}:\n{e}")
+                            losses[fn_name][i] = float('nan')
+
+                for fn_name, fn in test_loss_fns.items():
+                    wandb.log(
+                        {f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(),
+                         'fidelity': fidelity}
+                    )
 
     def run(
             self,
@@ -176,20 +190,19 @@ class BaseTrainer:
 
             # validation loss during training
             if valid_loss_fns is not None and self.step % log_freq == 0:
+                self.model.eval()
                 for fn_name, fn in valid_loss_fns.items():
                     if isinstance(fn, DictConfig):  # fixme: can we remove this?
                         fn = instantiate(fn)
 
-                    if hasattr(self.model, 'no_opt'):
-                        self.model.training = False 
-                    
+                    if hasattr(self.model, 'no_opt'):  # FIXME: @Aditya: remove this
+                        self.model.training = False
+
                     self.validate(valid_loader, fn, fn_name)
-                    self.model.train()
+
+                self.model.train()
 
         # Test loss for comparison of selectors
         self.model.eval()
-        for fn_name, fn in tqdm(test_loss_fns.items(), desc='Test functions'):
-            if isinstance(fn, DictConfig):  # fixme: can we remove this?
-                fn = instantiate(fn)
 
-            self.test(test_loader, fn, fn_name)
+        self.test(test_loader, test_loss_fns)
