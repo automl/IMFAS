@@ -4,10 +4,12 @@ from typing import List, Optional
 import math
 import torch
 
+from imfas.utils.modelinterface import ModelInterface
+
 logger = logging.getLogger(__name__)
 
 
-class SuccessiveHalving:
+class SuccessiveHalving(ModelInterface):
     def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", budget_type='additive'):
         """
         This class assumes a single batch (i.e. a single dataset!)
@@ -161,18 +163,6 @@ class SuccessiveHalving:
         return ranking.float().view(1, -1)
         # fixme: do we need to sort this ranking? based on the algorithms
         #  original positions.
-
-    def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
-
-    def eval(self):
-        pass
-
-    def train(self):
-        pass
-
-    def to(self, device):
-        pass
 
 
 if __name__ == "__main__":

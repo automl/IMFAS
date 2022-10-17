@@ -1,5 +1,5 @@
 import logging
-from abc import abstractmethod
+import warnings
 from functools import partial
 from typing import List, Callable
 
@@ -9,27 +9,12 @@ import scipy.optimize
 import torch
 from tqdm import tqdm
 
+from imfas.utils.modelinterface import ModelInterface
+
 logger = logging.getLogger(__name__)
 
 
 # FIXME: move to utils & make SH + algo selection baseline inherit from this
-class ModelInterface:
-
-    def eval(self):
-        pass
-
-    def train(self):
-        pass
-
-    def to(self, device):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
-
-    @abstractmethod
-    def forward(self, *args, **kwargs) -> torch.Tensor:
-        pass
 
 
 class ParametricLC(ModelInterface):
@@ -48,20 +33,28 @@ class ParametricLC(ModelInterface):
         # fun = lambda x: a * np.exp(-b*x) + c
 
         'pow4': lambda x, a, b, c, d: a - b * (x + d) ** (-c),  # has to closely match pow3,
-        'ilog2': lambda x, a, b: b - (a / np.log(x)),
+        # 'ilog2': lambda x, a, b: b - (a / np.log(x)),
+        # FIXME: Ilog2 Will require an index-shift in the budgets to avoid zero devision for x=1
         'expd3': lambda x, a, b, c: c - (c - a) * np.exp(-b * x),
         'logpower3': lambda x, a, b, c: a / (1 + (x / np.exp(b)) ** c),
         'last1': lambda x, a: (a + x) - x  # casts the prediction to have the correct size
     }
 
-    def __init__(self, function: str, budgets: List[int]):
+    def __init__(self, function: str, budgets: List[int], restarts: int = 10):
         """
         :param function: str, the name of the function to use for the parametric learning curve.
+        :param budgets: List[int], the budgets on which the learning curves are observed.
+        :param restarts: int, the number of times to restart the optimization. I.e. use
+        different random initializations
         """
         assert function in self.functionals.keys(), f"Function {function} not implemented!"
         self.function = function
         self.functional = self.functionals[function]
         self.budgets = np.array(budgets, dtype=np.float64)
+        self.restarts = restarts
+
+        if 0 in self.budgets:
+            warnings.warn("0 in budgets, this will cause problems with the log function")
 
     def __repr__(self):
         return f"Parametric_LC({self.function})"
@@ -83,32 +76,31 @@ class ParametricLC(ModelInterface):
 
         def objective(params):
             """params: iterable of parameter values to be optimized"""
-            return (f(**dict(zip(self.parameter_names, params))) - y)  # ** 2
+            return (f(**dict(zip(self.parameter_names, params))) - y) ** 2
 
         return objective
 
-    def fit(self, x: np.ndarray, Y: np.ndarray, restarts: int = 10) -> None:
+    def fit(self, x: np.ndarray, Y: np.ndarray, ) -> None:
         """
         :param x: 1D np.ndarray, the budgets on which the learning curves are observed.
         :param Y: 2D np.ndarray, the learning curves observed on the budgets for the respective
         algorithms on the same dataset.
-        :param restarts: int, the number of restarts to use for the optimization.
-        only the best result (least cost) is kept.
+
         """
 
         # the best parameters for each learning curve
-        parameters_lc = np.zeros((restarts, Y.shape[1], self.n_parameters))
+        parameters_lc = np.zeros((self.restarts, Y.shape[1], self.n_parameters))
 
         # fixme: currently assuming batch == 1
-        cost = np.zeros((restarts, Y.shape[1]))  # * np.inf
+        cost = np.zeros((self.restarts, Y.shape[1]))  # * np.inf
         #  multiple reinitializations for stability
-        for r in tqdm(range(restarts)):
+        for r in tqdm(range(self.restarts), desc=self.function):
             init = np.random.rand(Y.shape[1], self.n_parameters)
 
             for i in range(Y.shape[1]):
                 try:
                     parameters = sp.optimize.least_squares(
-                        self.objective_factory(x, Y[:, i, :][0]),
+                        self.objective_factory(x[:Y.shape[-1]], Y[:, i, :][0]),
                         init[i],
                         method='lm'
                     )
@@ -141,13 +133,14 @@ class ParametricLC(ModelInterface):
         :return: torch.Tensor, ranking score (i.e. performance for each algorithm observed
         at maximum fidelity
         """
+        # fidelity available for training the curve
         self.max_fidelity = mask.sum(dim=-1).max().item()
 
         # fit the parametric learning curve to the data.
         self.fit(self.budgets, lc_tensor[:, :, :self.max_fidelity].cpu().numpy())
 
         # Predict for every curve on max-fidelity (extrapolation)
-        return torch.tensor(self.predict(self.budgets[self.max_fidelity - 1]))
+        return torch.tensor(self.predict(self.budgets[-1]))
 
     def plot_curves(self, x, y, ax):
         y_hats = self.predict(x)
@@ -163,16 +156,16 @@ class ParametricLC(ModelInterface):
 
 
 class BestParametricLC(ModelInterface):
-    def __init__(self, budgets: List[int]):
+    def __init__(self, budgets: List[int], restarts: int = 10):
         self.budgets = np.array(budgets, dtype=np.float64)
         self.parametric_lcs = {
-            name: ParametricLC(name, budgets)
+            name: ParametricLC(name, budgets, restarts=restarts)
             for name in ParametricLC.functionals.keys()
         }
 
-    def fit(self, x: np.ndarray, Y: np.ndarray, restarts: int = 10) -> None:
+    def fit(self, x: np.ndarray, Y: np.ndarray) -> None:
         for parametric_lc in self.parametric_lcs.values():
-            parametric_lc.fit(x, Y, restarts)
+            parametric_lc.fit(x, Y)
 
         # find the best parametric learning curve for each learning curve by cost
         self.costs = np.array(
@@ -180,35 +173,66 @@ class BestParametricLC(ModelInterface):
 
         # find out which parametric lc is the best for which algorithm
         self.curve_name = np.array(list(self.parametric_lcs.keys()))[np.argmin(self.costs, axis=0)]
-        self.curve = np.argmin(self.costs, axis=0)
+        self.curve = np.nanargmin(self.costs, axis=0, )  # is the curve with the lowest cost for
+        # each
+        # algorithm. we want this curve as predictor for the extrapolation
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         predictions = np.array(
             [parametric_lc.predict(x)
              for parametric_lc in self.parametric_lcs.values()]
         )
-        predictions[self.curve]
+        # fancy indexing to get the final prediction of the best (lowest cost during training) curve
+        # for each algorithm.
+        final_performance = predictions[self.curve, list(range(predictions.shape[1]))]
+
+        return final_performance
 
     def forward(self, lc_tensor: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         self.max_fidelity = mask.sum(dim=-1).max().item()
 
         # fit the parametric learning curve to the data.
         self.fit(self.budgets, lc_tensor[:, :, :self.max_fidelity].cpu().numpy())
+        return torch.tensor(self.predict(self.budgets[-1]))
+
+    # def plot_curves(self, x, y, ax):
+    #     y_hats = self.predict(x)
+    #     for y, y_hat, curve, curve_name in zip(y[0], y_hats, self.curve, self.curve_name):
+    #         ax.plot(x, y_hat, color=curve, alpha=0.5, linewidth=1., label='fitted lc')
+    #         ax.plot(x, y, color='grey', alpha=0.5, linewidth=0.5, label='actual lc')
+    #     ax.set_title('Best Parametric LC for each Algorithm')
+    #     ax.set_xlabel('Budget')
+    #     ax.set_ylabel('Performance')
+    #     plt.legend()
+
+    def plot_curves(self, x, y, ax):
+        y_hats = self.predict(x)
+        for y_, y_hat in zip(y[0], y_hats):
+            ax.plot(x, y_hat, color='red', alpha=0.5, linewidth=1., )
+            ax.plot(x, y_, color='grey', alpha=0.5, linewidth=0.5, )
+        ax.set_title('Best Parametric LC for each Algorithm')
+        ax.set_xlabel('Budget')
+        ax.set_ylabel('Performance')
+        # plt.legend()
+        plt.ylim(*(y.min().item(), y.max().item()))
 
 
 if __name__ == '__main__':
     from imfas.data.lcbench.example_data import train_dataset
+    import matplotlib.pyplot as plt
 
-    lc_predictor = ParametricLC('exp3', budgets=list(range(0, 51)))
+    lc_predictor = ParametricLC('exp3', budgets=list(range(1, 52)))
     print(lc_predictor.n_parameters)
 
     # Batched learning curves (batch_size, n_algorithms, n_budgets)
-    X, y = train_dataset[3]
-    lc_tensor = X['learning_curves']
+    X, y = train_dataset[1]
+    lc_tensor = X['learning_curves'][20:30, :]
     shape = lc_tensor.shape
     lc_tensor = lc_tensor.view(1, *shape)
-    mask = X['mask'].view(1, *shape)
-    ranking = y['final_fidelity'].view(1, shape[0])
+    mask = torch.ones_like(lc_tensor, dtype=torch.long)
+    threshold = 20
+    mask[:, :, threshold:] = 0  # only partially available learning curves
+    ranking = y['final_fidelity'][20:30].view(1, shape[0])
 
     # print(lc_predictor.forward(lc_tensor, mask))
 
@@ -217,6 +241,10 @@ if __name__ == '__main__':
 
     # BestParametricLC(lc_predictor.budgets).fit(lc_predictor.budgets, lc_tensor.cpu().numpy())
 
-    lc_predictor = BestParametricLC.forward(lc_predictor.budgets)
+    lc_predictor = BestParametricLC(list(range(1, 52)), restarts=10)
+    final_performance = lc_predictor.forward(lc_tensor, mask)
+
+    lc_predictor.plot_curves(x=lc_predictor.budgets, y=lc_tensor, ax=plt.gca())
+    plt.show()
 
     print()
