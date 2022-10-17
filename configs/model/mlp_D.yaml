@@ -1,6 +1,6 @@
 # model is a mlp accepting dataset_meta_features only: mlp(D)
 
-_target_: imfas.models.mlp_D.MLPD
+_target_: imfas.models.mlpd.MLPD
 encoder:
 
   _target_: imfas.utils.mlp.MLP

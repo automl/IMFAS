@@ -6,7 +6,7 @@ class MLPD(nn.Module):
         """Interface to MLP, that accepts any input from the Dataloader, but makes
         use of the dataset_meta_features only 'MLP(D)' """
         super(MLPD, self).__init__()
-        self.encoder = encoder
+        self.encoder = encoder  # to allow for arbitrary parametrization of MLP
         self.device = device
 
     def forward(self, dataset_meta_features, *args, **kwargs):
