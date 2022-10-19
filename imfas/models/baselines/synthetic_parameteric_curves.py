@@ -1,14 +1,19 @@
+from __future__ import annotations
+import json
 import logging
 import copy
-from itertools import combinations_with_replacement
+from itertools import combinations
+import pathlib
 from typing import Callable, Tuple, List, Dict
 
+import torch
 from imfas.models.baselines.lcdb_parametric_lc import ParametricLC, BestParametricLC
 import numpy as np
 import pysmt.fnode
-from pysmt.shortcuts import Symbol, And, GE, LE, Times, Pow, Minus, Plus, Exists, Real, Div, reset_env, Xor, Or
+from pysmt.shortcuts import (
+    Symbol, And, GE, NotEquals, LE, Times, Pow, Minus, Plus, Exists, Real, Div, reset_env, Xor, Or, get_model, qelim, is_sat, ToReal, get_env
+)
 from pysmt.typing import REAL
-from pysmt.shortcuts import qelim, is_sat
 import inspect
 
 logger = logging.getLogger(__name__)
@@ -24,15 +29,15 @@ def pow3(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode, c: float):
 
 
 def log2(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode):
-    return Times(a, Plus(Real(np.log(x)), b))
+    return Times(a, Plus(Real(np.log(x).item()), b))
 
 
 def exp3(x: int, a: pysmt.fnode.FNode, b: float, c: pysmt.fnode.FNode):
-    return Plus(Times(a, Real(np.exp(-b * x))), c)
+    return Plus(Times(a, Real(np.exp(-b * x).item())), c)
 
 
 def exp2(x: int, a: pysmt.fnode.FNode, b: float):
-    return Times(a, Real(np.exp(-b * x)))
+    return Times(a, Real(np.exp(-b * x).item()))
 
 
 def lin2(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode):
@@ -52,16 +57,16 @@ def mmf4(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode, c: pysmt.fnode.FNod
 def wbl4(x: int, a: float, b: pysmt.fnode.FNode, c: pysmt.fnode.FNode, d: float):
     return Minus(
         c,
-        Times(b, Real(np.exp(-a * (x ** d))))
+        Times(b, Real(np.exp(-a * (x ** d)).item()))
     )
 
 
 def exp4(x: int, a: float, b: float, c: pysmt.fnode.FNode, d: float):
-    return Minus(c, Real(np.exp(-a * (x ** d) + b)))
+    return Minus(c, Real(np.exp(-a * (x ** d) + b).item()))
 
 
 def expp3(x: int, a: float, b: float, c: pysmt.fnode.FNode):
-    return Minus(c, Real(np.exp((x - b) ** a)))
+    return Minus(c, Real(np.exp((x - b) ** a).item()))
 
 
 def pow4(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode, c: float, d: pysmt.fnode.FNode):
@@ -76,50 +81,24 @@ def expd3(x: int, a: pysmt.fnode.FNode, b: float, c: pysmt.fnode.FNode):
         c,
         Times(
             Minus(c, a),
-            Real(np.exp(-b * x))
+            Real(np.exp(-b * x).item())
         )
     )
 
 
 def logpower3(x: int, a: pysmt.fnode.FNode, b: float, c: float):
-    return Div(a, Real(1 + (x / np.exp(b)) ** c))
+    return Div(a, Real(1 + (x / np.exp(b).item()) ** c))
 
 
 def last1(x: int, a: pysmt.fnode.FNode):
     return Minus(Plus(a, Real(x)), Real(x))
 
 
-x_start = 1
-x_end = 20
-
-apow2 = Symbol('apow2', REAL)
-bpow2 = 0.5
-
-apow3 = Symbol('apow3', REAL)
-bpow3 = Symbol('bpow3', REAL)
-cpow3 = 0.1
-f = Exists([apow2, apow3, bpow3], And(
-    GE(pow2(x_start, apow2, bpow2), pow3(x_start, apow3, bpow3, cpow3)),
-    LE(pow2(x_end, apow2, bpow2), pow3(x_end, apow3, bpow3, cpow3)),
-))
-
-qf_f = qelim(f, solver_name="z3")
-print("Quantifier-Free equivalent: %s" % qf_f)
-# Quantifier-Free equivalent: (7/2 <= (z + y))
-
-res = is_sat(qf_f, solver_name="msat")
-print("SAT check using MathSAT: %s" % res)
-import pdb
-pdb.set_trace()
-
-# SAT check using MathSAT: True
-
-
 class SynthericParametericCurves(ParametricLC):
     def __init__(self, function: str, budgets: List[int], restarts: int = 10, parameters_lc: np.ndarray = np.ones(4)):
         super(SynthericParametericCurves, self).__init__(function, budgets, restarts)
-        self.parameters_lc = parameters_lc[:self.n_parameters]
-        if np.isnan(self.predict(x[0])):
+        self.parameters_lc = [parameters_lc[:self.n_parameters]]
+        if np.isnan(self.predict(self.budgets[0])):
             raise ValueError('Invalid Parameteric values')
 
     def fit(self, x: np.ndarray, Y: np.ndarray, ) -> None:
@@ -133,14 +112,14 @@ def get_fixed_and_free_paras(func: Callable) -> Tuple[List, List]:
     """get the fixed and free parameters that can be passed to the SMT solver"""
     free_params = []
     fixed_params = []
-    for key, value in inspect.signature(func).parameters:
+    for key, value in inspect.signature(func).parameters.items():
         if key == 'x':
             # 'x' is used to pass budget values
             continue
-        if value.annotation.__name__ == 'FNode':
-            fixed_params.append(key)
-        else:
+        if value.annotation == 'pysmt.fnode.FNode':
             free_params.append(key)
+        else:
+            fixed_params.append(key)
     return free_params, fixed_params
 
 
@@ -169,8 +148,9 @@ class SynthericParametericCurvesSets(BestParametricLC):
         super(SynthericParametericCurvesSets, self).__init__(budgets=budgets, restarts=restarts)
         self.rng = np.random.RandomState(seed)
 
-    def fit(self, num_learning_curves: int,
-            fixed_para_init_values: Dict,
+    def fit(self,
+            num_learning_curves: int,
+            para_init_values: Dict,
             restarts: int = 10,
             min_n_intersections: int = 5,
             intersection_budget_bounds: List[List[int]] = [[1, 5], [5, 10], [25,50]]) -> None:
@@ -181,7 +161,7 @@ class SynthericParametericCurvesSets(BestParametricLC):
 
 
         :param num_learning_curves: int, The number of learning curves that we wish to generate.
-        :param fixed_para_init_values: Dict, a dictionary that indicate the proper exponent values for all the functions
+        :param para_init_values: Dict, a dictionary that indicate the proper exponent values for all the functions
             as they cannot be solved with the SMT solvers
         :param restarts: int, the number of restarts to use for the optimization.
         :param min_n_intersections: int the minimal number of intersection points
@@ -196,9 +176,11 @@ class SynthericParametericCurvesSets(BestParametricLC):
         while len(curves_generated) < num_learning_curves:
             for idx_restart in range(restarts):
                 reset_env()
+                get_env()
                 all_fixed_lc = True
-                while not all_fixed_lc:
-                    lc_indices = self.rng.choice(num_learning_curves, n_curves_checked, replace=False).sort()
+                while all_fixed_lc:
+                    lc_indices = self.rng.choice(num_learning_curves, n_curves_checked, replace=False)
+                    lc_indices.sort()
                     lc_is_generated = lc_indices < len(curves_generated)
                     n_curves_fixed = sum(lc_is_generated)
                     if n_curves_fixed < n_curves_checked:
@@ -215,24 +197,30 @@ class SynthericParametericCurvesSets(BestParametricLC):
                 all_free_pars = []
 
                 free_curve_bound_values = {}
-                free_curve_pars = {}
+                lcs_fixed_pars = {}
+                lcs_free_pars = {}
 
                 for lc_type, count_type in zip(lc_types, count_types):
                     free_params, fixed_params = get_fixed_and_free_paras(self.functionals[lc_type])
-                    all_tested_lcs.extend([f'{lc_type}_{idx}' for idx in range(count_type)])
 
                     # fixme find a way to initialize fixed params
                     for idx in range(count_type):
                         lc_name = f'{lc_type}_{idx}'
-                        func_params = copy.deepcopy(fixed_para_init_values[lc_type])
+                        all_tested_lcs.append(lc_name)
+
+                        lc_fixed_par = self.sample_lc(lc_type=lc_type, para_init_values=para_init_values,
+                                                      param_names=fixed_params)
+                        lc_free_par = {}
                         for free_par in free_params:
                             par = Symbol(f'{lc_type}_{idx}_{free_par}', REAL)
-                            func_params[free_par] = par
+                            lc_free_par[free_par] = par
                             all_free_pars.append(par)
 
-                        free_curve_pars[lc_name] = func_params
-                        lc_value_start = self.functionals[lc_type](x=x_start, **func_params)
-                        lc_value_end = self.functionals[lc_type](x=x_end, **func_params)
+                        lcs_fixed_pars[lc_name] = lc_fixed_par
+                        lcs_free_pars[lc_name] = lc_free_par
+
+                        lc_value_start = self.functionals[lc_type](x=x_start, **lc_fixed_par, **lc_free_par)
+                        lc_value_end = self.functionals[lc_type](x=x_end, **lc_fixed_par, **lc_free_par)
                         free_curve_bound_values[lc_name] = ([lc_value_start, lc_value_end])
 
                 smt_handles = []
@@ -241,19 +229,102 @@ class SynthericParametericCurvesSets(BestParametricLC):
                     for fix_bound in fixed_curve_bound_values:
                         smt_handles.append(
                             Xor(
-                                GE(free_curve_bound[0], fix_bound[1]),
-                                GE(free_curve_bound[1], fix_bound[1]),
+                                GE(free_curve_bound[0], Real(fix_bound[1].item())),
+                                GE(free_curve_bound[1], Real(fix_bound[1].item())),
                             )
                         )
-                for fre_curve_bound_1, fre_curve_bound_2 in combinations_with_replacement(free_curve_bound_values):
+                for fre_curve_bound_1, fre_curve_bound_2 in combinations(free_curve_bound_values.values(), 2):
                     smt_handles.append(
                         Xor(
                             GE(fre_curve_bound_1[0], fre_curve_bound_2[1]),
                             GE(fre_curve_bound_1[1], fre_curve_bound_2[1]),
                         )
                     )
-                f = Exists(all_free_pars, Or(*smt_handles))
-                qf_f = qelim(f, solver_name="z3")
+                problem = Or(*smt_handles) if len(smt_handles) > 1 else smt_handles[0]
+                domain = And(tuple(NotEquals(par, Real(0.)) for par in all_free_pars))
+                f = And(domain, problem)
 
-    def sample_lc(self):
-        pass
+                smt_model = get_model(f, solver_name='z3')
+
+                if smt_model:
+                    for lc_name in all_tested_lcs:
+                        lc_type = lc_name.split('_')[0]
+                        lc_param = copy.deepcopy(lcs_fixed_pars[lc_name])
+                        for key, value in lcs_free_pars[lc_name].items():
+                            # cannot find how to properly transform the smt.node to float values.
+                            # This is only a simple workaround...
+                            lc_par = smt_model[value].serialize().split('/')
+
+                            if len(lc_par) == 1:
+                                lc_param[key] = float(lc_par[0])
+                            else:
+                                lc_param[key] = float(int(lc_par[0]) / int(lc_par[1]))
+                        new_curve = SynthericParametericCurves(
+                            lc_type,
+                            budgets=self.budgets,
+                            restarts=restarts,
+                            parameters_lc=np.asarray([lc_param[key] for key in sorted(lc_param.keys())])
+                        )
+
+                        curves_generated.append(new_curve)
+                    break
+
+            if idx_restart == restarts:
+                # we randomly add a new parametric curve to the generated curve class
+                lc_type = self.rng.choice(list(self.functionals.keys()), 1)
+                new_curve = SynthericParametericCurves(lc_type, budgets=self.budgets, restarts=restarts,
+                                                       parameters_lc=self.sample_lc(lc_type, para_init_values))
+                curves_generated.append(new_curve)
+
+            self.parametric_lcs = curves_generated
+
+    def sample_lc(self, lc_type: str, para_init_values: dict, param_names: None | List[str]):
+        """
+        Sample the parameters of a learning curve. The parameters are pre-defiend by a dict that store all the
+        """
+        all_parameters = para_init_values[lc_type]
+        if np.isnan(all_parameters).any():
+            all_parameters = np.asarray(all_parameters)[~np.isnan(all_parameters).any(axis=1)].tolist()
+
+        lc_par = all_parameters[self.rng.randint((len(all_parameters)))]
+        if param_names is None:
+            return lc_par
+        lc_par = {name: lc_par[ord(name) - ord('a')] for name in param_names}
+        return lc_par
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        predictions = np.array(
+            [parametric_lc.predict(x)
+             for parametric_lc in self.parametric_lcs]
+        )
+        # fancy indexing to get the final prediction of the best (lowest cost during training) curve
+        # for each algorithm.
+        final_performance = predictions.squeeze()
+        return final_performance
+
+    def plot_curves(self, x, ax):
+        y_hats = self.predict(x)
+        for y_hat in y_hats:
+            ax.plot(x, y_hat, color='red', alpha=0.5, linewidth=1., )
+        ax.set_title('Best Parametric LC for each Algorithm')
+        ax.set_xlabel('Budget')
+        ax.set_ylabel('Performance')
+        # plt.legend()
+        plt.ylim(*(y_hats.min().item(), y_hats.max().item()))
+
+
+if __name__ == '__main__':
+    from imfas.data.lcbench.example_data import train_dataset
+    import matplotlib.pyplot as plt
+
+    with open(str(pathlib.Path(__file__).resolve().parent / 'lcs_parameters.json'), 'r') as f:
+        para_init_values = json.load(f)
+    budgets = list(range(1, 52))
+
+    lc_predictor = SynthericParametericCurvesSets(budgets, restarts=10)
+    final_performance = lc_predictor.fit(4, para_init_values)
+    lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
+    plt.show()
+
+    print()
+
