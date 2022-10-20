@@ -223,39 +223,44 @@ class SynthericParametericCurvesSetsSMT(BestParametricLC):
                         free_curve_bound_values[lc_name] = ([lc_value_start, lc_value_end])
 
                 smt_handles = []
-                # compare free-par curves with fixed_par_curves
-                for free_curve_bound in free_curve_bound_values.values():
-                    for fix_bound in fixed_curve_bound_values:
+                try:
+                    # compare free-par curves with fixed_par_curves
+                    for free_curve_bound in free_curve_bound_values.values():
+                        for fix_bound in fixed_curve_bound_values:
+                            smt_handles.append(
+                                LT(
+                                    Times(
+                                        Minus(free_curve_bound[0], Real(fix_bound[0].item())),
+                                        Minus(free_curve_bound[1], Real(fix_bound[1].item())),
+
+                                    ), Real(0))
+                                #Xor(
+                                #    GE(free_curve_bound[0], Real(fix_bound[0].item())),
+                                #    GE(free_curve_bound[1], Real(fix_bound[1].item())),
+                                #)
+                            )
+                    for fre_curve_bound_1, fre_curve_bound_2 in combinations(free_curve_bound_values.values(), 2):
                         smt_handles.append(
                             LT(
                                 Times(
-                                    Minus(free_curve_bound[0], Real(fix_bound[0].item())),
-                                    Minus(free_curve_bound[1], Real(fix_bound[1].item())),
+                                    Minus(fre_curve_bound_1[0], fre_curve_bound_2[0]),
+                                    Minus(fre_curve_bound_1[1], fre_curve_bound_2[1]),
 
                                 ), Real(0))
-                            #Xor(
-                            #    GE(free_curve_bound[0], Real(fix_bound[0].item())),
-                            #    GE(free_curve_bound[1], Real(fix_bound[1].item())),
+                            # Xor(
+                            #   GE(fre_curve_bound_1[0], fre_curve_bound_2[0]),
+                            #    GE(fre_curve_bound_1[1], fre_curve_bound_2[1]),
                             #)
                         )
-                for fre_curve_bound_1, fre_curve_bound_2 in combinations(free_curve_bound_values.values(), 2):
-                    smt_handles.append(
-                        LT(
-                            Times(
-                                Minus(fre_curve_bound_1[0], fre_curve_bound_2[0]),
-                                Minus(fre_curve_bound_1[1], fre_curve_bound_2[1]),
+                    problem = Or(*smt_handles) if len(smt_handles) > 1 else smt_handles[0]
+                    domain = And(tuple(NotEquals(par, Real(0.)) for par in all_free_pars))
+                    f = And(domain, problem)
 
-                            ), Real(0))
-                        # Xor(
-                        #   GE(fre_curve_bound_1[0], fre_curve_bound_2[0]),
-                        #    GE(fre_curve_bound_1[1], fre_curve_bound_2[1]),
-                        #)
-                    )
-                problem = Or(*smt_handles) if len(smt_handles) > 1 else smt_handles[0]
-                domain = And(tuple(NotEquals(par, Real(0.)) for par in all_free_pars))
-                f = And(domain, problem)
+                    smt_model = get_model(f, solver_name='z3')
+                except Exception as e:
+                    print(e)
+                    continue
 
-                smt_model = get_model(f, solver_name='z3')
                 if smt_model:
                     for lc_name in all_tested_lcs:
                         lc_type = lc_name.split('_')[0]
@@ -321,7 +326,7 @@ class SynthericParametericCurvesSetsSMT(BestParametricLC):
         y_hats = self.predict(x)
         for y_hat in y_hats:
             ax.plot(x, y_hat, color='red', alpha=0.5, linewidth=1., )
-        ax.set_title('Best Parametric LC for each Algorithm')
+        ax.set_title('Generated Synthetic Functions')
         ax.set_xlabel('Budget')
         ax.set_ylabel('Performance')
         # plt.legend()
@@ -336,7 +341,7 @@ if __name__ == '__main__':
     budgets = list(range(1, 52))
 
     lc_predictor = SynthericParametericCurvesSetsSMT(budgets, restarts=10, )
-    final_performance = lc_predictor.fit(3, para_init_values)
+    final_performance = lc_predictor.fit(20, para_init_values)
     lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
     plt.show()
 
