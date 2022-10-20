@@ -11,7 +11,7 @@ from imfas.models.baselines.lcdb_parametric_lc import ParametricLC, BestParametr
 import numpy as np
 import pysmt.fnode
 from pysmt.shortcuts import (
-    Symbol, And, GE, NotEquals, LE, Times, Pow, Minus, Plus, Exists, Real, Div, reset_env, Xor, Or, get_model, qelim, is_sat, ToReal, get_env
+    Symbol, And, GE, NotEquals, LT, Times, Pow, Minus, Plus, Exists, Real, Div, reset_env, Xor, Or, get_model, qelim, is_sat, ToReal, get_env
 )
 from pysmt.typing import REAL
 import inspect
@@ -21,7 +21,7 @@ x, y, z = [Symbol(s, REAL) for s in "xyz"]
 
 
 def pow2(x: int, a: pysmt.fnode.FNode, b: float):
-    return Times(-a, Real(x ** (- b)))
+    return Times(Minus(Real(0.), a), Real(x ** (- b)))
 
 
 def pow3(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode, c: float):
@@ -29,7 +29,7 @@ def pow3(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode, c: float):
 
 
 def log2(x: int, a: pysmt.fnode.FNode, b: pysmt.fnode.FNode):
-    return Times(a, Plus(Real(np.log(x).item()), b))
+    return Plus(Times(Minus(Real(0.), a), Real(np.log(x).item())), b)
 
 
 def exp3(x: int, a: pysmt.fnode.FNode, b: float, c: pysmt.fnode.FNode):
@@ -122,8 +122,7 @@ def get_fixed_and_free_paras(func: Callable) -> Tuple[List, List]:
             fixed_params.append(key)
     return free_params, fixed_params
 
-
-class SynthericParametericCurvesSets(BestParametricLC):
+class SynthericParametericCurvesSetsSMT(BestParametricLC):
     functionals = {
         'pow2': pow2,
         'pow3': pow3,
@@ -145,7 +144,7 @@ class SynthericParametericCurvesSets(BestParametricLC):
     }
 
     def __init__(self, budgets: List[int], restarts: int = 10, seed=0):
-        super(SynthericParametericCurvesSets, self).__init__(budgets=budgets, restarts=restarts)
+        super(SynthericParametericCurvesSetsSMT, self).__init__(budgets=budgets, restarts=restarts)
         self.rng = np.random.RandomState(seed)
 
     def fit(self,
@@ -228,24 +227,35 @@ class SynthericParametericCurvesSets(BestParametricLC):
                 for free_curve_bound in free_curve_bound_values.values():
                     for fix_bound in fixed_curve_bound_values:
                         smt_handles.append(
-                            Xor(
-                                GE(free_curve_bound[0], Real(fix_bound[1].item())),
-                                GE(free_curve_bound[1], Real(fix_bound[1].item())),
-                            )
+                            LT(
+                                Times(
+                                    Minus(free_curve_bound[0], Real(fix_bound[0].item())),
+                                    Minus(free_curve_bound[1], Real(fix_bound[1].item())),
+
+                                ), Real(0))
+                            #Xor(
+                            #    GE(free_curve_bound[0], Real(fix_bound[0].item())),
+                            #    GE(free_curve_bound[1], Real(fix_bound[1].item())),
+                            #)
                         )
                 for fre_curve_bound_1, fre_curve_bound_2 in combinations(free_curve_bound_values.values(), 2):
                     smt_handles.append(
-                        Xor(
-                            GE(fre_curve_bound_1[0], fre_curve_bound_2[1]),
-                            GE(fre_curve_bound_1[1], fre_curve_bound_2[1]),
-                        )
+                        LT(
+                            Times(
+                                Minus(fre_curve_bound_1[0], fre_curve_bound_2[0]),
+                                Minus(fre_curve_bound_1[1], fre_curve_bound_2[1]),
+
+                            ), Real(0))
+                        # Xor(
+                        #   GE(fre_curve_bound_1[0], fre_curve_bound_2[0]),
+                        #    GE(fre_curve_bound_1[1], fre_curve_bound_2[1]),
+                        #)
                     )
                 problem = Or(*smt_handles) if len(smt_handles) > 1 else smt_handles[0]
                 domain = And(tuple(NotEquals(par, Real(0.)) for par in all_free_pars))
                 f = And(domain, problem)
 
                 smt_model = get_model(f, solver_name='z3')
-
                 if smt_model:
                     for lc_name in all_tested_lcs:
                         lc_type = lc_name.split('_')[0]
@@ -276,11 +286,16 @@ class SynthericParametericCurvesSets(BestParametricLC):
                                                        parameters_lc=self.sample_lc(lc_type, para_init_values))
                 curves_generated.append(new_curve)
 
-            self.parametric_lcs = curves_generated
+        self.parametric_lcs = curves_generated
 
     def sample_lc(self, lc_type: str, para_init_values: dict, param_names: None | List[str]):
         """
-        Sample the parameters of a learning curve. The parameters are pre-defiend by a dict that store all the
+        Sample the parameters of a learning curve. The parameters are pre-defined by a dict that store all the best-fit
+        configurations from lcdb.
+
+        : param lc_type: str, type of the learning curves
+        : param para_init_values: dict, a dict recording the best fit parameters applied to the learning curve
+        : param_names: names of the parameters that needs to be selected. If it set as None, we return all the parameters
         """
         all_parameters = para_init_values[lc_type]
         if np.isnan(all_parameters).any():
@@ -312,7 +327,6 @@ class SynthericParametericCurvesSets(BestParametricLC):
         # plt.legend()
         plt.ylim(*(y_hats.min().item(), y_hats.max().item()))
 
-
 if __name__ == '__main__':
     from imfas.data.lcbench.example_data import train_dataset
     import matplotlib.pyplot as plt
@@ -321,8 +335,8 @@ if __name__ == '__main__':
         para_init_values = json.load(f)
     budgets = list(range(1, 52))
 
-    lc_predictor = SynthericParametericCurvesSets(budgets, restarts=10)
-    final_performance = lc_predictor.fit(4, para_init_values)
+    lc_predictor = SynthericParametericCurvesSetsSMT(budgets, restarts=10, )
+    final_performance = lc_predictor.fit(3, para_init_values)
     lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
     plt.show()
 
