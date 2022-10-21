@@ -1,4 +1,6 @@
+import math
 import pandas as pd
+from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
 
 from imfas.data.preprocessings.lc_slice import LC_TimeSlices
@@ -51,6 +53,35 @@ class Dataset_LC(Dataset):
     def __repr__(self):
         return f"DatasetLC(path={self.path}, metric={self.metric}) , " \
                f"shape={self.shape}"
+
+    def plot_single_dataset_curves(self, idx: int, ax=None, major='D'):
+        if major == 'D':
+            lcs = self.transformed_df[idx, :, :]
+        elif major == 'A':
+            lcs = self.transformed_df[:, idx, :]
+
+        pd.DataFrame(lcs.numpy().T).plot(legend=False, ax=ax)
+
+    def plot_alldataset_curves(self, dataset_name, major='D', **kwargs):
+        if major == 'D':
+            n = len(self)
+        elif major == 'A':
+            n = self.shape[1]  # number of algorithms
+
+        r = math.ceil(math.sqrt(n))
+        fig, axs = plt.subplots(ncols=r,
+                                nrows=r,
+                                figsize=(r * 1.5, r * 1.5),
+                                layout="constrained",
+                                sharex=True, **kwargs)
+
+        for i, ax in zip(range(n), axs.flatten()):
+            self.plot_single_dataset_curves(i, ax, major=major)
+
+        for ax in axs.flatten()[i:]:
+            ax.set_visible(False)
+
+        fig.suptitle(f"Dataset {dataset_name} - {major} major")
 
 
 if __name__ == "__main__":

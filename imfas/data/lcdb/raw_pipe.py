@@ -2,6 +2,7 @@ from itertools import product
 from pathlib import Path
 
 import numpy as np
+import openml
 import pandas as pd
 from lcdb import get_all_curves, get_meta_features
 
@@ -29,7 +30,7 @@ class LCDB_API:
             str_message = f'Available datasets: {len(self.openmlids)}\n' \
                           f'Available learners: {len(self.learners)}\n' \
                           f'Available fidelity levels: {len(self.fidelity)}\n' \
-                          f'Fidelity levels:\n {self.fidelity.values}'
+                          f'Fidelity levels:\n {self.fidelity.values}\n'
 
         return f"LCDB_API(root={self.path_preprocessed})\n" + str_message + str_missing
 
@@ -42,13 +43,30 @@ class LCDB_API:
         assert self.openmlids is not None, "Please run preprocess_to_raw first."
 
         df_meta = get_meta_features()
-        self.df_meta = df_meta[df_meta.openmlid.isin(self.openmlids)]
 
-    def save(self, name='lcdb'):
+        # add the missing values to the meta feature df
+        datasets = []
+        for openmlid in set(self.df.index.levels[0].values) - set(df_meta.openmlid.values):
+            datasets.append(openml.datasets.get_dataset(int(openmlid), download_data=False))
+
+        qualities = {m.id: m.qualities for m in datasets}
+        dataset_meta_features = pd.DataFrame.from_dict(qualities).T
+        dataset_meta_features['openmlid'] = dataset_meta_features.index
+        dataset_meta_features = dataset_meta_features[list(
+            set(dataset_meta_features.columns).intersection(set(df_meta.columns)))]
+
+        self.df_meta = df_meta[df_meta.openmlid.isin(self.openmlids)]
+        self.df_meta = pd.concat([self.df_meta, dataset_meta_features], ignore_index=True)
+        self.df_meta.set_index('openmlid', inplace=True)
+        self.df_meta.sort_index(inplace=True)
+
+    def save(self):
         """Save the preprocessed data to disk."""
 
         self.tables = dict()
 
+        assert all(self.df.index.levels[0].values == self.df_meta.index.values), \
+            'Openmlids do not match for df and df_meta.'
         for col in ['train', 'valid', 'test']:
             col_name = f'score_{col}'
 
@@ -60,7 +78,7 @@ class LCDB_API:
             )
 
         # self.df.to_csv(self.path_preprocessed / f'{name}.csv')
-        self.df_meta.to_csv(self.path_preprocessed / f'{name}_meta.csv')
+        self.df_meta.to_csv(self.path_preprocessed / f'lcdb_meta.csv')
 
     def find_subset_tensor(self, threshold=34, inner_seed=0, outer_seed=0, size_test=5000):
         """
@@ -106,6 +124,31 @@ class LCDB_API:
         self.fidelity = pd.Series(sorted(set(df.size_train)))
 
 
+from omegaconf import DictConfig
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def raw_pipe(*args, **kwargs):
+    # make it a hydra pipe again:
+
+    kwargs.pop('enable')
+    cfg = DictConfig(kwargs)
+
+    lcdb_pipe = LCDB_API(root=Path(__file__).parents[3] / 'data')
+
+    metric = cfg.pop('metric')
+
+    lcdb_pipe.load_lcs(metric=metric)
+    lcdb_pipe.find_subset_tensor(**cfg)
+    lcdb_pipe.load_meta_features()
+
+    logger.info(lcdb_pipe)
+
+    lcdb_pipe.save()
+
+
 if __name__ == '__main__':
     # TODO hydra_wrapper & config
     lcdb_pipe = LCDB_API(root=Path(__file__).parents[3] / 'data')
@@ -113,4 +156,4 @@ if __name__ == '__main__':
     lcdb_pipe.find_subset_tensor(threshold=34, inner_seed=0, outer_seed=0, size_test=5000)
     lcdb_pipe.load_meta_features()
     print(lcdb_pipe)
-    lcdb_pipe.save(name='lcdb')
+    lcdb_pipe.save()

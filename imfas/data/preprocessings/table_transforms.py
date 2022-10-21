@@ -98,6 +98,19 @@ class Drop(Transform):
         return X.drop(columns=self.columns)
 
 
+class Drop_Constant(Transform):
+    """Drop columns which only have constant values"""
+
+    def __init__(self):
+        """
+        transform a,ll nan values to 0
+        """
+        super(Drop_Constant, self).__init__()
+
+    def transform(self, X: pd.DataFrame):
+        return X.loc[:, X.apply(pd.Series.nunique) != 1]
+
+
 class Convert(Transform):
     def __init__(self, columns=None, dtype=None):  # FIXME: dtype should be used
         """change to a specific type"""
