@@ -129,6 +129,7 @@ def get_fixed_and_free_paras(func: Callable) -> Tuple[List, List]:
 class AbstractSyntheticParameterCurves(BestParametricLC):
     def __init__(self, budgets: List[int], restarts: int = 10, seed=0):
         super(AbstractSyntheticParameterCurves, self).__init__(budgets=budgets, restarts=restarts)
+        self.restarts = restarts
         self.rng = np.random.RandomState(seed)
 
     def sample_lc(self, lc_type: str, para_init_values: dict, param_names: None | List[str]=None):
@@ -192,7 +193,6 @@ class SyntheticParametericCurvesCalculus(AbstractSyntheticParameterCurves):
     def fit(self,
             num_learning_curves: int,
             para_init_values: Dict,
-            restarts: int = 10,
             min_n_intersections: int = 5,
             intersection_budget_bounds: List[List[int]] = [[1, 5], [5, 10], [25, 50]]) -> None:
         """
@@ -203,19 +203,19 @@ class SyntheticParametericCurvesCalculus(AbstractSyntheticParameterCurves):
         :param num_learning_curves: int, The number of learning curves that we wish to generate.
         :param para_init_values: Dict, a dictionary that indicate the proper exponent values for all the functions
             as they cannot be solved with the SMT solvers
-        :param restarts: int, the number of restarts to use for the optimization.
         :param min_n_intersections: int the minimal number of intersection points
         :param intersection_budget_bounds: the bounds where the intersection needs to happen
         """
         curves_generated: List[SynthericParametericCurves] = []
+        curves_types = []
 
         while len(curves_generated) < num_learning_curves:
-            for idx_restart in range(restarts):
+            for idx_restart in range(self.restarts):
 
                 new_lc_type = self.rng.choice(list(self.functionals.keys()), 1)[0]
                 if len(curves_generated) == 0:
                     new_curve = SynthericParametericCurves(new_lc_type, budgets=self.budgets,
-                                                           restarts=restarts,
+                                                           restarts=self.restarts,
                                                            parameters_lc=self.sample_lc(new_lc_type, para_init_values))
                     curves_generated.append(new_curve)
                     break
@@ -292,29 +292,37 @@ class SyntheticParametericCurvesCalculus(AbstractSyntheticParameterCurves):
                         new_curve = SynthericParametericCurves(
                             new_lc_type,
                             budgets=self.budgets,
-                            restarts=restarts,
+                            restarts=self.restarts,
                             parameters_lc=np.asarray(curve)
                         )
-                        res = new_curve.predict(self.budgets)
+                        res = new_curve.predict(self.budgets).flatten()
                         if np.isnan(res).any() or np.isinf(res).any():
                             continue
+                        if np.max(res) > 100 or np.min(res) < 0:
+                            continue
+                        if res[-1] - res[0] < 20 or res[0] > 40:
+                            continue
+
                         curves_generated.append(new_curve)
+                        curves_types.append(new_lc_type)
                         break
                     except Exception as e:
                         print(e)
                         continue
 
-            if idx_restart == restarts:
+            if idx_restart == self.restarts:
                 # we randomly add a new parametric curve to the generated curve class
                 lc_type = self.rng.choice(list(self.functionals.keys()), 1)
-                new_curve = SynthericParametericCurves(lc_type, budgets=self.budgets, restarts=restarts,
+                new_curve = SynthericParametericCurves(lc_type, budgets=self.budgets, restarts=self.restarts,
                                                        parameters_lc=self.sample_lc(lc_type, para_init_values))
                 curves_generated.append(new_curve)
+                curves_types.append(lc_type)
 
             self.parametric_lcs = curves_generated
+            self.curves_types = curves_types
 
 
-class SyntheticParametericCurvesSetsSMT(AbstractSyntheticParameterCurves):
+class SyntheticParametericCurvesSMT(AbstractSyntheticParameterCurves):
     functionals = {
         'pow2': pow2,
         'pow3': pow3,
@@ -462,12 +470,23 @@ class SyntheticParametericCurvesSetsSMT(AbstractSyntheticParameterCurves):
                                 lc_param[key] = float(lc_par[0])
                             else:
                                 lc_param[key] = float(int(lc_par[0]) / int(lc_par[1]))
-                        new_curve = SynthericParametericCurves(
-                            lc_type,
-                            budgets=self.budgets,
-                            restarts=restarts,
-                            parameters_lc=np.asarray([lc_param[key] for key in sorted(lc_param.keys())])
-                        )
+                        try:
+                            new_curve = SynthericParametericCurves(
+                                lc_type,
+                                budgets=self.budgets,
+                                restarts=restarts,
+                                parameters_lc=np.asarray([lc_param[key] for key in sorted(lc_param.keys())])
+                            )
+                            res = new_curve.predict(self.budgets).flatten()
+                            if np.isnan(res).any() or np.isinf(res).any():
+                                continue
+                            if np.max(res) > 100 or np.min(res) < 0:
+                                continue
+                            if res[-1] - res[0] < 10:
+                                continue
+                        except Exception as e:
+                            print(e)
+                            continue
 
                         curves_generated.append(new_curve)
                     break
@@ -482,6 +501,46 @@ class SyntheticParametericCurvesSetsSMT(AbstractSyntheticParameterCurves):
         self.parametric_lcs = curves_generated
 
 
+
+class SyntheticFuncMetaDatasets(AbstractSyntheticParameterCurves):
+    def fit(self,
+            curves: List[SynthericParametericCurves]) -> None:
+        """
+        Generate the learning curves from a set of artifical functions by pertubabign their parameters
+        """
+        generated_curves = []
+        for i, curve in enumerate(curves):
+            lc_type = curve.function
+            for idx_restart in range(self.restarts):
+                lc_par = copy.deepcopy(curve.parameters_lc[0])
+
+                new_value_idx = self.rng.randint(len(lc_par))
+
+                new_value_coefficient = self.rng.normal(1, 0.2)
+                while abs(new_value_coefficient - 1) > 0.3:
+                    new_value_coefficient = self.rng.normal(1, 0.2)
+                lc_par[new_value_idx] = lc_par[new_value_idx] * new_value_coefficient
+                try:
+                    new_curve = SynthericParametericCurves(lc_type, budgets=self.budgets, restarts=curve.restarts,
+                                                                   parameters_lc=lc_par)
+                except Exception as e:
+                    print(e)
+                    continue
+                res = new_curve.predict(self.budgets).flatten()
+                if np.isnan(res).any() or np.isinf(res).any():
+                    continue
+                if np.max(res) > 100 or np.min(res) < 0:
+                    continue
+
+                generated_curves.append(new_curve)
+                break
+
+            if idx_restart == self.restarts:
+                print(i)
+                generated_curves.append(curve)
+        self.parametric_lcs = generated_curves
+
+
 if __name__ == '__main__':
     from imfas.data.lcbench.example_data import train_dataset
     import matplotlib.pyplot as plt
@@ -490,9 +549,23 @@ if __name__ == '__main__':
         para_init_values = json.load(f)
     budgets = list(range(1, 52))
 
-    lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=12, seed=13)
-    final_performance = lc_predictor.fit(20, para_init_values)
-    lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
-    plt.show()
+    lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=200, seed=1)
+    lc_predictor.fit(30, para_init_values)
+    #lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
+    #plt.show()
 
-    print()
+    new_curves_generator = SyntheticFuncMetaDatasets(budgets, restarts=200, seed=1)
+    new_curves_generator.fit(lc_predictor.parametric_lcs)
+
+    lcs_all = []
+    lcs_all.append(lc_predictor.predict(lc_predictor.budgets))
+    lcs_all.append(new_curves_generator.predict(lc_predictor.budgets))
+
+    for i in range(20):
+        new_curves_generator.fit(new_curves_generator.parametric_lcs)
+        new_curves_generator.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
+        plt.show()
+        lcs_all.append(new_curves_generator.predict(lc_predictor.budgets))
+
+    # generated learning curves
+    lcs_all = np.asarray(lcs_all)

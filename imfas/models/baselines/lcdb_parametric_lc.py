@@ -8,8 +8,9 @@ import scipy as sp
 import scipy.optimize
 import torch
 from tqdm import tqdm
-
+import json
 from imfas.utils.modelinterface import ModelInterface
+import pathlib
 
 logger = logging.getLogger(__name__)
 
@@ -243,6 +244,13 @@ if __name__ == '__main__':
 
     lc_predictor = BestParametricLC(list(range(1, 52)), restarts=10)
     final_performance = lc_predictor.forward(lc_tensor, mask)
+
+    lcs_parameters = {}
+    for key, values in lc_predictor.parametric_lcs.items():
+        lcs_parameters[key] = values.parameters_lc.tolist()
+
+    with open(str(pathlib.Path(__file__).resolve().parent / 'lcs_parameters.json'), 'w') as f:
+        json.dump(lcs_parameters, f)
 
     lc_predictor.plot_curves(x=lc_predictor.budgets, y=lc_tensor, ax=plt.gca())
     plt.show()
