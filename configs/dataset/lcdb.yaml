@@ -1,7 +1,7 @@
 defaults:
   - dataset_meta: lcdb_minimal
-  - lc_meta: NULL # IRRELEVANT (had to be overritten)
-  - algo_meta: yahpo_lcbench_minimal
+  - lc_meta: NULL # IRRELEVANT (had to be overritten in here)
+  - algo_meta: NULL
 
 name: lcdb
 
@@ -24,6 +24,8 @@ train_dataset_class: # ---------------------------------------------------------
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.LC_NAFill
+          axis: 1
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
@@ -44,7 +46,7 @@ valid_dataset_class: # ---------------------------------------------------------
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
         - _target_: imfas.data.preprocessings.table_transforms.LC_NAFill
-          axis: 0
+          axis: 1
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
@@ -57,6 +59,8 @@ valid_dataset_class: # ---------------------------------------------------------
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.LC_NAFill
+          axis: 1
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
@@ -76,6 +80,8 @@ test_dataset_class: # ----------------------------------------------------------
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.LC_NAFill
+          axis: 1
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
@@ -89,6 +95,8 @@ test_dataset_class: # ----------------------------------------------------------
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.LC_NAFill
+          axis: 1
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}

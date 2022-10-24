@@ -71,6 +71,7 @@ class LCDB_API:
             col_name = f'score_{col}'
 
             self.tables[col_name] = pd.pivot(self.df, columns='size_train', values=col_name)
+
             self.tables[col_name].to_hdf(
                 self.path_preprocessed / f"{col}_lcs.h5",
                 key="dataset",

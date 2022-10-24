@@ -8,7 +8,8 @@ from imfas.utils.modelinterface import ModelInterface
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel('DEBUG')
+
+# logger.setLevel('DEBUG')
 
 
 class SuccessiveHalving(ModelInterface):
