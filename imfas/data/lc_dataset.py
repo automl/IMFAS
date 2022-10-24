@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from imfas.data.preprocessings.lc_slice import LC_TimeSlices
 from imfas.data.preprocessings.transformpipeline import TransformPipeline
 
-
+import pdb
 class Dataset_LC(Dataset):
     def __init__(self, path, transforms: TransformPipeline, metric: str = "None"):
         """
@@ -80,6 +80,23 @@ class DatasetLCSynthetic(Dataset_LC):
                 self.transforms = self.transforms.fit(self.df)
                 self.transformed_df = self.transforms.transform(self.df)
         """
+
+
+class DatasetTaskSet(Dataset_LC):
+    def __init__(self, path, transforms: TransformPipeline, metric: str = "None"):
+        """
+        :param metric: Lcbench needs another specifier to subset the dataset.
+        """
+        self.path = path
+        
+        np_array = np.load(path).mean(axis=2)[:,:50,:,0]
+
+        print(np_array.shape)
+        pdb.set_trace()
+        
+        self.transformed_df = torch.from_numpy(np_array)
+        self.metric = metric
+        
 
 
 if __name__ == "__main__":
