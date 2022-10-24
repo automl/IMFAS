@@ -6,6 +6,7 @@ from itertools import combinations
 import pathlib
 from typing import Callable, Tuple, List, Dict
 from functools import partial
+import os
 
 import torch
 from imfas.models.baselines.lcdb_parametric_lc import ParametricLC, BestParametricLC
@@ -351,9 +352,13 @@ class SyntheticParametericCurvesSMT(AbstractSyntheticParameterCurves):
             restarts: int = 10,
             min_n_intersections: int = 5,
             intersection_budget_bounds: List[List[int]] = [
-                [1, 5],
-                [5, 10],
-                [25, 50]]
+                [1, 2],
+                [2, 4],
+                [4, 8],
+                [8, 16],
+                [16, 32],
+                [32, 50]
+            ]
             ) -> None:
         """
         Here I propose an incremental approach to generate a set of curves that has min_n_intersections intersection
@@ -558,10 +563,11 @@ if __name__ == '__main__':
         para_init_values = json.load(f)
     budgets = list(range(1, 52))
 
-    lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=200, seed=35)
+    lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=200, seed=0)
     lc_predictor.fit(30, para_init_values)
-    #lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
-    #plt.show()
+    lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
+    plt.show()
+
 
 
     new_curves_generator = SyntheticFuncMetaDatasets(budgets, restarts=200, seed=1)
@@ -581,5 +587,12 @@ if __name__ == '__main__':
 
     # generated learning curves
     lcs_all = np.asarray(lcs_all)
-    with open("synthetic_func.npy", "wb") as f:
+
+    synthetic_func_path = pathlib.Path(__file__).parent.parent.parent.parent.absolute()  /\
+           'data' / 'preprocessed' / 'Synthetic'
+
+    if not synthetic_func_path.exists():
+        os.makedirs(str(synthetic_func_path), exist_ok=True)
+
+    with open(synthetic_func_path / "synthetic_func.npy", "wb") as f:
         np.save(f, lcs_all)
