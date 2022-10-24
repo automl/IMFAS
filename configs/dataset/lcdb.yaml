@@ -1,6 +1,6 @@
 defaults:
   - dataset_meta: lcdb_minimal
-  - lc_meta: multi_slice
+  - lc_meta: NULL # IRRELEVANT (had to be overritten)
   - algo_meta: yahpo_lcbench_minimal
 
 name: lcdb
@@ -43,6 +43,8 @@ valid_dataset_class: # ---------------------------------------------------------
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
+        - _target_: imfas.data.preprocessings.table_transforms.LC_NAFill
+          axis: 0
         - _target_: imfas.data.preprocessings.table_transforms.Convert
         - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}

@@ -110,6 +110,8 @@ class BaseTrainer:
             max_fidelity = test_loader.dataset.lcs.shape[-1]
             for fidelity in tqdm(range(max_fidelity), desc='Fidelity'):
 
+                # fixme: figure out how wandb can recieve the actual fidelity label.
+
                 test_loader.dataset.masking_fn = partial(
                     mask_lcs_to_max_fidelity,
                     max_fidelity=fidelity
@@ -127,7 +129,7 @@ class BaseTrainer:
                         if isinstance(fn, DictConfig):  # fixme: can we remove this?
                             fn = instantiate(fn)
 
-                        if hasattr(self.model, 'no_opt'):  # FIXME: @Aditya: remove me
+                        if hasattr(self.model, 'no_opt'):  # FIXME: @Aditya: remove this
                             self.model.training = False
 
                         if j == 0:  # for all those baselines that don't have a online training

@@ -154,3 +154,13 @@ class OneHot(Transform):
     def transform(self, X: pd.DataFrame):
         return pd.get_dummies(X, columns=self.columns, prefix=self.prefix,
                               drop_first=self.drop_first)
+
+
+class LC_NAFill(Transform):
+    def __init__(self, axis=0):
+        """Fill nan values with the last non nan value in the row
+        Learning curves might have values that have not been measured yet."""
+        self.axis = axis
+
+    def transform(self, X: pd.DataFrame):
+        return X.fillna(method="ffill", axis=self.axis)
