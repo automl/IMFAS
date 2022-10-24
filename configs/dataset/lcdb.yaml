@@ -116,7 +116,7 @@ test_dataloader_class:
   shuffle: False
   num_workers: ${num_workers}
 
-slices: [ 16, 32, 45, 64, 128, 181, 256, 362, 512, 724, 1024, 1448, 2048, 2896, 4096, 8192, 11585, 16384, 23170, 32768, 65536 ]
+slices: [ 16,32,45,64,128,181,256,362,512,724,1024,1448,2048,2896,4096,8192,11585,16384,23170,32768,65536 ]
 
 dataset_raw:
   _target_: imfas.data.lcdb.raw_pipe.raw_pipe
