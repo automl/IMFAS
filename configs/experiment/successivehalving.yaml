@@ -16,7 +16,7 @@ wandb:
 device: 'cpu'
 
 model:
-  eta: 2
+  eta: 3
 
 dataset:
   test_dataloader_class:

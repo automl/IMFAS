@@ -12,7 +12,7 @@ class Dataset_Join_Dmajor(Dataset):
     def __init__(
             self,
             learning_curves: Dataset_LC,
-            meta_dataset: DatasetMetaFeatures,
+            meta_dataset: DatasetMetaFeatures = None,
             meta_algo: Optional[AlgorithmMetaFeatures] = None,
             split: List[int] = None,
             masking_fn: Optional[Callable] = None,
@@ -37,7 +37,8 @@ class Dataset_Join_Dmajor(Dataset):
         self.kwargs = kwargs
 
         assert all([v.shape == self.lcs.shape for v in kwargs.values()])
-        assert self.lcs.shape[0] == meta_dataset.shape[0]
+        if meta_dataset is not None:
+            assert self.lcs.shape[0] == meta_dataset.shape[0]
         if meta_algo is not None:
             assert self.lcs.shape[1] == meta_algo.shape[1]
 
@@ -62,16 +63,25 @@ class Dataset_Join_Dmajor(Dataset):
         else:
             lc_tensor = self.lcs[it]
             mask = torch.ones_like(lc_tensor, dtype=torch.bool)
+        if self.meta_dataset is not None:
 
-        X = {
-            "dataset_meta_features": self.meta_dataset[it],
-            "learning_curves": lc_tensor,
-            "mask": mask,
-            **self.kwargs
+            X = {
+                "dataset_meta_features": self.meta_dataset[it],
+                "learning_curves": lc_tensor,
+                "mask": mask,
+                **self.kwargs
 
-            # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
+                # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
 
-        }
+            }
+        else:
+            X = {
+                "learning_curves": lc_tensor,
+                "mask": mask,
+                **self.kwargs
+                # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
+
+            }
 
         y = {"final_fidelity": self.lcs[it, :, -1]}
 

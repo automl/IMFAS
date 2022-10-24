@@ -6,11 +6,51 @@ trainerobj:
     lr: 0.001
 
 run_call:
-  epochs: 2
+  epochs: 0
   log_freq: 2
 
   train_loss_fn: Null
 
-  valid_loss_fns: Null
+  valid_loss_fns:
+    spearman:
+      _target_: imfas.losses.spearman.SpearmanLoss
 
-  test_loss_fns: Null
+    top1regret:
+      _target_: imfas.losses.topkregret.Top1RegretLoss
+      k: 1
+
+    top3regret:
+      _target_: imfas.evaluation.topkregret.TopKRegret
+      k: 3
+
+  test_loss_fns:
+    #   spearman:
+    #      _target_: imfas.losses.spearman.SpearmanLoss
+
+    #   plackett_luce:
+    #      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+    #      k: 10
+
+    #   neuralNDCG:
+    #      _target_: allrank.models.losses.neuralNDCG
+    #      _partial_: True
+    #      padded_value_indicator: -1
+    #      temperature: 1.
+    #      powered_relevancies: True
+    #      k: 10
+    #      stochastic: False
+    #      n_samples: 32
+    #      beta: 0.1
+    #      log_scores: True
+
+    top1regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 1
+
+    top3regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 3
+
+    top5regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 5

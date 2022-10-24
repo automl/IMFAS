@@ -19,7 +19,7 @@ seed: 0
 output_dir: ./tmp
 
 num_workers: 2
-device: 'cpu'
+device: ${device_ident:None} # FIXME: debug that all tensors are on same device with cuda
 
 
 wandb:
