@@ -159,10 +159,12 @@ class AbstractSyntheticParameterCurves(BestParametricLC):
         # fancy indexing to get the final prediction of the best (lowest cost during training) curve
         # for each algorithm.
         final_performance = predictions
+        final_performance = final_performance+ [(1 - np.arange(len(x)) / len(x))] * self.rng.normal(np.zeros_like(final_performance), 2* np.ones_like(final_performance))
         return final_performance
 
     def plot_curves(self, x, ax):
         y_hats = self.predict(x)
+
         for y_hat in y_hats:
             ax.plot(x, y_hat, color='red', alpha=0.5, linewidth=1., )
         ax.set_title('Generated Synthetic Functions')
@@ -348,7 +350,11 @@ class SyntheticParametericCurvesSMT(AbstractSyntheticParameterCurves):
             para_init_values: Dict,
             restarts: int = 10,
             min_n_intersections: int = 5,
-            intersection_budget_bounds: List[List[int]] = [[1, 5], [5, 10], [25, 50]]) -> None:
+            intersection_budget_bounds: List[List[int]] = [
+                [1, 5],
+                [5, 10],
+                [25, 50]]
+            ) -> None:
         """
         Here I propose an incremental approach to generate a set of curves that has min_n_intersections intersection
         points: every time we pick 2 curves and check if they have an intersection points. One of these 2 curves must
@@ -364,6 +370,7 @@ class SyntheticParametericCurvesSMT(AbstractSyntheticParameterCurves):
         """
         n_generated_lcs = 0
         curves_generated: List[SynthericParametericCurves] = []
+        curve_types = []
 
         n_curves_checked = 2  # This parameter indicates the amount of the learning curves that we want to compare at
         # each round
@@ -489,6 +496,7 @@ class SyntheticParametericCurvesSMT(AbstractSyntheticParameterCurves):
                             continue
 
                         curves_generated.append(new_curve)
+                        curve_types.append(curve_types)
                     break
 
             if idx_restart == restarts:
@@ -497,8 +505,10 @@ class SyntheticParametericCurvesSMT(AbstractSyntheticParameterCurves):
                 new_curve = SynthericParametericCurves(lc_type, budgets=self.budgets, restarts=restarts,
                                                        parameters_lc=self.sample_lc(lc_type, para_init_values))
                 curves_generated.append(new_curve)
+                curve_types.append(lc_type)
 
         self.parametric_lcs = curves_generated
+        self.curve_types = curve_types
 
 
 
@@ -542,30 +552,34 @@ class SyntheticFuncMetaDatasets(AbstractSyntheticParameterCurves):
 
 
 if __name__ == '__main__':
-    from imfas.data.lcbench.example_data import train_dataset
     import matplotlib.pyplot as plt
 
     with open(str(pathlib.Path(__file__).resolve().parent / 'lcs_parameters.json'), 'r') as f:
         para_init_values = json.load(f)
     budgets = list(range(1, 52))
 
-    lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=200, seed=1)
+    lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=200, seed=35)
     lc_predictor.fit(30, para_init_values)
     #lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
     #plt.show()
+
 
     new_curves_generator = SyntheticFuncMetaDatasets(budgets, restarts=200, seed=1)
     new_curves_generator.fit(lc_predictor.parametric_lcs)
 
     lcs_all = []
     lcs_all.append(lc_predictor.predict(lc_predictor.budgets))
+
+
     lcs_all.append(new_curves_generator.predict(lc_predictor.budgets))
 
     for i in range(20):
         new_curves_generator.fit(new_curves_generator.parametric_lcs)
-        new_curves_generator.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
-        plt.show()
+        #new_curves_generator.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
+        #plt.show()
         lcs_all.append(new_curves_generator.predict(lc_predictor.budgets))
 
     # generated learning curves
     lcs_all = np.asarray(lcs_all)
+    with open("synthetic_func.npy", "wb") as f:
+        np.save(f, lcs_all)
