@@ -16,11 +16,11 @@ run_call:
       _target_: imfas.losses.spearman.SpearmanLoss
 
     top1regret:
-      _target_: imfas.losses.topkregret.Top1RegretLoss
+      _target_: imfas.evaluation.topkregret.TopkRegret
       k: 1
 
     top3regret:
-      _target_: imfas.evaluation.topkregret.TopKRegret
+      _target_: imfas.evaluation.topkregret.TopkRegret
       k: 3
 
   test_loss_fns:
