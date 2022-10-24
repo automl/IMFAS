@@ -117,6 +117,56 @@ def raw_pipe(**kwargs):
 
     tables = db.save(cfg.cols)
 
+    def raw_pipe(*args, **kwargs):
+        config = DictConfig(**kwargs)
+        # Create your connection.
+        path_to_database = config['database_path']
+
+        connection = sqlite3.connect(path_to_database)
+        table_name = config['table_name']
+
+        df = pd.read_sql_query("SELECT * FROM {}".format(table_name), connection)
+        data = df[
+            ['dataset_id', 'budget', 'classifier', 'average_train_accuracy', 'average_val_accuracy',
+             'average_test_accuracy']]
+        data = data.set_index(['dataset_id', 'classifier'])
+
+        data_training_curves = data.drop(['average_val_accuracy', 'average_test_accuracy'], axis=1)
+        data_validation_curves = data.drop(['average_train_accuracy', 'average_test_accuracy'],
+                                           axis=1)
+        data_test_curves = data.drop(['average_train_accuracy', 'average_val_accuracy'], axis=1)
+
+        data_training_curves = data_training_curves.pivot_table(values='average_train_accuracy',
+                                                                index=['dataset_id', 'classifier'],
+                                                                columns=['budget'])
+
+        data_validation_curves = data_validation_curves.pivot_table(values='average_val_accuracy',
+                                                                    index=['dataset_id',
+                                                                           'classifier'],
+                                                                    columns=['budget'])
+
+        data_test_curves = data_test_curves.pivot_table(values='average_test_accuracy',
+                                                        index=['dataset_id', 'classifier'],
+                                                        columns=['budget'])
+
+        path_to_output_files = config['path_to_output_files']
+
+        data_training_curves.to_hdf(path_to_output_files + '/training_curves.h5', key='df',
+                                    mode='w')
+        data_validation_curves.to_hdf(path_to_output_files + 'validation_curves.h5', key='df',
+                                      mode='w')
+        data_test_curves.to_hdf(path_to_output_files + 'test_curves.h5', key='df', mode='w')
+
+    #     path = Path(__file__).parents[3] / 'data'
+
+
+#     db = OpenML_ASLC_Sqlite(path)
+#     df = db.load()
+#
+#     # cols = list(df.columns[df.columns.str.startswith('test_accuracy_fold')])
+#     cols = [x for x in df.index.levels[0] if x.startswith('test_accuracy_fold')]
+#     cols.append('average_test_accuracy')
+#     tables = db.collect_tables(cols)
 
 if __name__ == '__main__':
     path = Path(__file__).parents[3] / 'data'

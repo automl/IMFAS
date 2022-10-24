@@ -1,0 +1,10 @@
+name: OpenMLScikit
+
+dataset_raw:
+  _target_: imfas.data.lcbench.raw_pipe.raw_pipe
+
+  #TODO Change to relative
+  enable: False # whether to override the preprocessing
+  database_path: server_data/scikit-learn_conference_iclr2022.db
+  path_to_output_files: data_output
+  table_name: openmlcc18_learning_curve_data

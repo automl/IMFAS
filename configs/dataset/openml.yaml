@@ -90,8 +90,9 @@ test_dataloader_class:
 
 
 dataset_raw:
-  _target_: imfas.data.openml.raw_pipe.raw_pipe
+  _target_: imfas.data.openml.raw_pipe1.raw_pipe
   enable: False # whether to override the preprocessing
+  root: ${dir_data}
 
   cols:
     - test_accuracy_fold_1
