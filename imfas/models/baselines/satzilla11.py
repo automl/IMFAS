@@ -1,20 +1,13 @@
-import logging
+import pdb
 import random
-import numpy as np
-from aslib_scenario.aslib_scenario import ASlibScenario
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.utils import resample
 from collections import Counter
-from tqdm import tqdm
 
+import numpy as np
 import torch
 import torch.nn as nn
-import wandb
+from sklearn.ensemble import RandomForestClassifier
+from tqdm import tqdm
 
-
-import pdb
 
 class SATzilla11(nn.Module):
     """ 
@@ -24,25 +17,24 @@ class SATzilla11(nn.Module):
     thus does not account for presolving or employing a backup solver.    
     """
 
-    def __init__(self, max_fidelity, device = 'cpu'):
+    def __init__(self, max_fidelity, device='cpu'):
         super(SATzilla11, self).__init__()
-        
+
         self._name = 'satzilla-11'
         self._models = {}
         self.max_fidelity = max_fidelity
         self.device = device
-        self.no_opt = True
-
+        self.no_opt = True  # FIXME: @Aditya - this hack should not be necessary.
         self.training = True
 
         # used to break ties during the predictions phase
         self._rand = random.Random(0)
-        
+
         # TODO Initiate the classifier using hydra
         self.rfc_kwargs = {
             'n_estimators': 2,
-            'max_features': 'log2', 
-            'n_jobs': 5, 
+            'max_features': 'log2',
+            'n_jobs': 5,
             'random_state': 0
 
         }
@@ -54,18 +46,17 @@ class SATzilla11(nn.Module):
         else:
             return self.predict(dataset_meta_features[0])
 
-
     def fit(self, dataset_meta_features, fidelity):
 
         self._num_algorithms = np.shape(fidelity)[-1]
-        self._algo_ids = np.arange(0,self._num_algorithms,1)
+        self._algo_ids = np.arange(0, self._num_algorithms, 1)
 
         features = dataset_meta_features.numpy()
         performances = fidelity.numpy()
 
         # create and fit rfcs' for all pairwise comparisons between two algorithms
-        self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)]
-
+        self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in
+                                  range(i + 1, self._num_algorithms)]
 
         for (i, j) in tqdm(self._pairwise_indices):
             # determine pairwise target, initialize models and fit each RFC wrt. instance weights
@@ -77,38 +68,36 @@ class SATzilla11(nn.Module):
             sample_weights = np.nan_to_num(sample_weights)
 
             # TODO: how to set the remaining hyperparameters? 
-            self._models[(i, j)] = RandomForestClassifier(**self.rfc_kwargs)     # TODO set random state to the torch seed
+            self._models[(i, j)] = RandomForestClassifier(
+                **self.rfc_kwargs)  # TODO set random state to the torch seed
             self._models[(i, j)].fit(features, pair_target, sample_weight=sample_weights)
 
-
     def predict(self, dataset_meta_features):
-        
+
         batch_features = dataset_meta_features
-        
+
         selections = []
         # Selection an algorithm per task in the test-set
         for features in batch_features:
-                       
-            assert(features.ndim == 1), '`features` must be one dimensional'
+
+            assert (features.ndim == 1), '`features` must be one dimensional'
             features = np.expand_dims(features, axis=0)
 
             # compute the most voted algorithms for the given instance
             predictions = {(i, j): rfc.predict(features).item()
-                        for (i, j), rfc in self._models.items()}
- 
+                           for (i, j), rfc in self._models.items()}
+
             counter = Counter(predictions.values())
-            
+
             for id in self._algo_ids:
                 if id not in counter.keys():
                     counter[id] = 0
-                
-            
+
             # TODO revisit the tie breaking procedure
             # ranking = []
 
-            
             # for i in range(len(counter.most_common())):
-                
+
             #     key, val  = counter.most_common()[i]
 
             #     if counter.most_common()[i+1][1] == val:
@@ -127,8 +116,8 @@ class SATzilla11(nn.Module):
             #         print(ties)        
             #         [ranking.append(a) for a,_ in self._break_ties(ties, predictions)]
             #     else:
-            ranking = [key for key, _ in counter.most_common()]            
-            
+            ranking = [key for key, _ in counter.most_common()]
+
             selections.append(ranking)
 
         return torch.Tensor(selections)
@@ -138,7 +127,7 @@ class SATzilla11(nn.Module):
 
         # label target as i if the utility of algorithm i is <= the utility of algorithm j,
         # otherwise label it j
-        pair_target = np.full(performances.shape[0], fill_value=i)        
+        pair_target = np.full(performances.shape[0], fill_value=i)
         pair_target[performances[:, i] > performances[:, j]] = j
 
         return pair_target
@@ -161,22 +150,22 @@ class SATzilla11(nn.Module):
         print(indices)
 
         pred = {(i, j): predictions[(i, j)] for (i, j) in indices}
-        
+
         counter = Counter(pred.values())
 
         print('counter', counter)
         pdb.set_trace()
-        
+
         return counter.most_common()
 
     def train(self):
         self.training = True
-    
+
     def eval(self):
         self.training = False
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     x = SATzilla11()
 
     print('Hallelujah')

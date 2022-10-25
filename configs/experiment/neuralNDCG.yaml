@@ -6,11 +6,8 @@
 defaults:
   - /model: mlp_D
 
-
-
 wandb:
   notes: 'neuralNDCG test'
-
 
 dataset:
 

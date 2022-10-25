@@ -9,7 +9,8 @@ from functools import partial
 import os
 
 import torch
-from imfas.models.baselines.lcdb_parametric_lc import ParametricLC, BestParametricLC
+from imfas.models.baselines.lcdb_parametric_lc import ParametricLC
+from imfas.models.baselines.lcdb_parametric_best_lc import BestParametricLC
 import numpy as np
 import pysmt.fnode
 from pysmt.shortcuts import (

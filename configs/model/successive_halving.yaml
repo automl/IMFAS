@@ -1,3 +1,0 @@
-_target_: imfas.models.baselines.successive_halving.SuccessiveHalving
-eta: 2
-budgets: ${dataset.slices}

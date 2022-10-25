@@ -132,6 +132,8 @@ def raw_pipe(*args, **kwargs):  # datapath:pathlib.Path # FIXME: pass_orig_cwd e
     lc.to_hdf(dir_prep_dataset_bench / "logs_subset.h5", key="dataset", mode="w")
 
 
+# FIXME: move the below into the original API class & distinguish between load(
+#  from_download=True) and load(from_download=False)
 def collect_lctensor(algo_configs, bench, metric, fidelity_type, slices):
     # gather per dataset the respective performances for all configs
     slices_dict = {}

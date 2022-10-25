@@ -9,6 +9,9 @@ from imfas.utils.modelinterface import ModelInterface
 logger = logging.getLogger(__name__)
 
 
+# logger.setLevel('DEBUG')
+
+
 class SuccessiveHalving(ModelInterface):
     def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", budget_type='additive'):
         """
@@ -133,13 +136,18 @@ class SuccessiveHalving(ModelInterface):
             if level == len(self.schedule_index):
                 k = n_algos - n_dead
 
-            logger.debug(f"Budget {budget}: {k} survivors")
+            logger.debug(f"Budget {budget}: {k} will survivors out of {sum(survivors)}")
+            logger.debug(f"Survivors: {survivors}")
+
+            if sum(survivors) == 0:
+                break
 
             self.update_costs(cost_curves, budget, survivors)
 
             # dead in relative selection (index requires adjustment)
             slice = learning_curves[:, :, budget]
             alive_idx = algos_idx[survivors == 1]
+
             dead = torch.topk(slice[0, alive_idx], k, dim=0, largest=False)
 
             # translate to the algorithm index
@@ -148,9 +156,9 @@ class SuccessiveHalving(ModelInterface):
 
             # change the survivor flag
             survivors[new_dead_algo] = 0
-            logger.debug(f"Deceasceds'performances: "
+            logger.debug(f"Deceased' performances: "
                          f"{learning_curves[:, :, budget][0, new_dead_algo]}")
-            logger.debug(f"Survivors'performances: {learning_curves[:, :, budget] * survivors}")
+            logger.debug(f"Survivors' performances: {learning_curves[:, :, budget] * survivors}")
 
             # BOOKKEEPING: add the (sorted by performance) dead to the ranking
             rankings_idx[n_dead: n_dead + dead.indices.shape[-1]] = new_dead_algo

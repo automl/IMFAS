@@ -67,7 +67,9 @@ setuptools.setup(
         "yahpo_gym",  # fixme: versions?
         "openml",
         "ConfigSpace",
-        "smac==1.4.0"
+        "smac==1.4.0",
+        "lcdb",
+
         # "pytorch_forecasting",
         # "pytables",
     ],

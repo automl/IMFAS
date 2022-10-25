@@ -98,6 +98,19 @@ class Drop(Transform):
         return X.drop(columns=self.columns)
 
 
+class Drop_Constant(Transform):
+    """Drop columns which only have constant values"""
+
+    def __init__(self):
+        """
+        transform a,ll nan values to 0
+        """
+        super(Drop_Constant, self).__init__()
+
+    def transform(self, X: pd.DataFrame):
+        return X.loc[:, X.apply(pd.Series.nunique) != 1]
+
+
 class Convert(Transform):
     def __init__(self, columns=None, dtype=None):  # FIXME: dtype should be used
         """change to a specific type"""
@@ -141,3 +154,13 @@ class OneHot(Transform):
     def transform(self, X: pd.DataFrame):
         return pd.get_dummies(X, columns=self.columns, prefix=self.prefix,
                               drop_first=self.drop_first)
+
+
+class LC_NAFill(Transform):
+    def __init__(self, axis=0):
+        """Fill nan values with the last non nan value in the row
+        Learning curves might have values that have not been measured yet."""
+        self.axis = axis
+
+    def transform(self, X: pd.DataFrame):
+        return X.fillna(method="ffill", axis=self.axis)

@@ -30,7 +30,6 @@ train_dataset_class: # ---------------------------------------------------------
     metric: Train/val_cross_entropy
 
 
-
 valid_dataset_class: # -----------------------------------------------------------------------------
   _target_: imfas.data.Dataset_Join_Test
   meta_dataset: ${dataset.dataset_meta}
@@ -171,7 +170,7 @@ dataset_raw:
       # options:
       #       'Train/loss',
       #       'Train/lr',
-      #       'Train/test_balanced_accuracy', 'Train/test_cross_entropy',
+    #       'Train/test_balanced_accuracy', 'Train/test_cross_entropy',
     #       'Train/test_result', 'Train/train_accuracy',
     #       'Train/train_balanced_accuracy', 'Train/train_cross_entropy',
     #       'Train/val_accuracy', 'Train/val_balanced_accuracy',
