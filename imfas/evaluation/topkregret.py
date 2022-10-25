@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+import pdb
 
 class TopkRegret(nn.Module):
     def __init__(self, k):
@@ -19,6 +20,10 @@ class TopkRegret(nn.Module):
 
         NOTE: Careful, TopkMaxRegret is assuming that the maximum of y_scores is the best.
         """
+
+        # print(y_pred, y_true)
+        # pdb.set_trace()
+
         contenders = torch.topk(y_pred, k=self.k, dim=1)
         contenders_true_performance = y_true.gather(1, contenders.indices)
         # y_true[:, contenders.indices]
@@ -27,6 +32,8 @@ class TopkRegret(nn.Module):
         if self.k == 1:
             best_contender = best_contender.unsqueeze(1)
         best_available = torch.max(y_true, dim=1).values
+        
+        
         return torch.mean(best_available - best_contender)  # batch mean
 
 

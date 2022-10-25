@@ -5,6 +5,7 @@ import torchsort
 from torch.nn import Softmax
 from torch.nn.modules.loss import _Loss as Loss
 
+import pdb
 
 class SpearmanLoss(Loss):
     def __init__(
@@ -18,6 +19,7 @@ class SpearmanLoss(Loss):
     def forward(self, y_hat: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
         # generate soft ranks
         # FIXME: @Aditya, what is the expected dtype of both tensors?
+
         y_hat = self.ranking_fn(y_hat, **self.ts_kwargs)
         y_true = self.ranking_fn(y_true, **self.ts_kwargs)
 

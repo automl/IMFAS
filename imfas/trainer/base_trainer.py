@@ -58,7 +58,7 @@ class BaseTrainer:
                 self.optimizer.zero_grad()
 
             y_hat = self.model.forward(**X)
-            
+        
             if not hasattr(self.model, 'no_opt'):
                 loss = loss_fn(y_hat, y["final_fidelity"])
                 # print(y, y_hat, loss)
@@ -88,10 +88,6 @@ class BaseTrainer:
                 self.to_device(y)
 
 
-                # print(X.keys())
-                # print(y.keys())
-                # pdb.set_trace()
-
                 y_hat = self.model.forward(**X)
                 losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
 
@@ -109,6 +105,7 @@ class BaseTrainer:
         """
         with torch.no_grad():
             max_fidelity = test_loader.dataset.lcs.shape[-1]
+
             for fidelity in range(max_fidelity):
 
                 test_loader.dataset.masking_fn = partial(
@@ -126,16 +123,20 @@ class BaseTrainer:
                     if hasattr(self.model, 'no_opt'):
                         self.model.training = False
 
+
                     y_hat = self.model.forward(**X)
 
+                    # print(y_hat)
+                    # pdb.set_trace()
+                    
                     # Successive halving will inf for zero available fidelities.
                     # Some test loss functions may take an issue with that.
                     # This is a save-guard to prevent this (intended) behaviour.
                     try:
                         if hasattr(self.model, 'no_opt'):
-                            losses[i] = test_loss_fn(y_hat, y["final_fidelity"][0])
+                            losses[i] = test_loss_fn(y_hat, y['final_fidelity'][0])
                         else:    
-                            losses[i] = test_loss_fn(y_hat, y["final_fidelity"])
+                            losses[i] = test_loss_fn(y_hat, y['final_fidelity'])
                     except Exception as e:
                         log.error(f"Error in test loss fn {fn_name}:\n{e}")
 

@@ -8,6 +8,7 @@ from imfas.utils.modelinterface import ModelInterface
 
 logger = logging.getLogger(__name__)
 
+import pdb 
 
 class SuccessiveHalving(ModelInterface):
     def __init__(self, budgets: List, eta: int = 2, device: str = "cpu", budget_type='additive'):
@@ -106,6 +107,8 @@ class SuccessiveHalving(ModelInterface):
         SH execution.
         :return: torch.Tensor (float), ranking of the algorithms.
         """
+        
+        learning_curves = learning_curves
 
         # batch = learning_curves.shape[0]
         n_algos = learning_curves.shape[1]
@@ -160,13 +163,13 @@ class SuccessiveHalving(ModelInterface):
             logger.debug(f"rankings: {rankings_idx}")
 
         ranking = torch.tensor([rankings_idx.long().tolist().index(i) for i in range(n_algos)])
+
         return ranking.float().view(1, -1)
         # fixme: do we need to sort this ranking? based on the algorithms
         #  original positions.
 
 
 if __name__ == "__main__":
-    import torch
 
     logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
     # wandb.init()

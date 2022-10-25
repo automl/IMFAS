@@ -31,11 +31,11 @@ trainer:
       spearman:
         _target_: imfas.losses.spearman.SpearmanLoss
       
-      top1_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
-        k: 1
+      # top1_regret:
+      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   k: 1
     
-      top3_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
-        k: 3
+      # top3_regret:
+      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   k: 3
 
