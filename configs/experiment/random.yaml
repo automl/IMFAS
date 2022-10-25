@@ -15,7 +15,7 @@ wandb:
 device: 'cpu'
 
 model:
-  _target_: imfas.models.baselines.random.RandomBaseline
+  _target_: imfas.models.baselines.random_baseline.RandomBaseline
 
 
 dataset:

@@ -1,5 +1,5 @@
 import pdb
-import random
+import random_baseline
 from collections import Counter
 
 import numpy as np
@@ -28,7 +28,7 @@ class SATzilla11(nn.Module):
         self.training = True
 
         # used to break ties during the predictions phase
-        self._rand = random.Random(0)
+        self._rand = random_baseline.Random(0)
 
         # TODO Initiate the classifier using hydra
         self.rfc_kwargs = {

@@ -99,7 +99,7 @@ def pipe_train(cfg: DictConfig) -> None:
         }
     )
 
-    model = instantiate(cfg.model)
+    model = instantiate(cfg.model, device=cfg.device.type)
     model.to(cfg.device)
     torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
 

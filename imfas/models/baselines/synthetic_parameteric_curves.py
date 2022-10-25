@@ -8,7 +8,6 @@ from typing import Callable, Tuple, List, Dict
 from functools import partial
 import os
 
-import torch
 from imfas.models.baselines.lcdb_parametric_lc import ParametricLC
 from imfas.models.baselines.lcdb_parametric_best_lc import BestParametricLC
 import numpy as np
@@ -565,11 +564,12 @@ if __name__ == '__main__':
     budgets = list(range(1, 52))
 
     lc_predictor = SyntheticParametericCurvesCalculus(budgets, restarts=200, seed=0)
-    lc_predictor.fit(30, para_init_values)
+    lc_predictor.fit(50, para_init_values)
     lc_predictor.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
     plt.show()
 
-
+    import pdb
+    pdb.set_trace()
 
     new_curves_generator = SyntheticFuncMetaDatasets(budgets, restarts=200, seed=1)
     new_curves_generator.fit(lc_predictor.parametric_lcs)
@@ -580,7 +580,7 @@ if __name__ == '__main__':
 
     lcs_all.append(new_curves_generator.predict(lc_predictor.budgets))
 
-    for i in range(20):
+    for i in range(100):
         new_curves_generator.fit(new_curves_generator.parametric_lcs)
         #new_curves_generator.plot_curves(x=lc_predictor.budgets, ax=plt.gca())
         #plt.show()
