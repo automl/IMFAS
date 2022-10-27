@@ -86,10 +86,6 @@ class BaseTrainer:
                 self.to_device(X)
                 self.to_device(y)
 
-                # print(X.keys())
-                # print(y.keys())
-                # pdb.set_trace()
-
                 y_hat = self.model.forward(**X)
                 losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
 
