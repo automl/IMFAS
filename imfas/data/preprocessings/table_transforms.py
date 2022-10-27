@@ -126,7 +126,8 @@ class Convert(Transform):
             if self.dtype == "int":
                 X[col] = X[col].astype(int)
             else:
-                X[col] = pd.to_numeric(X[col])
+                X[col] = X[col].astype(float)
+                # X[col] = pd.to_numeric(X[col])
         return X
 
 
