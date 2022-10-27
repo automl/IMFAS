@@ -121,6 +121,9 @@ class SuccessiveHalving(ModelInterface):
         survivors = torch.ones((n_algos), dtype=torch.int64)
         self.elapsed_time = torch.zeros(1)
 
+        # required by sh_budget_trainer
+        self.observed_mask = torch.zeros_like(mask, dtype=torch.float32)
+
         # is attribute for debugging (assertion)
         self.schedule_index = self.plan_budgets(self.budgets, mask)
 
@@ -131,6 +134,12 @@ class SuccessiveHalving(ModelInterface):
         for level, budget in enumerate(self.schedule_index.tolist(), start=1):
             # number of survivors in this round
             k = max(1, int(n_algos / self.eta ** level))
+
+            # available fidelity for each algorithm
+            self.observed_mask[:, survivors == 1, :budget] = 1
+
+            # visited fidelities for each algorithm respectively
+            # self.observed_mask[:, survivors == 1, budget] = 1
 
             # final round to break all ties?
             if level == len(self.schedule_index):
