@@ -29,11 +29,7 @@ class MLP(nn.Module):
             self.layers.append(nn.Linear(hidden_dims[-2], hidden_dims[-1], bias=False))
 
     def forward(self, X):
-
-        print('fwd:')
         for layer in self.layers:
-            print(layer, 'input', X)
-
             X = layer(X)
 
         return X
