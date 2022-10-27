@@ -60,7 +60,7 @@ class BaseTrainer:
 
             if not hasattr(self.model, 'no_opt'):
                 loss = loss_fn(y_hat, y["final_fidelity"])
-                # print(y, y_hat, loss)
+                # print(X, y, y_hat, loss)
                 loss.backward()
 
                 # FIXME: y needs to be explicit or have a strong conventioN
