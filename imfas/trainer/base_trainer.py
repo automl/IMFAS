@@ -163,6 +163,7 @@ class BaseTrainer:
         :returns None, but tracks using wandb both the trainloss all the validation losses
         """
 
+        
         # Class & functional interface
         if isinstance(train_loss_fn, DictConfig):
             train_loss_fn = instantiate(train_loss_fn)

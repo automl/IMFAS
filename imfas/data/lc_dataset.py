@@ -72,8 +72,8 @@ class DatasetTaskSet(Dataset_LC):
                     path, 
                     transforms: TransformPipeline, 
                     metric: str = "None", 
-                    n_datasets: Optional[int] = 100, 
-                    n_algos: Optional[int] = 50, 
+                    n_datasets: Optional[int] = 1000, 
+                    n_algos: Optional[int] = 100, 
                     ctype: str = 'train'
                 ):
         """
@@ -82,7 +82,7 @@ class DatasetTaskSet(Dataset_LC):
         
         self.type_idx = {
             'train': 0,
-            'valid': 1,
+            'valid': 2,
             'test' : 3,
         }
         
@@ -91,13 +91,18 @@ class DatasetTaskSet(Dataset_LC):
         
         raw_data = np.load(path).mean(axis=2)[:n_datasets,:n_algos,:,self.type_idx[ctype]]
         pre_processed = self._preprocess(raw_data)
+
+        # print(ctype)
+
+        # pdb.set_trace()
+
         self.transformed_df = torch.from_numpy(pre_processed)
         
         
         self.metric = metric
         
     # TODO Make this is a preprocesing step instead of this hack
-    def _preprocess(self, np_array, Normalize=False):
+    def _preprocess(self, np_array, Normalize=True):
         '''
         Pre-Processing the data:
             - Handle Nans and Infs:
@@ -110,7 +115,7 @@ class DatasetTaskSet(Dataset_LC):
                 
                 # # Normalize -- Min-Max
                 if Normalize:
-                    np_array[i,j,:] = (np_array[i,j,:] - np_array[i,j,:].min()) / (np_array[i,j,:].max() - np_array[i,j,:].min()) 
+                    np_array[i,j,:] = 100 * (np_array[i,j,:] - np_array[i,j,:].min()) / (np_array[i,j,:].max() - np_array[i,j,:].min()) 
                 
                 for k in range(np_array.shape[2]):
                     

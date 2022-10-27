@@ -17,6 +17,7 @@ train_dataset_class: # ---------------------------------------------------------
     # FIXME: move this back to lc_meta (but make metric accessible from here!
     _target_: imfas.data.lc_dataset.DatasetTaskSet
     path: ${dataset.path.lc_meta}
+    ctype: 'train'
 
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
@@ -34,6 +35,7 @@ valid_dataset_class: # ---------------------------------------------------------
     # FIXME: move this back to lc_meta (but make metric accessible from here!
     _target_: imfas.data.lc_dataset.DatasetTaskSet
     path: ${dataset.path.lc_meta}
+    ctype: 'valid'
 
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
@@ -47,6 +49,7 @@ valid_dataset_class: # ---------------------------------------------------------
     # FIXME: move this back to lc_meta (but make metric accessible from here!
     _target_: imfas.data.lc_dataset.DatasetTaskSet
     path: ${dataset.path.lc_meta}
+    ctype: 'test'
 
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
@@ -67,6 +70,7 @@ test_dataset_class: # ----------------------------------------------------------
     # FIXME: move this back to lc_meta (but make metric accessible from here!
     _target_: imfas.data.lc_dataset.DatasetTaskSet
     path: ${dataset.path.lc_meta}
+    ctype: 'valid'
 
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
@@ -80,6 +84,7 @@ test_dataset_class: # ----------------------------------------------------------
     # FIXME: move this back to lc_meta (but make metric accessible from here!
     _target_: imfas.data.lc_dataset.DatasetTaskSet
     path: ${dataset.path.lc_meta}
+    ctype: 'test'
 
     transforms:
       _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline

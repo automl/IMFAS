@@ -15,13 +15,19 @@ run_call:
     spearman:
       _target_: imfas.losses.spearman.SpearmanLoss
 
-    top1regret:
-      _target_: imfas.losses.topkregret.Top1RegretLoss
+    top1_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
       k: 1
 
-    top3regret:
-      _target_: imfas.evaluation.topkregret.TopKRegret
+    top3_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
       k: 3
+
+    top5_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 5
+
+    
 
   test_loss_fns:
     #   spearman:
@@ -43,14 +49,14 @@ run_call:
     #      beta: 0.1
     #      log_scores: True
 
-    top1regret:
+    top1_regret:
       _target_: imfas.evaluation.topkregret.TopkRegret
       k: 1
 
-    top3regret:
+    top3_regret:
       _target_: imfas.evaluation.topkregret.TopkRegret
       k: 3
 
-    top5regret:
+    top5_regret:
       _target_: imfas.evaluation.topkregret.TopkRegret
       k: 5
