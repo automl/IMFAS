@@ -1,12 +1,9 @@
 from typing import Tuple, Optional
-import typing
 import bisect
-import random
 from collections import Counter
 
 import numpy as np
 import torch
-import torch.nn as nn
 from sklearn.ensemble import RandomForestClassifier
 from tqdm import tqdm
 
@@ -22,6 +19,7 @@ class AugmentedSATzilla11(SATzilla11):
         """
         super(AugmentedSATzilla11, self).__init__(max_fidelity, device)
         self.aug_fidelity = aug_fidelity
+        self._fitted = False
 
     def forward(self, dataset_meta_features, learning_curves, mask,*args, **kwargs):
         if self.training:
@@ -30,6 +28,8 @@ class AugmentedSATzilla11(SATzilla11):
             return self.predict(dataset_meta_features, learning_curves)
 
     def fit(self, dataset_meta_features, learning_curves):
+        if self._fitted:
+            return
         fidelity = learning_curves[:, :, self.max_fidelity]
         self._num_algorithms = np.shape(fidelity)[-1]
         self._algo_ids = np.arange(0, self._num_algorithms, 1)
@@ -65,8 +65,7 @@ class AugmentedSATzilla11(SATzilla11):
             self._models[(i, j)] = RandomForestClassifier(
                 **self.rfc_kwargs)  # TODO set random state to the torch seed
             self._models[(i, j)].fit(features_augmented, pair_target, sample_weight=sample_weights)
-
-        return features
+        self._fitted = True
 
     def predict(self,  dataset_meta_features, learning_curves):
 
