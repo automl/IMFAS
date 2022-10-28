@@ -125,7 +125,7 @@ class AugmentedSATzilla11(SATzilla11):
 
 
 class MultiAugmentedSATzilla11(AugmentedSATzilla11):
-    def __init__(self, max_fidelity, device='cpu', aug_fidelity: Tuple[int] = (0, 10)):
+    def __init__(self, max_fidelity, device='cpu', aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
@@ -151,7 +151,7 @@ class MultiAugmentedSATzilla11(AugmentedSATzilla11):
             if length_min == 0:
                 model = self.models[0]
             else:
-                model = self.models[bisect.bisect_right(self.aug_fidelity, length_min)]
+                model = self.models[bisect.bisect_right(self.aug_fidelity, length_min -1)]
             res = model.forward(dataset_meta_features, learning_curves, mask)
             return res
 
@@ -162,5 +162,7 @@ class MultiAugmentedSATzilla11(AugmentedSATzilla11):
 
     def eval(self):
         self.training = False
+        if hasattr(self, 'no_opt'):
+            delattr(self, 'no_opt') # FIXME: do we also need that for the base class?
         for model in self.models:
             model.eval()
