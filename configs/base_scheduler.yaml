@@ -1,0 +1,32 @@
+# @package _global_
+
+defaults:
+  - /base@_here_
+  - _self_
+
+environment:
+  _target_: imfas.scheduler.environment.Environment
+  cost_curves: NULL
+  learning_curves: NULL
+  regret_fn:
+    _target_: imfas.evaluation.topk_regret.TopKRegret
+    k: 3
+
+
+
+agent:
+  _target_: imfas.scheduler.scheduler.agent.DQNAgent
+  target_net: imfas.scheduler.scheduler.agent.Network
+  policy_net: imfas.scheduler.scheduler.agent.Network
+
+
+trainer_scheduler:
+  _target_: imfas.scheduler.scheduler.trainer.SchedulerTrainer
+
+  memory:
+    _target_: imfas.scheduler.memory.ReplayMemory
+    capacity: 10000
+
+  optimizer:
+    _target_: torch.optim.RMSprop
+    _partial_: True
