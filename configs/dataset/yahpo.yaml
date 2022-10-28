@@ -1,9 +1,11 @@
 defaults:
   - dataset_meta: lcbench_minimal
   - lc_meta: multi_slice
-  - algo_meta: yahpo_lcbench_minimal
+#  - algo_meta: yahpo_lcbench_minimal
+
 
 name: yahpo
+
 
 path:
   algo_meta: ${dir_data_processed}/yahpo_data/${dataset.dataset_raw.selection.bench}/config_subset.csv
@@ -14,13 +16,20 @@ path:
 train_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
-  meta_algo: ${dataset.algo_meta}
+  #  meta_algo: ${dataset.algo_meta}
   learning_curves: ${dataset.lc_meta}
 
 valid_dataset_class:
   _target_: imfas.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
-  meta_algo: ${dataset.algo_meta}
+  #  meta_algo: ${dataset.algo_meta}
+  learning_curves: ${dataset.lc_meta}
+
+
+test_dataset_class:
+  _target_: imfas.data.Dataset_Join_Dmajor
+  meta_dataset: ${dataset.dataset_meta}
+  #  meta_algo: ${dataset.algo_meta}
   learning_curves: ${dataset.lc_meta}
 
 # test_dataset_class: # unavailable! because yahpo did not collect these
@@ -37,6 +46,13 @@ valid_dataloader_class:
   batch_size: ${dynamically_computed.n_datasets}
   shuffle: False
   num_workers: ${num_workers}
+
+test_dataloader_class:
+  _target_: torch.utils.data.DataLoader
+  batch_size: ${dynamically_computed.n_datasets}
+  shuffle: False
+  num_workers: ${num_workers}
+
 
 
 

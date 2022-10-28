@@ -30,17 +30,18 @@ class Dataset_Join_Dmajor(Dataset):
             datasets are available)
         """
 
-        self.lcs = learning_curves
+        self.learning_curves = learning_curves
         self.meta_dataset = meta_dataset
         self.meta_algo = meta_algo
         self.masking_fn = masking_fn
         self.kwargs = kwargs
 
-        assert all([v.shape == self.lcs.shape for v in kwargs.values()])
+        assert all([v.shape == self.learning_curves.shape for v in kwargs.values()])
         if meta_dataset is not None:
-            assert self.lcs.shape[0] == meta_dataset.shape[0]
+            assert self.learning_curves.shape[0] == meta_dataset.shape[0]
+
         if meta_algo is not None:
-            assert self.lcs.shape[1] == meta_algo.shape[1]
+            assert self.learning_curves.shape[1] == meta_algo.shape[1]
 
         if split is not None:
             self.split = split
@@ -58,10 +59,10 @@ class Dataset_Join_Dmajor(Dataset):
 
         # if masking strategy is supplied:
         if self.masking_fn is not None:
-            lc_tensor, mask = self.masking_fn(self.lcs[it])
+            lc_tensor, mask = self.masking_fn(self.learning_curves[it])
 
         else:
-            lc_tensor = self.lcs[it]
+            lc_tensor = self.learning_curves[it]
             mask = torch.ones_like(lc_tensor, dtype=torch.bool)
         if self.meta_dataset is not None:
 
@@ -83,7 +84,7 @@ class Dataset_Join_Dmajor(Dataset):
 
             }
 
-        y = {"final_fidelity": self.lcs[it, :, -1]}
+        y = {"final_fidelity": self.learning_curves[it, :, -1]}
 
         return X, y
 

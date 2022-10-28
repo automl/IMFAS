@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 
 import math
-
 import torch
 import torch.nn as nn
 
@@ -56,19 +55,19 @@ class PositionalEncoding(nn.Module):
         if pos_idx is None:
             x = x + self.pe[:, : x.size(1), :]
         else:
-            x = x + self.pe[:, pos_idx[0] : pos_idx[1], :]  # type: ignore[misc]
+            x = x + self.pe[:, pos_idx[0]: pos_idx[1], :]  # type: ignore[misc]
         return self.dropout(x)
 
 
 class AbstractIMFASTransformer(nn.Module):
     def __init__(
-        self,
-        n_algos: int,
-        encoder: nn.Module,
-        decoder: nn.Module,
-        transformer_layer: torch.nn.TransformerEncoderLayer,
-        n_layers=2,
-        device: str = "cpu",
+            self,
+            n_algos: int,
+            encoder: nn.Module,
+            decoder: nn.Module,
+            transformer_layer: torch.nn.TransformerEncoderLayer,
+            n_layers=2,
+            device: str = "cpu",
     ):
         """
         Abstract IMFAS Transformer models. Here I propose two types of Transformer models. The first one is to consider
@@ -107,11 +106,21 @@ class AbstractIMFASTransformer(nn.Module):
     def forward(self, learning_curves, mask, dataset_meta_features=None):
         # FIXME: Consider How to encode Missing values here
 
-        learning_curves, lc_values_observed, lc_shape_info = self.preprocessing_lcs(learning_curves, mask)
+        learning_curves, lc_values_observed, lc_shape_info = self.preprocessing_lcs(
+            learning_curves,
+            mask
+        )
 
-        learning_curves_embedding, lc_values_observed = self.embeds_lcs(learning_curves, lc_values_observed)
+        learning_curves_embedding, lc_values_observed = self.embeds_lcs(
+            learning_curves,
+            lc_values_observed
+        )
 
-        encoded_lcs = self.encode_lc_embeddings(learning_curves_embedding, lc_values_observed, lc_shape_info)
+        encoded_lcs = self.encode_lc_embeddings(
+            learning_curves_embedding,
+            lc_values_observed,
+            lc_shape_info
+        )
 
         if dataset_meta_features is None:
             dataset_meta_features = torch.full([ 0], fill_value=0., dtype=encoded_lcs.dtype,
@@ -122,10 +131,10 @@ class AbstractIMFASTransformer(nn.Module):
 
 
     def encode_lc_embeddings(
-        self,
-        learning_curves_embedding: torch.Tensor,
-        lc_values_observed: torch.Tensor,
-        lc_shape_info: Tuple[int, int, int],
+            self,
+            learning_curves_embedding: torch.Tensor,
+            lc_values_observed: torch.Tensor,
+            lc_shape_info: Tuple[int, int, int],
     ) -> torch.Tensor:
         raise NotImplementedError
 
@@ -137,15 +146,16 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
     """
 
     def __init__(
-        self,
-        n_algos: int,
-        encoder: nn.Module,
-        decoder: nn.Module,
-        transformer_layer: nn.Module,
-        n_layers=2,
-        device: str = "cpu",
+            self,
+            n_algos: int,
+            encoder: nn.Module,
+            decoder: nn.Module,
+            transformer_layer: nn.Module,
+            n_layers=2,
+            device: str = "cpu",
     ):
-        super(IMFASBaseTransformer, self).__init__(n_algos, encoder, decoder, transformer_layer, n_layers, device)
+        super(IMFASBaseTransformer, self).__init__(n_algos, encoder, decoder, transformer_layer,
+                                                   n_layers, device)
         # This is attached at the end of each LCs to indicate that the LC ends here and we could extrac their
         # corresponding feature values. Here I simply compute the number of observed values as an input
         # TODO: Alternative: different embeddings w.r.t. position or algos
@@ -174,13 +184,13 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
     """
 
     def __init__(
-        self,
-        n_algos: int,
-        encoder: nn.Module,
-        decoder: nn.Module,
-        transformer_layer: nn.Module,
-        n_layers=2,
-        device: str = "cpu",
+            self,
+            n_algos: int,
+            encoder: nn.Module,
+            decoder: nn.Module,
+            transformer_layer: nn.Module,
+            n_layers=2,
+            device: str = "cpu",
     ):
         super(IMFASHierarchicalTransformer, self).__init__(
             n_algos, encoder, decoder, transformer_layer, n_layers, device
@@ -204,14 +214,16 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
         return learning_curves, lc_values_observed, lc_shape_info
 
     def embeds_lcs(self, learning_curves, lc_values_observed):
-        lc_embeddings = self.positional_encoder(self.lc_proj_layer(learning_curves)) * lc_values_observed.unsqueeze(-1)
+        lc_embeddings = self.positional_encoder(
+            self.lc_proj_layer(learning_curves)) * lc_values_observed.unsqueeze(-1)
 
         n_lcs, lc_length, d_model = lc_embeddings.shape
 
         # We attach the ending Embedding to the end of each sequences
         eos_embedding = self.eos_embedding_layer(self.EOS)
         lc_embeddings = torch.cat(
-            [lc_embeddings, torch.zeros((n_lcs, 1, d_model), dtype=lc_embeddings.dtype, device=lc_embeddings.device)],
+            [lc_embeddings, torch.zeros((n_lcs, 1, d_model), dtype=lc_embeddings.dtype,
+                                        device=lc_embeddings.device)],
             dim=1,
         )
 
@@ -223,7 +235,8 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
             [
                 lc_values_observed,
                 torch.zeros(
-                    (len(lc_values_observed), 1), dtype=lc_values_observed.dtype, device=lc_values_observed.device
+                    (len(lc_values_observed), 1), dtype=lc_values_observed.dtype,
+                    device=lc_values_observed.device
                 ),
             ],
             dim=1,
