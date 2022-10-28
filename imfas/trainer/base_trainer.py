@@ -58,6 +58,15 @@ class BaseTrainer:
 
             y_hat = self.model.forward(**X)
 
+            if torch.isnan(y_hat).any():
+                print(f'y_hat: {y_hat}',
+                      f'y: {y["final_fidelity"]}',
+                      f'lcs: {X["learning_curves"]}',
+                      f'mask: {X["mask"]}',
+                      f'Dataset metafeatures {X["dataset_meta_features"]}'
+                      )
+                print()
+
             if not hasattr(self.model, 'no_opt'):
                 loss = loss_fn(y_hat, y["final_fidelity"])
                 # print(X, y, y_hat, loss)
@@ -103,7 +112,7 @@ class BaseTrainer:
         """
 
         with torch.no_grad():
-            max_fidelity = test_loader.dataset.lcs.shape[-1]
+            max_fidelity = test_loader.dataset.learning_curves.shape[-1]
             for fidelity in tqdm(range(max_fidelity), desc='Fidelity'):
 
                 # fixme: figure out how wandb can recieve the actual fidelity label.
@@ -149,6 +158,8 @@ class BaseTrainer:
                         except Exception as e:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
                             losses[fn_name][i] = float('nan')
+
+                        print(losses[fn_name][i])
 
                 for fn_name, fn in test_loss_fns.items():
                     wandb.log(
