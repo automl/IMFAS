@@ -63,7 +63,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # Create the dataloaders (conditional on their existence)
     if 'train_dataset_class' in cfg.dataset.keys():
         train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
-        train_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=train_set)
+        train_loader = instantiate(cfg.dataset.train_dataloader_class, dataset=train_set)
         loaders['train_loader'] = train_loader
 
     if 'valid_dataset_class' in cfg.dataset.keys():
@@ -80,7 +80,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
     ref = list(loaders.values())[0].dataset
     cfg.dynamically_computed.n_data_meta_features = ref.meta_dataset.shape[1]
-    cfg.dynamically_computed.n_algos = ref.lcs.shape[1]
+    cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
     # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 

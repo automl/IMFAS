@@ -28,6 +28,9 @@ class SuccessiveHalving(ModelInterface):
         self.update_costs = self.update_costs_additive if budget_type == 'additive' \
             else self.update_costs_cumulative
 
+        # FIXME: with the observed map, the tracing of the budget can be "trivially" refactored
+        #  and the update cost need not be executed at every step
+
     def plan_budgets(self, budgets: List, mask: torch.Tensor):
         """
         Plan the successive halving run. This method is called once per run.
@@ -40,7 +43,6 @@ class SuccessiveHalving(ModelInterface):
         :return: torch.Tensor (long), the schedule of indices on the learning curve tensor for the
         successive halving run.
         """
-
         assert len(budgets) == mask.shape[-1], "Budgets and mask do not match!"
 
         # determine min & max budget
@@ -121,6 +123,9 @@ class SuccessiveHalving(ModelInterface):
         survivors = torch.ones((n_algos), dtype=torch.int64)
         self.elapsed_time = torch.zeros(1)
 
+        # required by sh_budget_trainer
+        self.observed_mask = torch.zeros_like(mask, dtype=torch.float32)
+
         # is attribute for debugging (assertion)
         self.schedule_index = self.plan_budgets(self.budgets, mask)
 
@@ -131,6 +136,12 @@ class SuccessiveHalving(ModelInterface):
         for level, budget in enumerate(self.schedule_index.tolist(), start=1):
             # number of survivors in this round
             k = max(1, int(n_algos / self.eta ** level))
+
+            # available fidelity for each algorithm
+            self.observed_mask[:, survivors == 1, :(budget + 1)] = 1
+
+            # visited fidelities for each algorithm respectively
+            # self.observed_mask[:, survivors == 1, budget] = 1
 
             # final round to break all ties?
             if level == len(self.schedule_index):
@@ -186,14 +197,16 @@ if __name__ == "__main__":
 
     budgets = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
     fidelities = len(budgets)
-    lcs = torch.arange(batch * n_algos * fidelities).view(batch, n_algos, fidelities)
+    lcs = torch.arange(batch * n_algos * fidelities, dtype=torch.float32).view(
+        batch, n_algos, fidelities
+    )
     cost = torch.arange(batch * n_algos * fidelities).view(batch, n_algos, fidelities)
     mask = torch.cat(
         [torch.ones((batch, n_algos, fidelities - 4), dtype=torch.bool),
          torch.zeros((batch, n_algos, 4), dtype=torch.bool)], axis=2)
 
     # SH with eta=3
-    sh = SuccessiveHalving(budgets, 3)
+    sh = SuccessiveHalving(budgets, 2)
 
     assert torch.equal(sh.forward(learning_curves=lcs, mask=mask, cost_curves=cost),
                        torch.tensor([[0., 1., 2., 3., 4., 5., 6., 7., 8., 9.]]))
