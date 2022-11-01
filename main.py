@@ -101,7 +101,7 @@ def pipe_train(cfg: DictConfig) -> None:
         }
     )
 
-    model = instantiate(cfg.model, device=cfg.device.type)
+    model = instantiate(cfg.model)
     model.to(cfg.device)
     torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
 
@@ -113,6 +113,11 @@ def pipe_train(cfg: DictConfig) -> None:
 def housekeeping(cfg: DictConfig) -> None:
     dict_cfg = OmegaConf.to_container(cfg, resolve=True, enum_to_str=True)
     print_cfg(cfg)
+
+    dataset = cfg.dataset.name
+    # SET job type as DATASET name
+    # FIXME: Any better ideas?
+    cfg.wandb.job_type = dataset
 
     log.info(get_original_cwd())
     # FIXME: W&B id???

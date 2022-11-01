@@ -13,7 +13,9 @@ defaults:
   - override /train_test_split: trainvalfixedtest
 
 wandb:
-  notes: 'satzilla_11'
+  group: 'augmented satzilla_11'
+  job_type: 'satzilla_11+'
+  notes: 'augmented satzilla_11'
 
 
 dataset:

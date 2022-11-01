@@ -86,6 +86,8 @@ class AbstractIMFASTransformer(nn.Module):
         self.decoder = decoder
         self.d_model = transformer_layer.linear1.in_features
         self.transformer_encoder = nn.TransformerEncoder(transformer_layer, n_layers)
+        if isinstance(device, str):
+            device = torch.device(device)
         self.device = device
         self.lc_proj_layer = self.build_lc_embedding_layer(n_algos, self.d_model)
         self.positional_encoder = PositionalEncoding(d_model=self.d_model)
