@@ -80,7 +80,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
     ref = list(loaders.values())[0].dataset
     cfg.dynamically_computed.n_data_meta_features = ref.meta_dataset.shape[1]
-    cfg.dynamically_computed.n_algos = ref.lcs.shape[1]
+    cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
     # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 

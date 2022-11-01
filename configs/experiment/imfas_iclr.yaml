@@ -8,6 +8,8 @@ defaults:
 
 
 wandb:
+  group: 'imfas_transformer'
+  job_type: 'train'
   notes: 'imfas transformer'
 
 
