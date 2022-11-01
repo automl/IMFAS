@@ -39,7 +39,7 @@ class Dataset_Join_Dmajor(Dataset):
         assert all([v.shape == self.lcs.shape for v in kwargs.values()])
         assert self.lcs.shape[0] == meta_dataset.shape[0]
         if meta_algo is not None:
-            assert self.lcs.shape[1] == meta_algo.shape[1]
+            assert self.lcs.shape[1] == meta_algo.shape[0]
 
         if split is not None:
             self.split = split

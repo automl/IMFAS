@@ -63,7 +63,7 @@ def pipe_train(cfg: DictConfig) -> None:
     # Create the dataloaders (conditional on their existence)
     if 'train_dataset_class' in cfg.dataset.keys():
         train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
-        train_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=train_set)
+        train_loader = instantiate(cfg.dataset.train_dataloader_class, dataset=train_set)
         loaders['train_loader'] = train_loader
 
     if 'valid_dataset_class' in cfg.dataset.keys():
