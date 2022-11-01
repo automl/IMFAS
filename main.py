@@ -48,7 +48,12 @@ def pipe_train(cfg: DictConfig) -> None:
 
     # hack: dataset_meta_features must be instantiated to know n for a traintest split index
     # of the data, that can be passed on.
-    dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
+
+    if "dataset_meta" in cfg.dataset:
+        dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
+    else:
+        dataset_meta_features = instantiate(cfg.dataset.lc_meta)
+
 
     # train test split by dataset major
     train_split, valid_split, test_split = call(
@@ -79,8 +84,13 @@ def pipe_train(cfg: DictConfig) -> None:
     # Dynamically computed configurations.
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
     ref = list(loaders.values())[0].dataset
-    cfg.dynamically_computed.n_data_meta_features = ref.meta_dataset.shape[1]
+
+    if ref.meta_dataset is not None:
+        cfg.dynamically_computed.n_data_meta_features = ref.meta_dataset.shape[1]
+    else:
+        cfg.dynamically_computed.n_data_meta_features = 0
     cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
+
     # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 
@@ -91,7 +101,7 @@ def pipe_train(cfg: DictConfig) -> None:
         }
     )
 
-    model = instantiate(cfg.model)
+    model = instantiate(cfg.model, device=cfg.device.type)
     model.to(cfg.device)
     torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
 
