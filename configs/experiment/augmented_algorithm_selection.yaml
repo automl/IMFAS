@@ -10,7 +10,7 @@ defaults:
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   # - override /dataset/algo_meta: lcbench_minimal
-
+  - override /train_test_split: trainvalidtest
 
 wandb:
   notes: 'satzilla_11'
