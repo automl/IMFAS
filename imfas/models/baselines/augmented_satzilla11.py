@@ -34,6 +34,11 @@ class AugmentedSATzilla11(SATzilla11):
         self._num_algorithms = np.shape(fidelity)[-1]
         self._algo_ids = np.arange(0, self._num_algorithms, 1)
 
+        # lc_argsort = torch.argsort(learning_curves, 1).numpy() / self._num_algorithms
+        lc_normalized = (learning_curves / torch.std(learning_curves, 1, keepdim=True)).numpy()
+
+        lc_features = lc_normalized
+
         features = dataset_meta_features.numpy()
         performances = fidelity.numpy()
         learning_curves = learning_curves.numpy()
@@ -54,8 +59,8 @@ class AugmentedSATzilla11(SATzilla11):
             # There are different ways of attaching the lc values to the feautre, here I simply take the most simple
             # approach: take the difference between these values
             if self.aug_fidelity is not None:
-                lc_value_i = learning_curves[:, i, self.aug_fidelity]
-                lc_value_j = learning_curves[:, j, self.aug_fidelity]
+                lc_value_i = lc_features[:, i, self.aug_fidelity]
+                lc_value_j = lc_features[:, j, self.aug_fidelity]
 
                 features_augmented = np.concatenate([features, lc_value_i - lc_value_j], axis=-1)
             else:
@@ -70,18 +75,21 @@ class AugmentedSATzilla11(SATzilla11):
     def predict(self,  dataset_meta_features, learning_curves):
 
         batch_features = dataset_meta_features
+        lc_argsort = torch.argsort(learning_curves, 1).numpy() / self._num_algorithms
+        lc_normalized = (learning_curves / torch.std(learning_curves, 1, keepdim=True)).numpy()
+        lc_feature = lc_normalized
 
         selections = []
         # Selection an algorithm per task in the test-set
-        for features, lc in zip(batch_features, learning_curves):
+        for features, lc in zip(batch_features, lc_feature):
 
             assert (features.ndim == 1), '`features` must be one dimensional'
             features = np.expand_dims(features, axis=0)
             predictions = {}
             for (i, j), rfc in self._models.items():
                 if self.aug_fidelity is not None:
-                    lc_value_i = learning_curves[:, i, self.aug_fidelity]
-                    lc_value_j = learning_curves[:, j, self.aug_fidelity]
+                    lc_value_i = np.expand_dims(lc[i, self.aug_fidelity], axis=0)
+                    lc_value_j = np.expand_dims(lc[j, self.aug_fidelity], axis=0)
                     features_augmented = np.concatenate([features, lc_value_i - lc_value_j], axis=-1)
                 else:
                     features_augmented = features
@@ -144,15 +152,22 @@ class MultiAugmentedSATzilla11(AugmentedSATzilla11):
                 res = model.forward(dataset_meta_features, learning_curves, mask)
             return res
         else:
-            n_observed_values = torch.sum(~mask.bool(), dim=-1)
+            n_observed_values = torch.sum(mask.bool(), dim=-1)
             length_min = torch.min(n_observed_values)
 
             # we assume that the more fidelity values a model receive, the better it will be
             if length_min == 0:
                 model = self.models[0]
             else:
-                model = self.models[bisect.bisect_right(self.aug_fidelity, length_min -1)]
+                model_idx = bisect.bisect_right(self.aug_fidelity, length_min - 1)
+                old_model_idx = bisect.bisect_right(self.aug_fidelity, length_min -2)
+
+                if model_idx == old_model_idx and hasattr(self, 'last_res'):
+                    return self.last_res
+                model = self.models[model_idx]
+
             res = model.forward(dataset_meta_features, learning_curves, mask)
+            self.last_res = res
             return res
 
     def train(self):
