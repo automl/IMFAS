@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - train_test_split: leave_one_out
+  - train_test_split: trainvalidtest #leave_one_out
   - dataset: lcbench
   - trainer: basetrainer
   - _self_
@@ -19,7 +19,7 @@ seed: 0
 output_dir: ./tmp
 
 num_workers: 2
-device: ${device_ident:None} # FIXME: debug that all tensors are on same device with cuda
+device: cpu #${device_ident:None} # FIXME: debug that all tensors are on same device with cuda
 
 
 wandb:

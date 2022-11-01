@@ -7,7 +7,8 @@ from torch import nn as nn
 class MLP(nn.Module):
     activation = {"relu": nn.ReLU, "identity": nn.Identity}
 
-    def __init__(self, hidden_dims: List[int], activation: str = "relu", readout=False):
+    def __init__(self, hidden_dims: List[int], activation: str = "relu", readout=False,
+                 device="cpu"):
         super(MLP, self).__init__()
         self.hidden_dims = hidden_dims
 
@@ -28,8 +29,12 @@ class MLP(nn.Module):
         if readout:
             self.layers.append(nn.Linear(hidden_dims[-2], hidden_dims[-1], bias=False))
 
+        self.to(device)
+
     def forward(self, X):
+
         for layer in self.layers:
+
             X = layer(X)
 
         return X

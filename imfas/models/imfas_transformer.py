@@ -90,6 +90,11 @@ class AbstractIMFASTransformer(nn.Module):
         self.lc_proj_layer = self.build_lc_embedding_layer(n_algos, self.d_model)
         self.positional_encoder = PositionalEncoding(d_model=self.d_model)
 
+        self.to(device)
+
+        # for k, i in self.named_parameters():
+        #     print(k, i.device)
+
     def build_lc_embedding_layer(self, n_algos: int, d_model_transformer: int):
         raise NotImplementedError
 
