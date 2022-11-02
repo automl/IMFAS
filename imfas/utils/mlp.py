@@ -33,9 +33,7 @@ class MLP(nn.Module):
 
     def forward(self, X):
 
-        # print('fwd:')
         for layer in self.layers:
-            # print(layer, [p.device for p in layer.parameters()])
 
             X = layer(X)
 
