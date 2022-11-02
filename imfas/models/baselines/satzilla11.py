@@ -1,4 +1,3 @@
-import pdb
 import random
 from collections import Counter
 
@@ -17,7 +16,7 @@ class SATzilla11(nn.Module):
     thus does not account for presolving or employing a backup solver.
     """
 
-    def __init__(self, max_fidelity, device="cpu"):
+    def __init__(self, max_fidelity, device="cpu", n_estimators: int = 2, max_features: str = 'log_2', n_jobs: int = 5, random_state: int = 0):
         super(SATzilla11, self).__init__()
 
         self._name = "satzilla-11"
@@ -31,7 +30,13 @@ class SATzilla11(nn.Module):
         self._rand = random.Random(0)
 
         # TODO Initiate the classifier using hydra
-        self.rfc_kwargs = {"n_estimators": 2, "max_features": "log2", "n_jobs": 5, "random_state": 0}
+        self.rfc_kwargs = {
+                            "n_estimators": n_estimators, 
+                            "max_features": max_features, 
+                            "n_jobs": n_jobs, 
+                            "random_state": random_state
+                        }
+
 
     def forward(self, dataset_meta_features, fidelity, *args, **kwargs):
 
@@ -145,9 +150,6 @@ class SATzilla11(nn.Module):
         pred = {(i, j): predictions[(i, j)] for (i, j) in indices}
 
         counter = Counter(pred.values())
-
-        print("counter", counter)
-        pdb.set_trace()
 
         return counter.most_common()
 
