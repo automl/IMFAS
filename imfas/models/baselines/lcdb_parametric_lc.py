@@ -20,25 +20,24 @@ logger = logging.getLogger(__name__)
 
 class ParametricLC(ModelInterface):
     functionals = {
-        'pow2': lambda x, a, b: -a * x ** (-b),
-        'pow3': lambda x, a, b, c: a - b * x ** (-c),
-        'log2': lambda x, a, b: -a * np.log(x) + b,
-        'exp3': lambda x, a, b, c: a * np.exp(-b * x) + c,
-        'exp2': lambda x, a, b: a * np.exp(-b * x),
-        'lin2': lambda x, a, b: a * x + b,
-        'vap3': lambda x, a, b, c: np.exp(a + b / x + c * np.log(x)),
-        'mmf4': lambda x, a, b, c, d: (a * b + c * x ** d) / (b + x ** d),
-        'wbl4': lambda x, a, b, c, d: (c - b * np.exp(-a * (x ** d))),
-        'exp4': lambda x, a, b, c, d: c - np.exp(-a * (x ** d) + b),
-        'expp3': lambda x, a, b, c: c - np.exp((x - b) ** a),
+        "pow2": lambda x, a, b: -a * x ** (-b),
+        "pow3": lambda x, a, b, c: a - b * x ** (-c),
+        "log2": lambda x, a, b: -a * np.log(x) + b,
+        "exp3": lambda x, a, b, c: a * np.exp(-b * x) + c,
+        "exp2": lambda x, a, b: a * np.exp(-b * x),
+        "lin2": lambda x, a, b: a * x + b,
+        "vap3": lambda x, a, b, c: np.exp(a + b / x + c * np.log(x)),
+        "mmf4": lambda x, a, b, c, d: (a * b + c * x**d) / (b + x**d),
+        "wbl4": lambda x, a, b, c, d: (c - b * np.exp(-a * (x**d))),
+        "exp4": lambda x, a, b, c, d: c - np.exp(-a * (x**d) + b),
+        "expp3": lambda x, a, b, c: c - np.exp((x - b) ** a),
         # fun = lambda x: a * np.exp(-b*x) + c
-
-        'pow4': lambda x, a, b, c, d: a - b * (x + d) ** (-c),  # has to closely match pow3,
+        "pow4": lambda x, a, b, c, d: a - b * (x + d) ** (-c),  # has to closely match pow3,
         # 'ilog2': lambda x, a, b: b - (a / np.log(x)),
         # FIXME: Ilog2 Will require an index-shift in the budgets to avoid zero devision for x=1
-        'expd3': lambda x, a, b, c: c - (c - a) * np.exp(-b * x),
-        'logpower3': lambda x, a, b, c: a / (1 + (x / np.exp(b)) ** c),
-        'last1': lambda x, a: (a + x) - x  # casts the prediction to have the correct size
+        "expd3": lambda x, a, b, c: c - (c - a) * np.exp(-b * x),
+        "logpower3": lambda x, a, b, c: a / (1 + (x / np.exp(b)) ** c),
+        "last1": lambda x, a: (a + x) - x,  # casts the prediction to have the correct size
     }
 
     def __init__(self, function: str, budgets: List[int], restarts: int = 10):
@@ -67,7 +66,7 @@ class ParametricLC(ModelInterface):
 
     @property
     def parameter_names(self):
-        return ['a', 'b', 'c', 'd'][0:self.n_parameters]
+        return ["a", "b", "c", "d"][0 : self.n_parameters]
 
     def objective_factory(self, x, y) -> Callable:
         """
@@ -82,7 +81,11 @@ class ParametricLC(ModelInterface):
 
         return objective
 
-    def fit(self, x: np.ndarray, Y: np.ndarray, ) -> None:
+    def fit(
+        self,
+        x: np.ndarray,
+        Y: np.ndarray,
+    ) -> None:
         """
         :param x: 1D np.ndarray, the budgets on which the learning curves are observed.
         :param Y: 2D np.ndarray, the learning curves observed on the budgets for the respective
@@ -102,15 +105,12 @@ class ParametricLC(ModelInterface):
             for i in range(Y.shape[1]):
                 try:
                     parameters = sp.optimize.least_squares(
-                        self.objective_factory(x[:Y.shape[-1]], Y[:, i, :][0]),
-                        init[i],
-                        method='lm'
+                        self.objective_factory(x[: Y.shape[-1]], Y[:, i, :][0]), init[i], method="lm"
                     )
                     parameters_lc[r, i, :] = parameters.x
                     cost[r, i] = parameters.cost
                 except Exception as e:
-                    logger.error(
-                        f"Error in fitting: {e} for function {self.function} at init {init[i]}")
+                    logger.error(f"Error in fitting: {e} for function {self.function} at init {init[i]}")
                     parameters_lc[r, i, :] = np.nan
                     cost[r, i] = np.inf
             # if there is at least one cost row that is not nan, we can break
@@ -140,11 +140,11 @@ class ParametricLC(ModelInterface):
 
         # saveguard for the case that the learning curve is not observed sufficiently (n<p)
         if self.max_fidelity + 1 < self.n_parameters:
-            return torch.ones(learning_curves.shape[:-1]) * float('nan')
+            return torch.ones(learning_curves.shape[:-1]) * float("nan")
 
         if self.training:
             # fit the parametric learning curve to the data.
-            self.fit(self.budgets, learning_curves[:, :, :self.max_fidelity].cpu().numpy())
+            self.fit(self.budgets, learning_curves[:, :, : self.max_fidelity].cpu().numpy())
 
         # Predict for every curve on max-fidelity (extrapolation)
         return torch.tensor(self.predict(self.budgets[-1])).view(1, -1)
@@ -152,31 +152,31 @@ class ParametricLC(ModelInterface):
     def plot_curves(self, x, y, ax):
         y_hats = self.predict(x)
         for y, y_hat in zip(y[0], y_hats):
-            ax.plot(x, y_hat, color='red', alpha=0.5, linewidth=1., label='fitted lc')
-            ax.plot(x, y, color='grey', alpha=0.5, linewidth=0.5, label='actual lc')
+            ax.plot(x, y_hat, color="red", alpha=0.5, linewidth=1.0, label="fitted lc")
+            ax.plot(x, y, color="grey", alpha=0.5, linewidth=0.5, label="actual lc")
         ax.set_title(self.function)
-        ax.set_xlabel('Budget')
-        ax.set_ylabel('Performance')
+        ax.set_xlabel("Budget")
+        ax.set_ylabel("Performance")
 
     def sample_lc(self):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from imfas.data.lcbench.example_data import train_dataset
 
-    lc_predictor = ParametricLC('exp3', budgets=list(range(1, 52)))
+    lc_predictor = ParametricLC("exp3", budgets=list(range(1, 52)))
     print(lc_predictor.n_parameters)
 
     # Batched learning curves (batch_size, n_algorithms, n_budgets)
     X, y = train_dataset[1]
-    lc_tensor = X['learning_curves'][20:30, :]
+    lc_tensor = X["learning_curves"][20:30, :]
     shape = lc_tensor.shape
     lc_tensor = lc_tensor.view(1, *shape)
     mask = torch.ones_like(lc_tensor, dtype=torch.long)
     threshold = 20
     mask[:, :, threshold:] = 0  # only partially available learning curves
-    ranking = y['final_fidelity'][20:30].view(1, shape[0])
+    ranking = y["final_fidelity"][20:30].view(1, shape[0])
 
     y_hat = lc_predictor.forward(lc_tensor, mask)
 

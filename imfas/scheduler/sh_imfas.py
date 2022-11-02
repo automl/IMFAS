@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class SH_imfas(SuccessiveHalving):
-    def __init__(self, model, budgets: List, eta: int = 2, device: str = "cpu", \
-                 budget_type='additive'):
+    def __init__(self, model, budgets: List, eta: int = 2, device: str = "cpu", budget_type="additive"):
         """
         This class assumes a single batch (i.e. a single dataset!)
         :param budgets: List[int] of budget 'labels' to be used in the successive halving run
@@ -29,15 +28,16 @@ class SH_imfas(SuccessiveHalving):
         self.model = model
 
     def __repr__(self):
-        return f"SH_imfas(model={self.model}," \
-               f"budgets={self.budgets}, eta={self.eta}, budget_type={self.budget_type})"
+        return (
+            f"SH_imfas(model={self.model}," f"budgets={self.budgets}, eta={self.eta}, budget_type={self.budget_type})"
+        )
 
     def forward(
-            self,
-            learning_curves: torch.Tensor,
-            mask: torch.Tensor,
-            cost_curves: Optional[torch.Tensor] = None,
-            **kwargs  # to capture all the other data, competitors might have available
+        self,
+        learning_curves: torch.Tensor,
+        mask: torch.Tensor,
+        cost_curves: Optional[torch.Tensor] = None,
+        **kwargs,  # to capture all the other data, competitors might have available
     ):
         """
         SH execution.
@@ -67,10 +67,10 @@ class SH_imfas(SuccessiveHalving):
 
         for level, budget in enumerate(self.schedule_index.tolist(), start=1):
             # number of survivors in this round
-            k = max(1, int(n_algos / self.eta ** level))
+            k = max(1, int(n_algos / self.eta**level))
 
             # available fidelity for each algorithm
-            self.observed_mask[:, survivors == 1, :(budget + 1)] = 1  # fixme: is this correct
+            self.observed_mask[:, survivors == 1, : (budget + 1)] = 1  # fixme: is this correct
 
             # visited fidelities for each algorithm respectively
             # self.observed_mask[:, survivors == 1, budget] = 1
@@ -89,12 +89,7 @@ class SH_imfas(SuccessiveHalving):
 
             # dead in relative selection (index requires adjustment)
             dead = self.kill_low_performers(
-                learning_curves=learning_curves,
-                k=k,
-
-                survivors=survivors,
-                budget=budget,
-                **kwargs
+                learning_curves=learning_curves, k=k, survivors=survivors, budget=budget, **kwargs
             )
             # translate to the algorithm index
             new_dead_algo = algos_idx[survivors == 1][dead.indices]
@@ -102,13 +97,12 @@ class SH_imfas(SuccessiveHalving):
 
             # change the survivor flag
             survivors[new_dead_algo] = 0
-            logger.debug(f"Deceased' performances: "
-                         f"{learning_curves[:, :, budget][0, new_dead_algo]}")
+            logger.debug(f"Deceased' performances: " f"{learning_curves[:, :, budget][0, new_dead_algo]}")
             logger.debug(f"Survivors' performances: {learning_curves[:, :, budget] * survivors}")
 
             # BOOKKEEPING: add the (sorted by performance) dead to the ranking
-            rankings_idx[n_dead: n_dead + dead.indices.shape[-1]] = new_dead_algo
-            rankings_values[n_dead: n_dead + dead.indices.shape[-1]] = dead.values
+            rankings_idx[n_dead : n_dead + dead.indices.shape[-1]] = new_dead_algo
+            rankings_values[n_dead : n_dead + dead.indices.shape[-1]] = dead.values
             n_dead += dead.indices.shape[-1]
 
             logger.debug(f"rankings: {rankings_idx}")
@@ -129,9 +123,10 @@ class SH_imfas(SuccessiveHalving):
     def kill_low_performers(self, learning_curves, k, survivors, **kwargs):
         # assuming that the model is imfas_iclr transformer
         mask = self.observed_mask
-        dataset_meta_features = kwargs.pop('dataset_meta_features')
-        expectation = self.model(learning_curves=learning_curves, mask=mask,
-                                 dataset_meta_features=dataset_meta_features)
+        dataset_meta_features = kwargs.pop("dataset_meta_features")
+        expectation = self.model(
+            learning_curves=learning_curves, mask=mask, dataset_meta_features=dataset_meta_features
+        )
 
         # we can use our (relative) expectation only on those that are still alive!
         dead = torch.topk(expectation[0, survivors == 1], k, dim=0, largest=False)
@@ -147,7 +142,6 @@ if __name__ == "__main__":
 
     from imfas.utils.mlp import MLP
 
-
     class MLP_LC:
         def __init__(self, n_algos, fidelities):
             # expects that the learning curve tensor is being stacked
@@ -157,7 +151,6 @@ if __name__ == "__main__":
             shape = 1, reduce(operator.mul, learning_curves.shape, 1)
             return self.model(learning_curves.view(shape) * mask.view(shape))
 
-
     # Check Eta schedules and rankings
     # fixme: move to test!
     batch = 1
@@ -166,12 +159,18 @@ if __name__ == "__main__":
     budgets = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 51]
     fidelities = len(budgets)
     lcs = torch.arange(batch * n_algos * fidelities, dtype=torch.float32).view(
-        batch, n_algos, fidelities,
+        batch,
+        n_algos,
+        fidelities,
     )
     cost = torch.arange(batch * n_algos * fidelities).view(batch, n_algos, fidelities)
     mask = torch.cat(
-        [torch.ones((batch, n_algos, fidelities - 4), dtype=torch.bool),
-         torch.zeros((batch, n_algos, 4), dtype=torch.bool)], axis=2)
+        [
+            torch.ones((batch, n_algos, fidelities - 4), dtype=torch.bool),
+            torch.zeros((batch, n_algos, 4), dtype=torch.bool),
+        ],
+        axis=2,
+    )
 
     # SH with eta=3
 

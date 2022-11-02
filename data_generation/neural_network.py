@@ -9,10 +9,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import TQDMProgressBar
 
 
-def get_sequential_model(num_hidden_layers,
-                         num_hidden_units,
-                         input_units,
-                         output_units):
+def get_sequential_model(num_hidden_layers, num_hidden_units, input_units, output_units):
     """
     Returns a sequential model with 2+num_hidden_layers linear layers.
     All linear layers (except the last one) are followed by a ReLU function.
@@ -41,11 +38,10 @@ def get_sequential_model(num_hidden_layers,
             nn.ReLU(),
         ]
 
-    layers += [
-        nn.Linear(num_hidden_units, output_units)
-    ]
+    layers += [nn.Linear(num_hidden_units, output_units)]
 
     return nn.Sequential(*layers)
+
 
 class PyTorchDataset(Dataset):
     """
@@ -119,7 +115,7 @@ class MLP(pl.LightningModule):
         y_hat = self.model(X)
 
         val_accuracy = self.calculate_accuracy(y_hat, y)
-        return {'val_accuracy': val_accuracy}
+        return {"val_accuracy": val_accuracy}
 
     def validation_epoch_end(self, outputs):
         """
@@ -130,7 +126,7 @@ class MLP(pl.LightningModule):
             outputs: List of dicts from `validation_step`.
         """
 
-        val_accuracy = torch.stack([o['val_accuracy'] for o in outputs]).numpy().flatten()
+        val_accuracy = torch.stack([o["val_accuracy"] for o in outputs]).numpy().flatten()
 
         val_accuracy = float(np.mean(val_accuracy))
         if val_accuracy > self.highest_val_accuracy:
@@ -170,11 +166,7 @@ class MLP(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
-    def fit(self, X_train, y_train,
-            X_val, y_val,
-            learning_rate=1e-1,
-            num_epochs=10,
-            batch_size=8):
+    def fit(self, X_train, y_train, X_val, y_val, learning_rate=1e-1, num_epochs=10, batch_size=8):
         """
         Fits the model with training data. Model is validated after every epoch on the validation
         data.
@@ -196,22 +188,15 @@ class MLP(pl.LightningModule):
             callbacks=[TQDMProgressBar(refresh_rate=0)],  # No progress bar
             enable_checkpointing=False,
             logger=False,
-            devices=1
+            devices=1,
         )
 
         # Define training loader
         # `train_loader` is a lambda function, which takes batch_size as input
-        train_loader = DataLoader(
-            PyTorchDataset(X_train, y_train),
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=0)
+        train_loader = DataLoader(PyTorchDataset(X_train, y_train), batch_size=batch_size, shuffle=True, num_workers=0)
 
         # Define validation loader
-        val_loader = DataLoader(
-            PyTorchDataset(X_val, y_val),
-            batch_size=1,
-            num_workers=0)
+        val_loader = DataLoader(PyTorchDataset(X_val, y_val), batch_size=1, num_workers=0)
 
         # Train model
         self.trainer.fit(self, train_loader, val_loader)

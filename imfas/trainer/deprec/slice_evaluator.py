@@ -38,7 +38,7 @@ class SliceEvaluator(BaseTrainer):
                 y_hat = self.model.forward(**X)
                 losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
 
-            wandb.log({f"max fidelity: {fn_name}": losses.mean(), 'fidelity': fidelity})
+            wandb.log({f"max fidelity: {fn_name}": losses.mean(), "fidelity": fidelity})
 
     def run(self, train_loader, test_loader, epochs, log_freq, *args, **kwargs):
         # TODO: check what happens when this condition is not met
@@ -47,7 +47,7 @@ class SliceEvaluator(BaseTrainer):
         super().run(train_loader, test_loader, epochs=epochs, log_freq=log_freq, *args, **kwargs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     """
     Experiment to run SH baseline on the fixed fidelity slices (i.e. maximum available fidelity)
     and compare that against a trainable model, that is evaluated on the same maximum slices.
@@ -58,8 +58,7 @@ if __name__ == '__main__':
     from imfas.models.baselines.successive_halving import SuccessiveHalving
     from imfas.losses.spearman import SpearmanLoss
     from imfas.utils.masking import mask_lcs_to_max_fidelity, mask_lcs_randomly
-    from imfas.data.lcbench.example_data import data_path, pipe_lc, \
-        pipe_meta
+    from imfas.data.lcbench.example_data import data_path, pipe_lc, pipe_meta
     from imfas.evaluation.topkregret import TopkMaxRegret
 
     from imfas.utils.util import seed_everything
@@ -75,49 +74,32 @@ if __name__ == '__main__':
         # train_split, test_split = train_test_split(n=35, share=0.8)
         train_split, test_split = leave_one_out(n=35, idx=[seed])
         test_dataset = Dataset_Join_Dmajor(
-            meta_dataset=DatasetMetaFeatures(
-                path=data_path / 'meta_features.csv',
-                transforms=pipe_meta),
-            lc=Dataset_LC(
-                path=data_path / 'logs_subset.h5',
-                transforms=pipe_lc,
-                metric='Train/train_accuracy'),
+            meta_dataset=DatasetMetaFeatures(path=data_path / "meta_features.csv", transforms=pipe_meta),
+            lc=Dataset_LC(path=data_path / "logs_subset.h5", transforms=pipe_lc, metric="Train/train_accuracy"),
             split=test_split,
         )
 
         # Show, that we can also input another model and train it beforehand.
         train_dataset = Dataset_Join_Dmajor(
-            meta_dataset=DatasetMetaFeatures(
-                path=data_path / 'meta_features.csv',
-                transforms=pipe_meta),
-            lc=Dataset_LC(
-                path=data_path / 'logs_subset.h5',
-                transforms=pipe_lc,
-                metric='Train/train_accuracy'),
+            meta_dataset=DatasetMetaFeatures(path=data_path / "meta_features.csv", transforms=pipe_meta),
+            lc=Dataset_LC(path=data_path / "logs_subset.h5", transforms=pipe_lc, metric="Train/train_accuracy"),
             split=train_split,
-            masking_fn=mask_lcs_randomly
+            masking_fn=mask_lcs_randomly,
         )
 
         train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
         # (evaluate SH) ---------------------------------------------
         budgets = list(range(1, 52))
-        wandb.init(
-            entity="tnt",
-            mode='online',
-            project='imfas-iclr',
-            job_type='base: sh, leave one out',
-            group='sh'
-        )
+        wandb.init(entity="tnt", mode="online", project="imfas-iclr", job_type="base: sh, leave one out", group="sh")
         model = SuccessiveHalving(budgets=budgets, eta=2)
-        test_loader = DataLoader(test_dataset, batch_size=1,
-                                 shuffle=False)  # batch=1, because of SH
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)  # batch=1, because of SH
 
         sliceevaluator = SliceEvaluator(
             model,
             max_fidelities=budgets,
             # creates a learning curve for these fidelities
-            masking_fn=mask_lcs_to_max_fidelity
+            masking_fn=mask_lcs_to_max_fidelity,
         )
 
         # sliceevaluator.evaluate(test_loader, valid_loss_fn=SpearmanLoss(), fn_name='spearman')
@@ -129,9 +111,10 @@ if __name__ == '__main__':
             valid_loss_fns={
                 "spearman": SpearmanLoss(),
                 "top1_regret": TopkMaxRegret(1),
-                "top3_regret": TopkMaxRegret(3)},
+                "top3_regret": TopkMaxRegret(3),
+            },
             epochs=epochs,  # <----
-            log_freq=epochs  # <----
+            log_freq=epochs,  # <----
         )
         wandb.finish()
 
@@ -139,9 +122,13 @@ if __name__ == '__main__':
         from imfas.models.imfas_wp import IMFAS_WP
         from imfas.utils.mlp import MLP
 
-        wandb.init(entity="tnt", mode='online', project='imfas-iclr',
-                   job_type='base: imfas_wp rnd. masking, leave one out',
-                   group='imfas_wp')
+        wandb.init(
+            entity="tnt",
+            mode="online",
+            project="imfas-iclr",
+            job_type="base: imfas_wp rnd. masking, leave one out",
+            group="imfas_wp",
+        )
 
         n_algos = 58
         n_meta_features = 107
@@ -149,7 +136,7 @@ if __name__ == '__main__':
             encoder=MLP(hidden_dims=[n_meta_features, 300, 200]),
             decoder=MLP(hidden_dims=[200, n_algos]),
             input_dim=n_algos,
-            n_layers=2
+            n_layers=2,
         )
         # model = PlackettTest(encoder=MLP(hidden_dims=[n_meta_features, 100, n_algos])) # constant in
         # fidelity
@@ -166,11 +153,13 @@ if __name__ == '__main__':
             train_loader,
             test_loader,
             train_loss_fn=SpearmanLoss(),
-            valid_loss_fns={"spearman": SpearmanLoss(), "top1_regret": TopkMaxRegret(1),
-                            "top3_regret":
-                                TopkMaxRegret(3)},
+            valid_loss_fns={
+                "spearman": SpearmanLoss(),
+                "top1_regret": TopkMaxRegret(1),
+                "top3_regret": TopkMaxRegret(3),
+            },
             epochs=epochs,  # <----
-            log_freq=epochs  # <----
+            log_freq=epochs,  # <----
         )
         wandb.finish()
-    print('done')
+    print("done")

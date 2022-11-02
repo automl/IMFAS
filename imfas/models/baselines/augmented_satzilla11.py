@@ -11,7 +11,7 @@ from imfas.models.baselines.satzilla11 import SATzilla11
 
 
 class AugmentedSATzilla11(SATzilla11):
-    def __init__(self, max_fidelity, device='cpu', aug_fidelity: Optional[Tuple[int]] = (0, 10)):
+    def __init__(self, max_fidelity, device="cpu", aug_fidelity: Optional[Tuple[int]] = (0, 10)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
@@ -21,7 +21,7 @@ class AugmentedSATzilla11(SATzilla11):
         self.aug_fidelity = aug_fidelity
         self._fitted = False
 
-    def forward(self, dataset_meta_features, learning_curves, mask,*args, **kwargs):
+    def forward(self, dataset_meta_features, learning_curves, mask, *args, **kwargs):
         if self.training:
             return self.fit(dataset_meta_features, learning_curves)
         else:
@@ -44,8 +44,9 @@ class AugmentedSATzilla11(SATzilla11):
         learning_curves = learning_curves.numpy()
 
         # create and fit rfcs' for all pairwise comparisons between two algorithms
-        self._pairwise_indices = [(i, j) for i in range(self._num_algorithms) for j in
-                                  range(i + 1, self._num_algorithms)]
+        self._pairwise_indices = [
+            (i, j) for i in range(self._num_algorithms) for j in range(i + 1, self._num_algorithms)
+        ]
 
         for (i, j) in tqdm(self._pairwise_indices):
             # determine pairwise target, initialize models and fit each RFC wrt. instance weights
@@ -67,12 +68,11 @@ class AugmentedSATzilla11(SATzilla11):
                 features_augmented = features
 
             # TODO: how to set the remaining hyperparameters?
-            self._models[(i, j)] = RandomForestClassifier(
-                **self.rfc_kwargs)  # TODO set random state to the torch seed
+            self._models[(i, j)] = RandomForestClassifier(**self.rfc_kwargs)  # TODO set random state to the torch seed
             self._models[(i, j)].fit(features_augmented, pair_target, sample_weight=sample_weights)
         self._fitted = True
 
-    def predict(self,  dataset_meta_features, learning_curves):
+    def predict(self, dataset_meta_features, learning_curves):
 
         batch_features = dataset_meta_features
         lc_argsort = torch.argsort(learning_curves, 1).numpy() / self._num_algorithms
@@ -83,7 +83,7 @@ class AugmentedSATzilla11(SATzilla11):
         # Selection an algorithm per task in the test-set
         for features, lc in zip(batch_features, lc_feature):
 
-            assert (features.ndim == 1), '`features` must be one dimensional'
+            assert features.ndim == 1, "`features` must be one dimensional"
             features = np.expand_dims(features, axis=0)
             predictions = {}
             for (i, j), rfc in self._models.items():
@@ -133,7 +133,7 @@ class AugmentedSATzilla11(SATzilla11):
 
 
 class MultiAugmentedSATzilla11(AugmentedSATzilla11):
-    def __init__(self, max_fidelity, device='cpu', aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
+    def __init__(self, max_fidelity, device="cpu", aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
@@ -144,7 +144,7 @@ class MultiAugmentedSATzilla11(AugmentedSATzilla11):
         aug_fidelity.sort()
         self.models = [AugmentedSATzilla11(max_fidelity, device, None)]
         for i, fid in enumerate(aug_fidelity):
-            self.models.append(AugmentedSATzilla11(max_fidelity, device, tuple(aug_fidelity[:i + 1])))
+            self.models.append(AugmentedSATzilla11(max_fidelity, device, tuple(aug_fidelity[: i + 1])))
 
     def forward(self, dataset_meta_features, learning_curves, mask, *args, **kwargs):
         if self.training:
@@ -160,9 +160,9 @@ class MultiAugmentedSATzilla11(AugmentedSATzilla11):
                 model = self.models[0]
             else:
                 model_idx = bisect.bisect_right(self.aug_fidelity, length_min - 1)
-                old_model_idx = bisect.bisect_right(self.aug_fidelity, length_min -2)
+                old_model_idx = bisect.bisect_right(self.aug_fidelity, length_min - 2)
 
-                if model_idx == old_model_idx and hasattr(self, 'last_res'):
+                if model_idx == old_model_idx and hasattr(self, "last_res"):
                     return self.last_res
                 model = self.models[model_idx]
 
@@ -177,7 +177,7 @@ class MultiAugmentedSATzilla11(AugmentedSATzilla11):
 
     def eval(self):
         self.training = False
-        if hasattr(self, 'no_opt'):
-            delattr(self, 'no_opt') # FIXME: do we also need that for the base class?
+        if hasattr(self, "no_opt"):
+            delattr(self, "no_opt")  # FIXME: do we also need that for the base class?
         for model in self.models:
             model.eval()

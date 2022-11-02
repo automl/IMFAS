@@ -9,7 +9,9 @@ from torch.utils.data import Dataset
 from imfas.data.preprocessings.lc_slice import LC_TimeSlices
 from imfas.data.preprocessings.transformpipeline import TransformPipeline
 
+from typing import Optional
 
+import pdb
 class Dataset_LC(Dataset):
     def __init__(self, path, transforms: TransformPipeline, metric: str = "None"):
         """
@@ -95,23 +97,99 @@ class DatasetLCSynthetic(Dataset_LC):
         self.path = path
         self.transformed_df = torch.from_numpy(np.load(path))
         self.metric = metric
+
+
+class DatasetTaskSet(Dataset_LC):
+    def __init__(   self, 
+                    path, 
+                    transforms: TransformPipeline, 
+                    metric: str = "None", 
+                    n_datasets: Optional[int] = 1000, 
+                    n_algos: Optional[int] = 100, 
+                    ctype: str = 'train'
+                ):
         """
-        # TODO: do we need any other stuffs?
-        if metric is not "None":
-            self.df = self.df.xs(key=metric)
-
-        # consider: is this possible by read in? - to reduce memory overhead
-
-        self.multidex = self.df.index
+        :param metric: Lcbench needs another specifier to subset the dataset.
+        """
+        
+        self.type_idx = {
+            'train': 0,
+            'valid': 2,
+            'test' : 3,
+        }
+        
+        self.path = path
         self.transforms = transforms
+        
+        raw_data = np.load(path).mean(axis=2)[:n_datasets,:n_algos,:,self.type_idx[ctype]]
+        pre_processed = self._preprocess(raw_data)
 
-        if transforms is not None:
-            if transforms.fitted:
-                self.transformed_df = self.transforms.transform(self.df)
-            else:
-                self.transforms = self.transforms.fit(self.df)
-                self.transformed_df = self.transforms.transform(self.df)
+        # print(ctype)
+
+        # pdb.set_trace()
+
+        self.transformed_df = torch.from_numpy(pre_processed)
+        
+        
+        self.metric = metric
+        
+    # TODO Make this is a preprocesing step instead of this hack
+    def _preprocess(self, np_array, Normalize=True):
+        '''
+        Pre-Processing the data:
+            - Handle Nans and Infs:
+            - Normalize Min-Max 
+        
+        '''
+        
+        for i in range(np_array.shape[0]):
+            for j in range(np_array.shape[1]):
+                
+                # # Normalize -- Min-Max
+                if Normalize:
+                    np_array[i,j,:] = 100 * (np_array[i,j,:] - np_array[i,j,:].min()) / (np_array[i,j,:].max() - np_array[i,j,:].min()) 
+                
+                for k in range(np_array.shape[2]):
+                    
+                    # Handle Nans
+                    if np.isnan(np_array[i,j,k]) or np.isinf(np_array[i,j,k]):
+                        # If the data point is the first one, set it to 0   
+                        if k==0:
+                            np_array[i,j,k] = 0
+                        
+                        # If the last point, or if the next point is also nan, use the last point
+                        elif k==np_array.shape[2]-1 or ( np.isnan(np_array[i,j,k+1]) or np.isinf(np_array[i,j,k+1]) ) :
+                            np_array[i,j,k] = np_array[i,j,k-1]
+                        
+                        # Otherwise take the average of the previous andthe next points
+                        else:
+                            np_array[i,j,k] = 0.5 * ( np_array[i,j,k-1] + np_array[i,j,k+1] ) 
+        return np_array
+    
+    def __getitem__(self, item: int):
         """
+        :param item: int. index of dataset to be queried
+        :returns: tensor of shape (n_fidelities, n_algorithms)
+        """
+        # FIXME: this won't be applicable no more when transform has ToTensor
+        # return single learning curve:
+        # self.df.loc[item, :]  # item:tuple e.g. ('APSFailure', '0')
+
+        return self.transformed_df[item]
+    
+    
+    def __len__(self):
+        return self.shape[0]
+    
+    
+    @property
+    def shape(self):
+        return self.transformed_df.shape
+    
+
+    def __repr__(self):
+        return f"DatasetLC(path={self.path}, metric={self.metric}) , " \
+               f"shape={self.shape}"
 
 
 if __name__ == "__main__":

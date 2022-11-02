@@ -1,7 +1,8 @@
 import os
 import logging
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
-os.environ['MKL_NUM_THREADS'] = '1'
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
 import openml
 import numpy as np
 from sklearn.model_selection import cross_val_score
@@ -48,13 +49,17 @@ def get_cc18_datasets():
 
 
 def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budget, number_of_splits, seed):
-    base_pipeline = Pipeline(steps=[('imputer', SimpleImputer(strategy='most_frequent')),
-                               ('onehot', OneHotEncoder(handle_unknown='ignore')),
-                               ('classifier', algorithm)])
+    base_pipeline = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+            ("classifier", algorithm),
+        ]
+    )
 
     X, y, categorical_indicator, attribute_names = openml_dataset.get_data(
-        dataset_format="dataframe",
-        target=openml_dataset.default_target_attribute)
+        dataset_format="dataframe", target=openml_dataset.default_target_attribute
+    )
     X = X.to_numpy()
     y = y.to_numpy()
 
@@ -89,7 +94,8 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budget, number_of_s
             stratified_X_trains[fold],
             stratified_y_trains[fold],
             random_state=fold,
-            n_samples=int(budget*stratified_X_trains[fold].shape[0]))
+            n_samples=int(budget * stratified_X_trains[fold].shape[0]),
+        )
 
         try:
             pipeline = clone(base_pipeline)
@@ -123,33 +129,35 @@ def evaluate_algorithm_on_dataset(openml_dataset, algorithm, budget, number_of_s
     average_test_accuracy_over_folds = np.asarray(test_accuracies).mean()
     average_training_time = np.asarray(times).mean()
 
-    print(f"{openml_dataset.name}:: budget: {budget}, train_accuracy: {average_train_accuracy_over_folds}, val_accuracy: {average_val_accuracy_over_folds}, test_accuracy: {average_test_accuracy_over_folds}, time: {average_training_time}s")
+    print(
+        f"{openml_dataset.name}:: budget: {budget}, train_accuracy: {average_train_accuracy_over_folds}, val_accuracy: {average_val_accuracy_over_folds}, test_accuracy: {average_test_accuracy_over_folds}, time: {average_training_time}s"
+    )
 
     evaluation_result = dict()
-    evaluation_result['pipeline'] = str(pipeline)
-    evaluation_result['average_train_accuracy'] = average_train_accuracy_over_folds
-    evaluation_result['train_accuracy_per_fold'] = train_accuracies
-    evaluation_result['average_val_accuracy'] = average_val_accuracy_over_folds
-    evaluation_result['val_accuracy_per_fold'] = val_accuracies
-    evaluation_result['average_test_accuracy'] = average_test_accuracy_over_folds
-    evaluation_result['test_accuracy_per_fold'] = test_accuracies
-    evaluation_result['average_train_time_s'] = average_training_time
-    evaluation_result['train_time_s_per_fold'] = times
+    evaluation_result["pipeline"] = str(pipeline)
+    evaluation_result["average_train_accuracy"] = average_train_accuracy_over_folds
+    evaluation_result["train_accuracy_per_fold"] = train_accuracies
+    evaluation_result["average_val_accuracy"] = average_val_accuracy_over_folds
+    evaluation_result["val_accuracy_per_fold"] = val_accuracies
+    evaluation_result["average_test_accuracy"] = average_test_accuracy_over_folds
+    evaluation_result["test_accuracy_per_fold"] = test_accuracies
+    evaluation_result["average_train_time_s"] = average_training_time
+    evaluation_result["train_time_s_per_fold"] = times
 
     return evaluation_result
 
 
 def run_experiment(keyfields: dict, result_processor: ResultProcessor, custom_fields: dict):
     # Extracting given parameters
-    number_of_splits = int(custom_fields['number_of_splits'])
+    number_of_splits = int(custom_fields["number_of_splits"])
 
-    seed = int(keyfields['seed'])
+    seed = int(keyfields["seed"])
     np.random.seed(seed)
 
-    dataset_id = keyfields['dataset_id']
-    budget = keyfields['budget']
+    dataset_id = keyfields["dataset_id"]
+    budget = keyfields["budget"]
 
-    classifier = eval(keyfields['classifier'])
+    classifier = eval(keyfields["classifier"])
 
     dataset = openml.datasets.get_dataset(dataset_id)
 

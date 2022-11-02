@@ -32,7 +32,13 @@ trainer:
 
     test_loss_fns:
       spearman:
-        #        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
         _target_: imfas.losses.spearman.SpearmanLoss
-
+      
+      # top1_regret:
+      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   k: 1
+    
+      # top3_regret:
+      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   k: 3
 
