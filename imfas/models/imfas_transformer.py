@@ -122,7 +122,10 @@ class AbstractIMFASTransformer(nn.Module):
         if dataset_meta_features is None:
             dataset_meta_features = torch.full([0], fill_value=0.0, dtype=encoded_lcs.dtype, device=encoded_lcs.device)
 
-        encoded_D = self.encoder(dataset_meta_features).repeat([*encoded_lcs.shape[:-1], 1])
+            encoded_D = self.encoder(dataset_meta_features).repeat([*encoded_lcs.shape[:-1], 1])
+        else:
+            encoded_D = self.encoder(dataset_meta_features)
+
         return self.decoder(torch.cat((encoded_lcs, encoded_D), 1))
 
     def encode_lc_embeddings(

@@ -24,9 +24,9 @@ class Dataset_join_classicAS(Dataset_Join_Dmajor):
         and y is a dict of the final fidelity of the learning curves.
         """
         X = {"dataset_meta_features": self.meta_dataset[self.split],
-             "fidelity": self.lcs[self.split, :, self.slice]}
+             "fidelity": self.learning_curves[self.split, :, self.slice]}
 
-        y = {"final_fidelity": self.lcs[self.split, :, self.slice], }
+        y = {"final_fidelity": self.learning_curves[self.split, :, self.slice], }
 
         return X, y
 

@@ -61,6 +61,10 @@ class BaseTrainer:
 
             y_hat = self.model.forward(**X)
 
+            if y_hat is None:
+                loss = 0
+                continue
+
             if torch.isnan(y_hat).any():
                 print(
                     f"y_hat: {y_hat}",
@@ -91,18 +95,18 @@ class BaseTrainer:
     def validate(self, valid_loader, valid_loss_fn, function_name):
         """evaluate the model on the validationset after epoch ends for a single validation
         function"""
+        if valid_loader is not None:
+            with torch.no_grad():
+                losses = torch.zeros(len(valid_loader))
+                for i, data in enumerate(valid_loader):
+                    X, y = data
+                    self.to_device(X)
+                    self.to_device(y)
 
-        with torch.no_grad():
-            losses = torch.zeros(len(valid_loader))
-            for i, data in enumerate(valid_loader):
-                X, y = data
-                self.to_device(X)
-                self.to_device(y)
+                    y_hat = self.model.forward(**X)
+                    losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
 
-                y_hat = self.model.forward(**X)
-                losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
-
-            wandb.log({f"Validation: {function_name}": losses.mean()}, step=self.step)
+                wandb.log({f"Validation: {function_name}": losses.mean()}, step=self.step)
 
     def test(
         self,
@@ -163,8 +167,6 @@ class BaseTrainer:
                         except Exception as e:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
                             losses[fn_name][i] = float("nan")
-
-                        print(losses[fn_name][i])
 
                 for fn_name, fn in test_loss_fns.items():
                     wandb.log({f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(), "fidelity": fidelity})

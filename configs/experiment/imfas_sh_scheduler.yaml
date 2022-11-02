@@ -63,6 +63,11 @@ model:
 
 
 trainer:
+  _target_: imfas.trainer.sh_budget_trainer.SHBudgetTrainer
+  sh_model:
+    eta: 2
+    budgets: ${dataset.slices}
+
   run_call:
     epochs: 5000
     log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
