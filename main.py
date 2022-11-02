@@ -54,11 +54,10 @@ def pipe_train(cfg: DictConfig) -> None:
     else:
         dataset_meta_features = instantiate(cfg.dataset.lc_meta)
 
-
     # train test split by dataset major
     train_split, valid_split, test_split = call(
         cfg.train_test_split,
-        n=len(dataset_meta_features)
+        n=len(dataset_meta_features),
     )
 
     cfg.dynamically_computed.n_datasets = dataset_meta_features.shape[0]
@@ -115,9 +114,12 @@ def housekeeping(cfg: DictConfig) -> None:
     print_cfg(cfg)
 
     dataset = cfg.dataset.name
+
+    fold_idx = cfg.train_test_split.get('fold_idx', 0)
+
     # SET job type as DATASET name
     # FIXME: Any better ideas?
-    cfg.wandb.job_type = dataset
+    cfg.wandb.job_type = f'{dataset}_{fold_idx}'
 
     log.info(get_original_cwd())
     # FIXME: W&B id???

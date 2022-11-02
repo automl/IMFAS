@@ -14,9 +14,10 @@
 
 defaults:
   - /model: satzilla11
-  - override /dataset: lcbench
-  - override /dataset/dataset_meta: lcbench_minimal
+  #- override /dataset: lcbench
+  #- override /dataset/dataset_meta: lcbench_minimal
   # - override /dataset/algo_meta: lcbench_minimal
+
 
 
 wandb:

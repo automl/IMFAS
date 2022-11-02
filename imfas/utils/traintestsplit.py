@@ -18,17 +18,21 @@ def train_valid_test_split(n, valid_share=0.1, test_share=0.1):
     return train_split, valid_split, test_split
 
 
-def train_valid_fix_test_split(n, valid_share=0.1, test_share=0.1):
+def train_valid_fix_test_split(n, valid_share=0.1, test_share=0.1, fold_idx=0):
     # here test_share can be either a float or an iterable object. In the former case, we simply take the last n samples
     # as the test sets. While for the later case, we take all the values inside test_share as test sets.
     if isinstance(test_share, Iterable):
         test_split = list(test_share)
         n_train_val = n - len(test_split)
     else:
+        if fold_idx * test_share > 1:
+            raise ValueError('Number of fold is too large!')
+
         n_test_split = int(test_share * n)
         n_test_split = n_test_split or 1
         n_train_val = n - n_test_split
-        test_split = list(range(n_train_val, n))
+
+        test_split = list(range(n_train_val  - fold_idx * n_test_split, n - fold_idx * n_test_split))
 
     train_split = random.sample(list(set(range(n)) - set(test_split)), k=int(n_train_val * (1 - valid_share)))
     valid_split = random.sample(list(set(range(n)) - set(train_split) - set(test_split)), k=int(n_train_val *

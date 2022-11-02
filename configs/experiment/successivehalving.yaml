@@ -4,8 +4,8 @@
 # learning curve aware algorithm.
 # Since we only ever care for its baseline (test) performance, this pipe is a bit hacky.
 
-defaults:
-  - override /train_test_split: trainvalidtest
+#defaults:
+  #- override /train_test_split: trainvalidtest
 
 wandb:
   group: 'Baseline: SH'

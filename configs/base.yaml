@@ -1,7 +1,7 @@
 # @package _global_
 
 defaults:
-  - train_test_split: trainvalidtest #leave_one_out
+  - train_test_split: trainvalfixedtest # trainvalidtest #leave_one_out
   - dataset: lcbench
   - trainer: basetrainer
   - _self_
