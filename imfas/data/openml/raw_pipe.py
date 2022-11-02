@@ -110,52 +110,70 @@ class OpenML_ASLC_Sqlite:
         return self.tables
 
 
-def raw_pipe(**kwargs):
-    cfg = DictConfig(kwargs)
-    log.info('Loading from download')
-    df = OpenML_ASLC_Sqlite(kwargs['root']).load_download(kwargs['path'])
+# def raw_pipe(**kwargs):
+#     cfg = DictConfig(kwargs)
+#     log.info('Loading from download')
+#     df = OpenML_ASLC_Sqlite(kwargs['root']).load_download(kwargs['path'])
+#
+#     tables = db.save(cfg.cols)
 
-    tables = db.save(cfg.cols)
+def raw_pipe(*args, **kwargs):
+    config = DictConfig(kwargs)
+    # Create your connection.
+    path_to_database = config['database_path']
 
-    def raw_pipe(*args, **kwargs):
-        config = DictConfig(**kwargs)
-        # Create your connection.
-        path_to_database = config['database_path']
+    connection = sqlite3.connect(path_to_database)
+    table_name = config['table_name']
 
-        connection = sqlite3.connect(path_to_database)
-        table_name = config['table_name']
+    df = pd.read_sql_query("SELECT * FROM {}".format(table_name), connection)
+    data = df[
+        ['dataset_id', 'budget', 'classifier', 'average_train_accuracy', 'average_val_accuracy',
+         'average_test_accuracy']]
 
-        df = pd.read_sql_query("SELECT * FROM {}".format(table_name), connection)
-        data = df[
-            ['dataset_id', 'budget', 'classifier', 'average_train_accuracy', 'average_val_accuracy',
-             'average_test_accuracy']]
-        data = data.set_index(['dataset_id', 'classifier'])
+    # deselct weird datasets (e.g. constant values for all configs) or extremely low performance
+    # for all configs.
+    data = data.loc[~data.dataset_id.isin([40994, 40983, 1462, 469, 307, 37, 40994, 14, 16, 22])]
 
-        data_training_curves = data.drop(['average_val_accuracy', 'average_test_accuracy'], axis=1)
-        data_validation_curves = data.drop(['average_train_accuracy', 'average_test_accuracy'],
-                                           axis=1)
-        data_test_curves = data.drop(['average_train_accuracy', 'average_val_accuracy'], axis=1)
+    log.debug(f'{len(set(data.dataset_id))} datasets are available')
 
-        data_training_curves = data_training_curves.pivot_table(values='average_train_accuracy',
-                                                                index=['dataset_id', 'classifier'],
-                                                                columns=['budget'])
+    data = data.set_index(['dataset_id', 'classifier'])
 
-        data_validation_curves = data_validation_curves.pivot_table(values='average_val_accuracy',
-                                                                    index=['dataset_id',
-                                                                           'classifier'],
-                                                                    columns=['budget'])
+    data_training_curves = data.drop(['average_val_accuracy', 'average_test_accuracy'], axis=1)
+    data_validation_curves = data.drop(['average_train_accuracy', 'average_test_accuracy'], axis=1)
+    data_test_curves = data.drop(['average_train_accuracy', 'average_val_accuracy'], axis=1)
 
-        data_test_curves = data_test_curves.pivot_table(values='average_test_accuracy',
-                                                        index=['dataset_id', 'classifier'],
-                                                        columns=['budget'])
+    data_training_curves = data_training_curves.pivot_table(
+        values='average_train_accuracy',
+        index=['dataset_id', 'classifier'],
+        columns=['budget'])
 
-        path_to_output_files = config['path_to_output_files']
+    data_validation_curves = data_validation_curves.pivot_table(
+        values='average_val_accuracy',
+        index=['dataset_id', 'classifier'],
+        columns=['budget'])
 
-        data_training_curves.to_hdf(path_to_output_files + '/training_curves.h5', key='df',
-                                    mode='w')
-        data_validation_curves.to_hdf(path_to_output_files + 'validation_curves.h5', key='df',
-                                      mode='w')
-        data_test_curves.to_hdf(path_to_output_files + 'test_curves.h5', key='df', mode='w')
+    data_test_curves = data_test_curves.pivot_table(
+        values='average_test_accuracy',
+        index=['dataset_id', 'classifier'],
+        columns=['budget'])
+
+    path_to_output_files = Path(config['path_to_output_files'])
+    path_to_output_files.mkdir(parents=True, exist_ok=True)
+
+    data_training_curves.to_hdf(path_to_output_files / 'training_curves.h5', key='df', mode='w')
+    data_validation_curves.to_hdf(path_to_output_files / 'validation_curves.h5', key='df', mode='w')
+    data_test_curves.to_hdf(path_to_output_files / 'test_curves.h5', key='df', mode='w')
+
+    # collect dataset meta features
+    datasets = []
+    openmlids = data.index.levels[0]
+    for openmlid in openmlids:
+        datasets.append(openml.datasets.get_dataset(int(openmlid), download_data=False))
+
+    qualities = {m.id: m.qualities for m in datasets}
+    dataset_meta_features = pd.DataFrame.from_dict(qualities).T
+
+    dataset_meta_features.to_csv(path_to_output_files / 'dataset_meta_features.csv')
 
     #     path = Path(__file__).parents[3] / 'data'
 
