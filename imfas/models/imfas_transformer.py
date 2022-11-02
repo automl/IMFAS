@@ -108,9 +108,8 @@ class AbstractIMFASTransformer(nn.Module):
         learning_curves_embedding = self.positional_encoder(self.lc_proj_layer(learning_curves))
         return learning_curves_embedding, lc_values_observed
 
-    def forward(self, dataset_meta_features, learning_curves, mask):
+    def forward(self, learning_curves, mask, dataset_meta_features=None):
         # FIXME: Consider How to encode Missing values here
-        encoded_D = self.encoder(dataset_meta_features)
 
         learning_curves, lc_values_observed, lc_shape_info = self.preprocessing_lcs(
             learning_curves,
@@ -128,7 +127,13 @@ class AbstractIMFASTransformer(nn.Module):
             lc_shape_info
         )
 
+        if dataset_meta_features is None:
+            dataset_meta_features = torch.full([ 0], fill_value=0., dtype=encoded_lcs.dtype,
+                                               device=encoded_lcs.device)
+
+        encoded_D = self.encoder(dataset_meta_features).repeat([*encoded_lcs.shape[:-1], 1])
         return self.decoder(torch.cat((encoded_lcs, encoded_D), 1))
+
 
     def encode_lc_embeddings(
             self,

@@ -1,5 +1,8 @@
 import math
+import numpy as np
 import pandas as pd
+import torch
+
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
 
@@ -82,6 +85,33 @@ class Dataset_LC(Dataset):
             ax.set_visible(False)
 
         fig.suptitle(f"Dataset {dataset_name} - {major} major")
+
+
+class DatasetLCSynthetic(Dataset_LC):
+    def __init__(self, path, transforms: TransformPipeline, metric: str = "None"):
+        """
+        :param metric: Lcbench needs another specifier to subset the dataset.
+        """
+        self.path = path
+        self.transformed_df = torch.from_numpy(np.load(path))
+        self.metric = metric
+        """
+        # TODO: do we need any other stuffs?
+        if metric is not "None":
+            self.df = self.df.xs(key=metric)
+
+        # consider: is this possible by read in? - to reduce memory overhead
+
+        self.multidex = self.df.index
+        self.transforms = transforms
+
+        if transforms is not None:
+            if transforms.fitted:
+                self.transformed_df = self.transforms.transform(self.df)
+            else:
+                self.transforms = self.transforms.fit(self.df)
+                self.transformed_df = self.transforms.transform(self.df)
+        """
 
 
 if __name__ == "__main__":

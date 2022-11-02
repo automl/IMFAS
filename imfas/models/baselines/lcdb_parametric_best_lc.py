@@ -1,3 +1,5 @@
+import json
+import pathlib
 from typing import List
 
 import numpy as np
@@ -106,3 +108,10 @@ if __name__ == '__main__':
     topkregret = TopkRegret(k=1)
     topkregret(final_performance, ranking)
     print()
+
+    lcs_parameters = {}
+    for key, values in lc_predictor.parametric_lcs.items():
+        lcs_parameters[key] = values.parameters_lc.tolist()
+
+    with open(str(pathlib.Path(__file__).resolve().parent / 'lcs_parameters.json'), 'w') as f:
+        json.dump(lcs_parameters, f)
