@@ -7,7 +7,7 @@ name: task_set
 path:
   algo_meta: ${dir_data_processed}/${dataset.name}/config_subset.csv
   # data_meta: ${dir_data_processed}/${dataset.name}/meta_features.csv
-  lc_meta: ${dir_data_processed}/${dataset.name}/y_100.npy
+  lc_meta: ${dir_data_processed}/${dataset.name}/raw.npy
 
 
 train_dataset_class: # -----------------------------------------------------------------------------
