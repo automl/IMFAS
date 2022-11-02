@@ -33,6 +33,18 @@ trainer:
     test_loss_fns:
       spearman:
         _target_: imfas.losses.spearman.SpearmanLoss
+
+      top1_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 1
+
+      top3_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 3
+
+      top5_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 5
       
       # top1_regret:
       #   _target_: imfas.evaluation.topkregret.TopkRegret
@@ -41,4 +53,5 @@ trainer:
       # top3_regret:
       #   _target_: imfas.evaluation.topkregret.TopkRegret
       #   k: 3
+
 

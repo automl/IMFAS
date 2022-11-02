@@ -68,3 +68,17 @@ trainer:
     log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
       _target_: imfas.losses.spearman.SpearmanLoss
+
+    test_loss_fns:
+
+      top1_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 1
+
+      top3_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 3
+
+      top5_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 5

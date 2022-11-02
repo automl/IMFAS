@@ -68,11 +68,22 @@ trainer:
     log_freq: 1
 
     test_loss_fns:
+
+      placeholder:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 1
+
       top1_regret:
         _target_: imfas.evaluation.topkregret.TopkRegret
         k: 1
+
       top3_regret:
         _target_: imfas.evaluation.topkregret.TopkRegret
         k: 3
+
+      top5_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 5
+
 
 
