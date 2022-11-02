@@ -121,6 +121,8 @@ def housekeeping(cfg: DictConfig) -> None:
     # FIXME: Any better ideas?
     cfg.wandb.job_type = f'{dataset}_{fold_idx}'
 
+    cfg.wandb.tags = [dataset, f'fold_idx_{fold_idx}', f'seed_{cfg.seed}', *cfg.wandb.tags]
+
     log.info(get_original_cwd())
     # FIXME: W&B id???
     hydra_job = (

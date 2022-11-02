@@ -11,6 +11,8 @@ wandb:
   group: 'Baseline: SH'
   job_type: 'sh_eta2'
   notes: 'Successive Halving'
+  tags:
+    - 'Successive Halving'
 
 device: 'cpu'
 

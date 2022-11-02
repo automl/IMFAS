@@ -16,6 +16,8 @@ wandb:
   group: 'augmented satzilla_11'
   job_type: 'satzilla_11+'
   notes: 'augmented satzilla_11'
+  tags:
+    - 'Augmented SATzilla11'
 
 
 dataset:

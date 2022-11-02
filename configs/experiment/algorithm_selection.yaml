@@ -24,6 +24,8 @@ wandb:
   group: 'satzilla_11'
   job_type: 'satzilla_11'
   notes: 'satzilla_11'
+  tags:
+    - 'SATzilla11'
 
 
 dataset:

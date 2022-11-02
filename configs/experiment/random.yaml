@@ -11,6 +11,8 @@ wandb:
   group: 'RandomBaseline'
   job_type: 'random'
   notes: 'Random Baseline'
+  tags:
+    - 'Random'
 
 device: 'cpu'
 
