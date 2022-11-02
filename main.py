@@ -10,8 +10,7 @@ log = logging.getLogger(__name__)
 
 import torch
 
-OmegaConf.register_new_resolver("device_ident", lambda _: torch.device(
-    "cuda" if torch.cuda.is_available() else "cpu"))
+OmegaConf.register_new_resolver("device_ident", lambda _: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
 OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
 OmegaConf.register_new_resolver("len", lambda l: len(l))
@@ -54,32 +53,28 @@ def pipe_train(cfg: DictConfig) -> None:
     else:
         dataset_meta_features = instantiate(cfg.dataset.lc_meta)
 
-
     # train test split by dataset major
-    train_split, valid_split, test_split = call(
-        cfg.train_test_split,
-        n=len(dataset_meta_features)
-    )
+    train_split, valid_split, test_split = call(cfg.train_test_split, n=len(dataset_meta_features))
 
     cfg.dynamically_computed.n_datasets = dataset_meta_features.shape[0]
     del dataset_meta_features
 
     loaders = {}
     # Create the dataloaders (conditional on their existence)
-    if 'train_dataset_class' in cfg.dataset.keys():
+    if "train_dataset_class" in cfg.dataset.keys():
         train_set = instantiate(cfg.dataset.train_dataset_class, split=train_split)
         train_loader = instantiate(cfg.dataset.train_dataloader_class, dataset=train_set)
-        loaders['train_loader'] = train_loader
+        loaders["train_loader"] = train_loader
 
-    if 'valid_dataset_class' in cfg.dataset.keys():
+    if "valid_dataset_class" in cfg.dataset.keys():
         valid_set = instantiate(cfg.dataset.valid_dataset_class, split=valid_split)
         valid_loader = instantiate(cfg.dataset.valid_dataloader_class, dataset=valid_set)
-        loaders['valid_loader'] = valid_loader
+        loaders["valid_loader"] = valid_loader
 
-    if 'test_dataset_class' in cfg.dataset.keys():
+    if "test_dataset_class" in cfg.dataset.keys():
         test_set = instantiate(cfg.dataset.test_dataset_class, split=test_split)
         test_loader = instantiate(cfg.dataset.test_dataloader_class, dataset=test_set)
-        loaders['test_loader'] = test_loader
+        loaders["test_loader"] = test_loader
 
     # Dynamically computed configurations.
     # maybe change later to resolvers? https://omegaconf.readthedocs.io/en/2.2_branch/usage.html#access-and-manipulation
@@ -117,9 +112,9 @@ def housekeeping(cfg: DictConfig) -> None:
     log.info(get_original_cwd())
     # FIXME: W&B id???
     hydra_job = (
-            os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
-            + "_"
-            + os.path.basename(HydraConfig.get().run.dir)
+        os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
+        + "_"
+        + os.path.basename(HydraConfig.get().run.dir)
     )
     cfg.wandb.id = hydra_job + "_" + id_generator()  # FIXME: necessary?
     wandb.init(**cfg.wandb, config=dict_cfg)

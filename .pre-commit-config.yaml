@@ -1,6 +1,3 @@
-# If you see me, please update my `rev` field using the provided links
-# Click the repo and update to latest tags.
-# If things break on update, raise an issue
 repos:
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
@@ -13,20 +10,20 @@ repos:
         name: isort imports tests
         files: tests
 
-  - repo: https://github.com/ambv/black
-    rev: 22.1.0
-    hooks:
-      # - id: black
-      #   name: black formatter imfas
-      #   files: imfas
+  # - repo: https://github.com/ambv/black
+  #   rev: 22.1.0
+  #   hooks:
+  #     # - id: black
+  #     #   name: black formatter imfas
+  #     #   files: imfas
 
-      - id: black
-        name: black formatter tests
-        files: tests
+  #     - id: black
+  #       name: black formatter tests
+  #       files: tests
 
-      - id: black
-        name: black formatter examples
-        files: examples
+  #     - id: black
+  #       name: black formatter examples
+  #       files: examples
 
   # - repo: https://github.com/pycqa/pydocstyle
   #   rev: 6.1.1

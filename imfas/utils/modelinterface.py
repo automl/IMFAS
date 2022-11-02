@@ -4,7 +4,6 @@ import torch
 
 
 class ModelInterface:
-
     def __init__(self):
         self.training = True
 

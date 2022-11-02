@@ -17,10 +17,10 @@ log = logging.getLogger(__name__)
 
 class SHBudgetTrainer(BaseTrainer):
     def __init__(
-            self,
-            model,
-            sh_model: SuccessiveHalving,
-            optimizer: Optional[torch.optim.Optimizer] = None,
+        self,
+        model,
+        sh_model: SuccessiveHalving,
+        optimizer: Optional[torch.optim.Optimizer] = None,
     ):
         super().__init__(model, optimizer)
         self.sh_model = sh_model
@@ -34,19 +34,16 @@ class SHBudgetTrainer(BaseTrainer):
         """
         with torch.no_grad():
             max_fidelity = test_loader.dataset.learning_curves.shape[-1]
-            for fidelity in tqdm(range(max_fidelity), desc='Fidelity'):
+            for fidelity in tqdm(range(max_fidelity), desc="Fidelity"):
                 losses_sh = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
                 losses_model = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
 
-                test_loader.dataset.masking_fn = partial(
-                    mask_lcs_to_max_fidelity,
-                    max_fidelity=fidelity
-                )
+                test_loader.dataset.masking_fn = partial(mask_lcs_to_max_fidelity, max_fidelity=fidelity)
 
                 for i, (X, y) in enumerate(test_loader):
-                    mask = X.pop('mask')
+                    mask = X.pop("mask")
                     print(mask)
-                    self.to_device({'mask': mask})
+                    self.to_device({"mask": mask})
                     self.to_device(X)
                     self.to_device(y)
 
@@ -58,7 +55,7 @@ class SHBudgetTrainer(BaseTrainer):
 
                         # collect sh's budget mask (already conditioned on max fidelity)
                         mask_sh = self.sh_model.observed_mask
-                        self.to_device({'mask': mask_sh})
+                        self.to_device({"mask": mask_sh})
 
                         # predict model based on that mask
                         y_hat_model = self.model.forward(**X, mask=mask_sh)
@@ -72,31 +69,32 @@ class SHBudgetTrainer(BaseTrainer):
                             # print(losses_sh[fn_name][i])
                         except Exception as e:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
-                            losses_sh[fn_name][i] = float('nan')
+                            losses_sh[fn_name][i] = float("nan")
 
                         try:
                             losses_model[fn_name][i] = fn(y_hat_model, y["final_fidelity"])
                             # print(losses_model[fn_name][i])
                         except Exception as e:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
-                            losses_model[fn_name][i] = float('nan')
+                            losses_model[fn_name][i] = float("nan")
 
                 # write out the average losses for each loss function out to wandb
                 for fn_name, fn in test_loss_fns.items():
                     wandb.log(
-                        {f"Test, Slice Evaluation sh: {fn_name}": losses_sh[fn_name].mean(),
-                         'fidelity': fidelity}
+                        {f"Test, Slice Evaluation sh: {fn_name}": losses_sh[fn_name].mean(), "fidelity": fidelity}
                     )
 
                     wandb.log(
-                        {f"Test, Slice Evaluation model on sh\'s mask: {fn_name}":
-                             losses_model[fn_name].mean(),
-                         'fidelity': fidelity}
+                        {
+                            f"Test, Slice Evaluation model on sh's mask: {fn_name}": losses_model[fn_name].mean(),
+                            "fidelity": fidelity,
+                        }
                     )
 
                     wandb.log(
-                        {f"Test, Slice Evaluation improvement of model over sh both on sh\'s mask:"
-                         f" {fn_name}":
-                             losses_sh[fn_name].mean() - losses_model[fn_name].mean(),
-                         'fidelity': fidelity}
+                        {
+                            f"Test, Slice Evaluation improvement of model over sh both on sh's mask:"
+                            f" {fn_name}": losses_sh[fn_name].mean() - losses_model[fn_name].mean(),
+                            "fidelity": fidelity,
+                        }
                     )

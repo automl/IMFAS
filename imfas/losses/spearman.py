@@ -5,11 +5,12 @@ import torchsort
 from torch.nn import Softmax
 from torch.nn.modules.loss import _Loss as Loss
 
+import pdb
+
 
 class SpearmanLoss(Loss):
     def __init__(
-            self, reduction: str = "mean", ranking_fn: Callable = torchsort.soft_rank,
-            ts_kwargs: Dict = {}
+        self, reduction: str = "mean", ranking_fn: Callable = torchsort.soft_rank, ts_kwargs: Dict = {}
     ) -> None:
         super(SpearmanLoss, self).__init__(reduction=reduction)
         self.ranking_fn = ranking_fn
@@ -18,6 +19,7 @@ class SpearmanLoss(Loss):
     def forward(self, y_hat: torch.Tensor, y_true: torch.Tensor) -> torch.Tensor:
         # generate soft ranks
         # FIXME: @Aditya, what is the expected dtype of both tensors?
+
         y_hat = self.ranking_fn(y_hat, **self.ts_kwargs)
         y_true = self.ranking_fn(y_true, **self.ts_kwargs)
 
@@ -38,8 +40,7 @@ class SpearmanLoss(Loss):
 
 class WeightedSpearman(Loss):
     def __init__(
-            self, reduction: str = "mean", ranking_fn: Callable = torchsort.soft_rank,
-            ts_kwargs: Dict = {}
+        self, reduction: str = "mean", ranking_fn: Callable = torchsort.soft_rank, ts_kwargs: Dict = {}
     ) -> None:
         super(WeightedSpearman, self).__init__(reduction=reduction)
         self.spearman_loss = SpearmanLoss(reduction, ranking_fn=ranking_fn, ts_kwargs=ts_kwargs)

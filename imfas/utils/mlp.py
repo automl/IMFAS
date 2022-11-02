@@ -7,8 +7,7 @@ from torch import nn as nn
 class MLP(nn.Module):
     activation = {"relu": nn.ReLU, "identity": nn.Identity}
 
-    def __init__(self, hidden_dims: List[int], activation: str = "relu", readout=False,
-                 device="cpu"):
+    def __init__(self, hidden_dims: List[int], activation: str = "relu", readout=False, device="cpu"):
         super(MLP, self).__init__()
         self.hidden_dims = hidden_dims
 

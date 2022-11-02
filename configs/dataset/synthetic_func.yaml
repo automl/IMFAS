@@ -16,7 +16,7 @@ train_dataset_class: # ---------------------------------------------------------
   #  meta_algo: ${dataset.algo_meta}
   learning_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.DatasetLCSynthetic
+    _target_: imfas.data.lc_dataset.DatasetLCSynthetic
     path: ${dataset.path.lc_meta}
 
     transforms:
@@ -33,7 +33,7 @@ valid_dataset_class: # ---------------------------------------------------------
   _target_: imfas.data.Dataset_Join_Test
   learning_curves: # ${dataset.lc_meta}  # validation
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.DatasetLCSynthetic
+    _target_: imfas.data.lc_dataset.DatasetLCSynthetic
     path: ${dataset.path.lc_meta}
 
     transforms:
@@ -46,7 +46,7 @@ valid_dataset_class: # ---------------------------------------------------------
 
   test_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.DatasetLCSynthetic
+    _target_: imfas.data.lc_dataset.DatasetLCSynthetic
     path: ${dataset.path.lc_meta}
 
     transforms:

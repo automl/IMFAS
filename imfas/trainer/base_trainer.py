@@ -16,9 +16,9 @@ log = logging.getLogger(__name__)
 
 class BaseTrainer:
     def __init__(
-            self,
-            model,
-            optimizer: Optional[torch.optim.Optimizer] = None,
+        self,
+        model,
+        optimizer: Optional[torch.optim.Optimizer] = None,
     ):
         """
 
@@ -32,7 +32,7 @@ class BaseTrainer:
 
         self.optimizer = None
 
-        if isinstance(self.model, nn.Module) and not hasattr(self.model, 'no_opt'):
+        if isinstance(self.model, nn.Module) and not hasattr(self.model, "no_opt"):
             # partial instantiation from hydra!
             self.optimizer = optimizer(self.model.parameters())
 
@@ -40,7 +40,10 @@ class BaseTrainer:
     def step(self):
         return self._step
 
-    def to_device(self, input, ) -> None:
+    def to_device(
+        self,
+        input,
+    ) -> None:
         for k, v in input.items():
             input[k] = v.to(self.device).float()
         return input
@@ -59,15 +62,16 @@ class BaseTrainer:
             y_hat = self.model.forward(**X)
 
             if torch.isnan(y_hat).any():
-                print(f'y_hat: {y_hat}',
-                      f'y: {y["final_fidelity"]}',
-                      f'lcs: {X["learning_curves"]}',
-                      f'mask: {X["mask"]}',
-                      f'Dataset metafeatures {X["dataset_meta_features"]}'
-                      )
+                print(
+                    f"y_hat: {y_hat}",
+                    f'y: {y["final_fidelity"]}',
+                    f'lcs: {X["learning_curves"]}',
+                    f'mask: {X["mask"]}',
+                    f'Dataset metafeatures {X["dataset_meta_features"]}',
+                )
                 print()
 
-            if not hasattr(self.model, 'no_opt'):
+            if not hasattr(self.model, "no_opt"):
                 loss = loss_fn(y_hat, y["final_fidelity"])
                 # print(X, y, y_hat, loss)
                 loss.backward()
@@ -98,9 +102,13 @@ class BaseTrainer:
                 y_hat = self.model.forward(**X)
                 losses[i] = valid_loss_fn(y_hat, y["final_fidelity"])
 
-            wandb.log({f'Validation: {function_name}': losses.mean()}, step=self.step)
+            wandb.log({f"Validation: {function_name}": losses.mean()}, step=self.step)
 
-    def test(self, test_loader, test_loss_fns, ):
+    def test(
+        self,
+        test_loader,
+        test_loss_fns,
+    ):
         """
         Slice Evaluation Protocol;
         Evaluate the model on the testset after training is done.
@@ -113,14 +121,11 @@ class BaseTrainer:
 
         with torch.no_grad():
             max_fidelity = test_loader.dataset.learning_curves.shape[-1]
-            for fidelity in tqdm(range(max_fidelity), desc='Fidelity'):
+            for fidelity in tqdm(range(max_fidelity), desc="Fidelity"):
 
                 # fixme: figure out how wandb can recieve the actual fidelity label.
 
-                test_loader.dataset.masking_fn = partial(
-                    mask_lcs_to_max_fidelity,
-                    max_fidelity=fidelity
-                )
+                test_loader.dataset.masking_fn = partial(mask_lcs_to_max_fidelity, max_fidelity=fidelity)
 
                 # fixme: make one fwd pass and compute all validation losses on the fwd pass
                 #  to drastically reduce the number of fwd passes!
@@ -134,7 +139,7 @@ class BaseTrainer:
                         if isinstance(fn, DictConfig):  # fixme: can we remove this?
                             fn = instantiate(fn)
 
-                        if hasattr(self.model, 'no_opt'):  # FIXME: @Aditya: remove this
+                        if hasattr(self.model, "no_opt"):  # FIXME: @Aditya: remove this
                             self.model.training = False
 
                         if j == 0:  # for all those baselines that don't have a online training
@@ -150,46 +155,41 @@ class BaseTrainer:
                         # Some test loss functions may take an issue with that.
                         # This is a save-guard to prevent this (intended) behaviour.
                         try:
-                            if hasattr(self.model, 'no_opt'):
+                            if hasattr(self.model, "no_opt"):
                                 losses[fn_name][i] = fn(y_hat, y["final_fidelity"][0])
                                 # FIXME: @Aditya: remove this hack
                             else:
                                 losses[fn_name][i] = fn(y_hat, y["final_fidelity"])
                         except Exception as e:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
-                            losses[fn_name][i] = float('nan')
+                            losses[fn_name][i] = float("nan")
 
                         print(losses[fn_name][i])
 
                 for fn_name, fn in test_loss_fns.items():
-                    wandb.log(
-                        {f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(),
-                         'fidelity': fidelity}
-                    )
+                    wandb.log({f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(), "fidelity": fidelity})
 
     def run(
-            self,
-            train_loader: torch.utils.data.DataLoader = None,
-            valid_loader: torch.utils.data.DataLoader = None,
-            test_loader: torch.utils.data.DataLoader = None,
-            epochs: int = 0,
-            log_freq: int = 5,
-            train_loss_fn: Union[Callable, DictConfig] = None,
-            valid_loss_fns: Dict[str, Callable] = None,
-            test_loss_fns: Dict[str, Callable] = None,
-
+        self,
+        train_loader: torch.utils.data.DataLoader = None,
+        valid_loader: torch.utils.data.DataLoader = None,
+        test_loader: torch.utils.data.DataLoader = None,
+        epochs: int = 0,
+        log_freq: int = 5,
+        train_loss_fn: Union[Callable, DictConfig] = None,
+        valid_loss_fns: Dict[str, Callable] = None,
+        test_loss_fns: Dict[str, Callable] = None,
     ):
         """
         Main loop including training & test evaluation, all of which report to wandb
 
         :returns None, but tracks using wandb both the trainloss all the validation losses
         """
-
         # Class & functional interface
         if isinstance(train_loss_fn, DictConfig):
             train_loss_fn = instantiate(train_loss_fn)
 
-        for epoch in tqdm(range(epochs), desc='Training epochs'):
+        for epoch in tqdm(range(epochs), desc="Training epochs"):
             if isinstance(self.model, nn.Module):
                 self.train(train_loader, epoch, train_loss_fn)
 
@@ -204,7 +204,7 @@ class BaseTrainer:
                     if isinstance(fn, DictConfig):  # fixme: can we remove this?
                         fn = instantiate(fn)
 
-                    if hasattr(self.model, 'no_opt'):  # FIXME: @Aditya: remove this
+                    if hasattr(self.model, "no_opt"):  # FIXME: @Aditya: remove this
                         self.model.training = False
 
                     self.validate(valid_loader, fn, fn_name)

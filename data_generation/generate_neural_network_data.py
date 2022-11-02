@@ -1,12 +1,14 @@
 import torch
 
 import warnings
+
 warnings.filterwarnings("ignore", ".*does not have many workers.*")
 warnings.filterwarnings("ignore", ".*MPS available.*")
 warnings.filterwarnings("ignore", ".*Global seed.*")
 
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
 
@@ -30,11 +32,13 @@ import time
 import os
 
 
-def evaluate_algorithm_on_dataset(openml_dataset, budget, number_of_splits, num_hidden_layers, num_hidden_units, learning_rate, max_num_epochs, seed):
+def evaluate_algorithm_on_dataset(
+    openml_dataset, budget, number_of_splits, num_hidden_layers, num_hidden_units, learning_rate, max_num_epochs, seed
+):
 
     X, y, categorical_indicator, attribute_names = openml_dataset.get_data(
-        dataset_format="dataframe",
-        target=openml_dataset.default_target_attribute)
+        dataset_format="dataframe", target=openml_dataset.default_target_attribute
+    )
     X = X.to_numpy()
     y = y.to_numpy()
 
@@ -48,11 +52,13 @@ def evaluate_algorithm_on_dataset(openml_dataset, budget, number_of_splits, num_
     label_encoders = list()
 
     for train_index, test_index in stratiefiedKFold.split(X, y):
-        pipeline = Pipeline(steps=[('imputer', SimpleImputer(strategy='most_frequent')),
-                                   ('onehot', OneHotEncoder(handle_unknown='ignore')),
-                                   ('standard_scaler', StandardScaler(with_mean=False))
-                                   ]
-                            )
+        pipeline = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("onehot", OneHotEncoder(handle_unknown="ignore")),
+                ("standard_scaler", StandardScaler(with_mean=False)),
+            ]
+        )
         label_encoder = LabelEncoder()
         label_encoders.append(label_encoder)
 
@@ -66,7 +72,6 @@ def evaluate_algorithm_on_dataset(openml_dataset, budget, number_of_splits, num_
         y_val = label_encoder.transform(y=y_val)
         X_test = pipeline.transform(X=X_test).todense()
         y_test = label_encoder.transform(y=y_test)
-
 
         stratified_X_trains.append(X_train)
         stratified_X_vals.append(X_val)
@@ -98,7 +103,9 @@ def evaluate_algorithm_on_dataset(openml_dataset, budget, number_of_splits, num_
         try:
             # train pipeline
             start_time = time.time()
-            network_model.fit(X_train, y_train, X_val, y_val, learning_rate=learning_rate, num_epochs=int(budget*max_num_epochs))
+            network_model.fit(
+                X_train, y_train, X_val, y_val, learning_rate=learning_rate, num_epochs=int(budget * max_num_epochs)
+            )
             elapsed_time_in_seconds = time.time() - start_time
             times.append(elapsed_time_in_seconds)
 
@@ -129,39 +136,44 @@ def evaluate_algorithm_on_dataset(openml_dataset, budget, number_of_splits, num_
     average_test_accuracy_over_folds = np.asarray(test_accuracies).mean()
     average_training_time = np.asarray(times).mean()
 
-    print(f"{openml_dataset.name}:: budget: {budget}, train_accuracy: {average_train_accuracy_over_folds}, val_accuracy: {average_val_accuracy_over_folds}, test_accuracy: {average_test_accuracy_over_folds}, time: {average_training_time}s")
+    print(
+        f"{openml_dataset.name}:: budget: {budget}, train_accuracy: {average_train_accuracy_over_folds}, val_accuracy: {average_val_accuracy_over_folds}, test_accuracy: {average_test_accuracy_over_folds}, time: {average_training_time}s"
+    )
 
     evaluation_result = dict()
-    evaluation_result['pipeline'] = str(learning_rate)
-    evaluation_result['average_train_accuracy'] = average_train_accuracy_over_folds
-    evaluation_result['train_accuracy_per_fold'] = train_accuracies
-    evaluation_result['average_val_accuracy'] = average_val_accuracy_over_folds
-    evaluation_result['val_accuracy_per_fold'] = val_accuracies
-    evaluation_result['average_test_accuracy'] = average_test_accuracy_over_folds
-    evaluation_result['test_accuracy_per_fold'] = test_accuracies
-    evaluation_result['average_train_time_s'] = average_training_time
-    evaluation_result['train_time_s_per_fold'] = times
+    evaluation_result["pipeline"] = str(learning_rate)
+    evaluation_result["average_train_accuracy"] = average_train_accuracy_over_folds
+    evaluation_result["train_accuracy_per_fold"] = train_accuracies
+    evaluation_result["average_val_accuracy"] = average_val_accuracy_over_folds
+    evaluation_result["val_accuracy_per_fold"] = val_accuracies
+    evaluation_result["average_test_accuracy"] = average_test_accuracy_over_folds
+    evaluation_result["test_accuracy_per_fold"] = test_accuracies
+    evaluation_result["average_train_time_s"] = average_training_time
+    evaluation_result["train_time_s_per_fold"] = times
 
     return evaluation_result
 
+
 def run_experiment(keyfields: dict, result_processor: ResultProcessor, custom_fields: dict):
     # Extracting given parameters
-    number_of_splits = int(custom_fields['number_of_splits'])
-    num_hidden_layers = int(custom_fields['number_of_hidden_layers'])
-    num_hidden_units = int(custom_fields['number_of_hidden_units'])
-    max_num_epochs = int(custom_fields['maximum_number_of_epochs'])
+    number_of_splits = int(custom_fields["number_of_splits"])
+    num_hidden_layers = int(custom_fields["number_of_hidden_layers"])
+    num_hidden_units = int(custom_fields["number_of_hidden_units"])
+    max_num_epochs = int(custom_fields["maximum_number_of_epochs"])
 
-    seed = int(keyfields['seed'])
+    seed = int(keyfields["seed"])
     np.random.seed(seed)
 
-    dataset_id = int(keyfields['dataset_id'])
-    budget = keyfields['budget']
+    dataset_id = int(keyfields["dataset_id"])
+    budget = keyfields["budget"]
 
-    learning_rate = keyfields['learning_rate']
+    learning_rate = keyfields["learning_rate"]
 
     dataset = openml.datasets.get_dataset(dataset_id)
 
-    evaluation_result = evaluate_algorithm_on_dataset(dataset, budget, number_of_splits, num_hidden_layers, num_hidden_units, learning_rate, max_num_epochs, seed)
+    evaluation_result = evaluate_algorithm_on_dataset(
+        dataset, budget, number_of_splits, num_hidden_layers, num_hidden_units, learning_rate, max_num_epochs, seed
+    )
 
     # Write intermediate results to database
     result_processor.process_results(evaluation_result)
@@ -169,6 +181,6 @@ def run_experiment(keyfields: dict, result_processor: ResultProcessor, custom_fi
 
 if __name__ == "__main__":
     torch.set_num_threads(1)
-    experimenter = PyExperimenter(config_file= os.path.join('config', 'neural_network_configuration.cfg'))
+    experimenter = PyExperimenter(config_file=os.path.join("config", "neural_network_configuration.cfg"))
     experimenter.fill_table_from_config()
     experimenter.execute(run_experiment, max_experiments=-1, random_order=True)

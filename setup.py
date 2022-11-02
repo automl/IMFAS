@@ -69,7 +69,6 @@ setuptools.setup(
         "ConfigSpace",
         "smac==1.4.0",
         "lcdb",
-
         # "pytorch_forecasting",
         # "pytables",
     ],

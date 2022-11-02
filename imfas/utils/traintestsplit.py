@@ -1,5 +1,6 @@
+from typing import Iterable, List
+
 import random
-from typing import List, Iterable
 
 
 def train_test_split(n, share):
@@ -31,8 +32,9 @@ def train_valid_fix_test_split(n, valid_share=0.1, test_share=0.1):
         test_split = list(range(n_train_val, n))
 
     train_split = random.sample(list(set(range(n)) - set(test_split)), k=int(n_train_val * (1 - valid_share)))
-    valid_split = random.sample(list(set(range(n)) - set(train_split) - set(test_split)), k=int(n_train_val *
-                                                                                                valid_share))
+    valid_split = random.sample(
+        list(set(range(n)) - set(train_split) - set(test_split)), k=int(n_train_val * valid_share)
+    )
 
     return train_split, valid_split, test_split
 
