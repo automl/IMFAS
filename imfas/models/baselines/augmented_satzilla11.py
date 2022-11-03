@@ -11,13 +11,13 @@ from imfas.models.baselines.satzilla11 import SATzilla11
 
 
 class AugmentedSATzilla11(SATzilla11):
-    def __init__(self, max_fidelity, device="cpu", aug_fidelity: Optional[Tuple[int]] = (0, 10)):
+    def __init__(self, max_fidelity, device="cpu",  n_estimators: int = 2, max_features: str = 'log_2', n_jobs: int = 5, random_state: int = 0, aug_fidelity: Optional[Tuple[int]] = (0, 10)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
         aug_fidelity: which fidelity values from the learing curves will be attached to the features
         """
-        super(AugmentedSATzilla11, self).__init__(max_fidelity, device)
+        super(AugmentedSATzilla11, self).__init__(max_fidelity, device, n_estimators, max_features, n_jobs, random_state)
         self.aug_fidelity = aug_fidelity
         self._fitted = False
 
@@ -133,18 +133,25 @@ class AugmentedSATzilla11(SATzilla11):
 
 
 class MultiAugmentedSATzilla11(AugmentedSATzilla11):
-    def __init__(self, max_fidelity, device="cpu", aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
+    def __init__(self, max_fidelity, device="cpu",  n_estimators: int = 2, max_features: str = 'log_2', n_jobs: int = 5, random_state: int = 0,aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
         aug_fidelity: which fidelity values from the learing curves will be attached to the features
         """
-        super(MultiAugmentedSATzilla11, self).__init__(max_fidelity, device, aug_fidelity)
+        super(MultiAugmentedSATzilla11, self).__init__(max_fidelity, device, n_estimators, max_features, n_jobs, random_state, aug_fidelity)
         aug_fidelity = list(aug_fidelity)
         aug_fidelity.sort()
-        self.models = [AugmentedSATzilla11(max_fidelity, device, None)]
+        
+        model_init_kwargs = {'max_fidelity':max_fidelity,
+                             'device': device,
+                             'n_estimators':n_estimators,
+                             'max_features': max_features,
+                             'n_jobs': n_jobs,
+                             'random_state': random_state}
+        self.models = [AugmentedSATzilla11(aug_fidelity=None, **model_init_kwargs)]
         for i, fid in enumerate(aug_fidelity):
-            self.models.append(AugmentedSATzilla11(max_fidelity, device, tuple(aug_fidelity[: i + 1])))
+            self.models.append(AugmentedSATzilla11(aug_fidelity=tuple(aug_fidelity[: i + 1]), **model_init_kwargs))
 
     def forward(self, dataset_meta_features, learning_curves, mask, *args, **kwargs):
         if self.training:
