@@ -16,7 +16,7 @@ class SATzilla11(nn.Module):
     thus does not account for presolving or employing a backup solver.
     """
 
-    def __init__(self, max_fidelity, device="cpu", n_estimators: int = 2, max_features: str = 'log_2', n_jobs: int = 5, random_state: int = 0):
+    def __init__(self, max_fidelity, device="cpu", n_estimators: int = 2, max_features: str = 'log2', n_jobs: int = 5, random_state: int = 0):
         super(SATzilla11, self).__init__()
 
         self._name = "satzilla-11"

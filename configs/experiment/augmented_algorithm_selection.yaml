@@ -6,7 +6,7 @@
 # we made a slice evaluation protocol at the test time. and each time we only use the model trained with the largest
 # possible fidelity values
 defaults:
-  - /model: satzilla11
+  # - /model: AugmentedSATzilla11
   - override /dataset: lcbench
   - override /dataset/dataset_meta: lcbench_minimal
   # - override /dataset/algo_meta: lcbench_minimal
@@ -68,6 +68,13 @@ trainer:
       top1_regret:
         _target_: imfas.evaluation.topkregret.TopkRegret
         k: 1
+      top1regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 1
+
       top3_regret:
         _target_: imfas.evaluation.topkregret.TopkRegret
         k: 3
+      top5_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 5

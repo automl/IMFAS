@@ -65,15 +65,15 @@ class BaseTrainer:
                 loss = 0
                 continue
 
-            if torch.isnan(y_hat).any():
-                print(
-                    f"y_hat: {y_hat}",
-                    f'y: {y["final_fidelity"]}',
-                    f'lcs: {X["learning_curves"]}',
-                    f'mask: {X["mask"]}',
-                    f'Dataset metafeatures {X["dataset_meta_features"]}',
-                )
-                print()
+            # if torch.isnan(y_hat).any():
+            #     print(
+            #         f"y_hat: {y_hat}",
+            #         f'y: {y["final_fidelity"]}',
+            #         f'lcs: {X["learning_curves"]}',
+            #         f'mask: {X["mask"]}',
+            #         f'Dataset metafeatures {X["dataset_meta_features"]}',
+            #     )
+            #     print()
 
             if not hasattr(self.model, "no_opt"):
                 loss = loss_fn(y_hat, y["final_fidelity"])
@@ -151,6 +151,9 @@ class BaseTrainer:
                             self.model.train()
 
                         y_hat = self.model.forward(**X)
+
+                        
+
 
                         if j == 0:
                             self.model.eval()

@@ -4,6 +4,8 @@ import math
 import torch
 import torch.nn as nn
 
+import pdb
+
 
 class PositionalEncoding(nn.Module):
     r"""This function is direcly copied from Auto-PyTorch Forecasting and is a modified version of
@@ -33,13 +35,18 @@ class PositionalEncoding(nn.Module):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
+        ## What is happening here
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
+        
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
+
+        # print('PositionalEncoding -- init')
+        # pdb.set_trace()
 
     def forward(self, x: torch.Tensor, pos_idx: Optional[Tuple[int]] = None) -> torch.Tensor:
         r"""Inputs of forward function
@@ -52,6 +59,10 @@ class PositionalEncoding(nn.Module):
         Examples:
             >>> output = pos_encoder(x)
         """
+        
+        # print('PositionalEncoding')
+        # pdb.set_trace() 
+        
         if pos_idx is None:
             x = x + self.pe[:, : x.size(1), :]
         else:
@@ -102,12 +113,26 @@ class AbstractIMFASTransformer(nn.Module):
 
     def preprocessing_lcs(self, learning_curves, lc_values_observed):
         (batch_size, n_algos, lc_length) = learning_curves.shape
+        
         learning_curves = learning_curves.transpose(1, 2)
+        
         lc_values_observed = lc_values_observed.transpose(1, 2)
+        
+        # print('Abstract Transformer -- preprocessing_lcs')
+        # pdb.set_trace()
+        
         return learning_curves, lc_values_observed, (batch_size, n_algos, lc_length)
 
     def embeds_lcs(self, learning_curves, lc_values_observed):
+        
+        # learning_curves_embedding = self.positional_encoder(learning_curves)
+        
         learning_curves_embedding = self.positional_encoder(self.lc_proj_layer(learning_curves))
+        
+
+        # print('Abstract Transformer --embeds_lcs')
+        # pdb.set_trace()
+        
         return learning_curves_embedding, lc_values_observed
 
     def forward(self, learning_curves, mask, dataset_meta_features=None):
@@ -126,6 +151,10 @@ class AbstractIMFASTransformer(nn.Module):
         else:
             encoded_D = self.encoder(dataset_meta_features)
 
+        
+        # print('AbstractIMFASTransformer -- forward')
+        # pdb.set_trace()
+        
         return self.decoder(torch.cat((encoded_lcs, encoded_D), 1))
 
     def encode_lc_embeddings(
@@ -163,13 +192,25 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
         return nn.Linear(n_algos, d_model_transformer)
 
     def encode_lc_embeddings(self, learning_curves_embedding, mask, lc_shape_info):
+        
+        
         lc_length_embedding = self.lc_length_embedding(mask.sum(1)).unsqueeze(1)
 
         # lc_values_observed = lc_values_observed.transpose(1, 2)
+        
+        # print('Base Transformer  -- encode_lc_embeddings')
+        # pdb.set_trace()
+
+        # NOTE Transformer encoder should not have the necessity for this
+        # encoded_lcs = self.transformer_encoder(learning_curves_embedding)
+        
+
         encoded_lcs = self.transformer_encoder(
             torch.cat([learning_curves_embedding, lc_length_embedding], dim=1),
         )[:, -1, :]
 
+
+        
         return encoded_lcs
 
 
