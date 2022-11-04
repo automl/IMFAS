@@ -18,7 +18,7 @@ OmegaConf.register_new_resolver("len", lambda l: len(l))
 OmegaConf.register_new_resolver("range", lambda start, stop, step: list(range(start, stop, step)))
 
 import os
-
+import pathlib
 import random
 import string
 
@@ -101,8 +101,27 @@ def pipe_train(cfg: DictConfig) -> None:
     torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
-    trainer.run(**loaders, **cfg.trainer.run_call)
+
+    prediction, ground_truth = trainer.run(**loaders, **cfg.trainer.run_call)
     log.info("Done!")
+
+    dataset_name = cfg.dataset.name
+
+    fold_idx = cfg.train_test_split.get('fold_idx', 0)
+    seed = cfg.seed
+    model = cfg.wandb.tags[-1]
+
+
+    obj_dir = pathlib.Path.home() / 'Project' / 'imfas_data' / dataset_name / f'fold_{fold_idx}' / model / f'seed_{seed}'
+    if not obj_dir.exists():
+        os.makedirs(str(obj_dir))
+
+    assert prediction.shape == ground_truth.shape
+    assert len(prediction) == len(test_split)
+    # assert train_set.learning_curves.shape[-1] == prediction.shape[-1]
+
+    torch.save(prediction,  str(obj_dir / 'prediction.pt'))
+    torch.save(ground_truth,  str(obj_dir / 'ground_truth.pt'))
 
 
 def housekeeping(cfg: DictConfig) -> None:

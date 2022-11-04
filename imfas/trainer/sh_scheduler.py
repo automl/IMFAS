@@ -20,4 +20,4 @@ class SHScheduler(BaseTrainer):
         # as an attribute), to make the scheduler ready for slice evaluation.
         self.model = self.scheduler
 
-        BaseTrainer.test(self, test_loader, test_loss_fns, **kwargs)
+        return BaseTrainer.test(self, test_loader, test_loss_fns, **kwargs)

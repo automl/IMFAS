@@ -122,7 +122,8 @@ class BaseTrainer:
         3. Repeat 1 & 2 for all available fidelities in the test set
 
         """
-
+        prediction = []
+        ground_truth = []
         with torch.no_grad():
             max_fidelity = test_loader.dataset.learning_curves.shape[-1]
             for fidelity in tqdm(range(max_fidelity), desc="Fidelity"):
@@ -134,6 +135,9 @@ class BaseTrainer:
                 # fixme: make one fwd pass and compute all validation losses on the fwd pass
                 #  to drastically reduce the number of fwd passes!
                 losses = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
+
+                pred_i = []
+                ground_truth_i = []
 
                 for i, (X, y) in enumerate(test_loader):
                     self.to_device(X)
@@ -168,8 +172,22 @@ class BaseTrainer:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
                             losses[fn_name][i] = float("nan")
 
+                    pred_i.append(y_hat)
+                    if hasattr(self.model, 'no_opt'):
+                        ground_truth_i.append(y["final_fidelity"][0])
+                    else:
+                        ground_truth_i.append(y["final_fidelity"])
+
+                prediction.append(torch.cat(pred_i, 0).unsqueeze(-1))
+                ground_truth.append(torch.cat(ground_truth_i, 0).unsqueeze(-1))
+
+
                 for fn_name, fn in test_loss_fns.items():
                     wandb.log({f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(), "fidelity": fidelity})
+        prediction = torch.cat(prediction, dim=-1) # prediction has shape of [num_datasets, n_algos, n_fidelities]
+        ground_truth = torch.cat(ground_truth, dim=-1)
+
+        return prediction, ground_truth
 
     def run(
         self,
@@ -216,4 +234,5 @@ class BaseTrainer:
         # Test loss for comparison of selectors
         self.model.eval()
 
-        self.test(test_loader, test_loss_fns)
+        prediction, ground_truth = self.test(test_loader, test_loss_fns)
+        return prediction, ground_truth
