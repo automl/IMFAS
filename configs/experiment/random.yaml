@@ -4,8 +4,6 @@
 # learning curve aware algorithm.
 # Since we only ever care for its baseline (test) performance, this pipe is a bit hacky.
 
-defaults:
-  - override /train_test_split: trainvalidtest
 
 wandb:
   group: 'RandomBaseline'
@@ -20,10 +18,13 @@ model:
 
 dataset:
   test_dataloader_class:
-    batch_size: 1 # has to be one for successive halving. aggregate over test set in trainer.evaluate
+    batch_size: 1000 # has to be one for successive halving. aggregate over test set in trainer.evaluate
     shuffle: False # to know on which dataset in test we perform badly
 
 trainer:
+  trainerobj:
+    _target_: imfas.trainer.random_trainer.RandomTrainer
+    reps: 1000
   run_call:
     epochs: 0 # since we only need a single test execution anyways (HACK)
 
