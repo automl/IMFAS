@@ -1,0 +1,41 @@
+_target_: imfas.models.transformer2.IMFAS_Joint_Transformer
+
+
+dataset_metaf_encoder:
+  _target_: imfas.utils.mlp.MLP
+  hidden_dims:
+    - ${dynamically_computed.n_data_meta_features}
+
+positional_encoder:
+  _target_: imfas.models.transformer2.PositionalEncoder
+  d_model: ${dynamically_computed.n_fidelities}
+  max_len: 5000
+  dropout: 0.1
+
+transformer_encoder:
+  _target_: torch.nn.TransformerEncoder
+  num_layers: 2 # how many transformer layers to stack
+  encoder_layer:
+    _target_: torch.nn.TransformerEncoderLayer
+    d_model: ${dynamically_computed.n_fidelities}  # fixme: only even numbers (e.g. lcbench 51 --> 50
+    nhead: 5 # attention heads
+    dim_feedforward: 100
+    dropout: 0.1
+    activation: relu
+
+    batch_first: True
+    norm_first: False
+  #    device: ${device}
+
+  norm:
+    _target_: torch.nn.LayerNorm
+    normalized_shape: 512
+
+decoder:
+  _target_: imfas.utils.mlp.MLP
+  hidden_dims:
+    - 100  # n_d_metaf_encoding_dim + transformer output dim
+    - ${dynamically_computed.n_algos}
+
+
+device: ${device}
