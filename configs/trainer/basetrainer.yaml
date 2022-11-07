@@ -15,7 +15,7 @@ run_call:
     spearman:
       _target_: imfas.losses.spearman.SpearmanLoss
 
-    top1_regret:
+    top1regret:
       _target_: imfas.evaluation.topkregret.TopkRegret
       k: 1
 

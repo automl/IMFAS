@@ -34,6 +34,8 @@ class TopkRegret(nn.Module):
             best_contender = best_contender.unsqueeze(1)
         best_available = torch.max(y_true, dim=1).values
 
+        # pdb.set_trace()
+
         return torch.mean(best_available - best_contender)  # batch mean
 
 

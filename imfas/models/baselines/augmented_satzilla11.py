@@ -11,7 +11,7 @@ from imfas.models.baselines.satzilla11 import SATzilla11
 
 
 class AugmentedSATzilla11(SATzilla11):
-    def __init__(self, max_fidelity, device="cpu",  n_estimators: int = 2, max_features: str = 'log_2', n_jobs: int = 5, random_state: int = 0, aug_fidelity: Optional[Tuple[int]] = (0, 10)):
+    def __init__(self, max_fidelity, device="cpu",  n_estimators: int = 2, max_features: str = 'log2', n_jobs: int = 5, random_state: int = 0, aug_fidelity: Optional[Tuple[int]] = (0, 10)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
@@ -133,7 +133,7 @@ class AugmentedSATzilla11(SATzilla11):
 
 
 class MultiAugmentedSATzilla11(AugmentedSATzilla11):
-    def __init__(self, max_fidelity, device="cpu",  n_estimators: int = 2, max_features: str = 'log_2', n_jobs: int = 5, random_state: int = 0,aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
+    def __init__(self, max_fidelity, device="cpu",  n_estimators: int = 2, max_features: str = 'log2', n_jobs: int = 5, random_state: int = 0,aug_fidelity: Tuple[int] = (0, 10, 20, 30, 40, 50)):
         """
         a SATzilla11 algorithm selector that also consider the fidelity values as dataset meta features.
         Therefore, this model neds to work with imfas.data.dataset_join_Dmajor.Dataset_Join_Dmajor
