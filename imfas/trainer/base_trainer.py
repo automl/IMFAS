@@ -43,7 +43,7 @@ class BaseTrainer:
     def to_device(
         self,
         input,
-    ) -> None:
+    ):
         for k, v in input.items():
             input[k] = v.to(self.device).float()
         return input
@@ -53,8 +53,8 @@ class BaseTrainer:
         # TODO: incorporate callbacks to the training loop (before and after each epoch, and )
         #  at every (k-th) step?
         for _, (X, y) in enumerate(train_loader):
-            self.to_device(X)
-            self.to_device(y)
+            X = self.to_device(X)
+            y = self.to_device(y)
 
             if self.optimizer:
                 self.optimizer.zero_grad()

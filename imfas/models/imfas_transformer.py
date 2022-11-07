@@ -74,10 +74,12 @@ class AbstractIMFASTransformer(nn.Module):
     def __init__(
         self,
         n_algos: int,
+        n_fidelities: int,
         encoder: nn.Module,
         decoder: nn.Module,
         transformer_layer: torch.nn.TransformerEncoderLayer,
         n_layers=2,
+        has_reduce_layer=False,
         device: str = "cpu",
     ):
         """
@@ -104,6 +106,10 @@ class AbstractIMFASTransformer(nn.Module):
         self.positional_encoder = PositionalEncoding(d_model=self.d_model)
 
         self.to(device)
+        self.has_reduce_layer = has_reduce_layer
+
+        if self.has_reduce_layer:
+            self.reduce_layer = torch.nn.Linear(n_fidelities + 1, 1)
 
         # for k, i in self.named_parameters():
         #     print(k, i.device)
@@ -150,12 +156,12 @@ class AbstractIMFASTransformer(nn.Module):
             encoded_D = self.encoder(dataset_meta_features).repeat([*encoded_lcs.shape[:-1], 1])
         else:
             encoded_D = self.encoder(dataset_meta_features)
-
+            if len(encoded_lcs.shape) == 3:
+                encoded_D = encoded_D.unsqueeze(1).repeat(1, encoded_lcs.shape[1], 1)
         
         # print('AbstractIMFASTransformer -- forward')
         # pdb.set_trace()
-        
-        return self.decoder(torch.cat((encoded_lcs, encoded_D), 1))
+        return self.decoder(torch.cat((encoded_lcs, encoded_D), -1)).squeeze(-1)
 
     def encode_lc_embeddings(
         self,
@@ -175,25 +181,26 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
     def __init__(
         self,
         n_algos: int,
+        n_fidelities: int,
         encoder: nn.Module,
         decoder: nn.Module,
         transformer_layer: nn.Module,
         n_layers=2,
         device: str = "cpu",
+        has_reduce_layer=False,
     ):
-        super(IMFASBaseTransformer, self).__init__(n_algos, encoder, decoder, transformer_layer, n_layers, device)
+        super(IMFASBaseTransformer, self).__init__(n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, has_reduce_layer, device)
         # This is attached at the end of each LCs to indicate that the LC ends here and we could extrac their
         # corresponding feature values. Here I simply compute the number of observed values as an input
         # TODO: Alternative: different embeddings w.r.t. position or algos
         self.lc_length_embedding = nn.Linear(n_algos, transformer_layer.linear1.in_features)
+
         self.to(torch.device(device))
 
     def build_lc_embedding_layer(self, n_algos: int, d_model_transformer: int):
         return nn.Linear(n_algos, d_model_transformer)
 
     def encode_lc_embeddings(self, learning_curves_embedding, mask, lc_shape_info):
-        
-        
         lc_length_embedding = self.lc_length_embedding(mask.sum(1)).unsqueeze(1)
 
         # lc_values_observed = lc_values_observed.transpose(1, 2)
@@ -203,13 +210,16 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
 
         # NOTE Transformer encoder should not have the necessity for this
         # encoded_lcs = self.transformer_encoder(learning_curves_embedding)
-        
 
         encoded_lcs = self.transformer_encoder(
             torch.cat([learning_curves_embedding, lc_length_embedding], dim=1),
-        )[:, -1, :]
-
-
+        )
+        if self.has_reduce_layer:
+            encoded_lcs = torch.transpose(encoded_lcs, 1, 2)
+            encoded_lcs = self.reduce_layer(encoded_lcs)
+            encoded_lcs = torch.transpose(encoded_lcs, 1, 2).squeeze(1)
+        else:
+            encoded_lcs = encoded_lcs[:, -1, :]
         
         return encoded_lcs
 
@@ -224,21 +234,32 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
     def __init__(
         self,
         n_algos: int,
+        n_fidelities: int,
         encoder: nn.Module,
         decoder: nn.Module,
         transformer_layer: nn.Module,
         n_layers=2,
         device: str = "cpu",
+        has_reduce_layer=False,
     ):
+        self.EOS = torch.tensor(0, device=torch.device(device))  # End of Sequence
+
         super(IMFASHierarchicalTransformer, self).__init__(
-            n_algos, encoder, decoder, transformer_layer, n_layers, device
+            n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, has_reduce_layer, device
         )
 
         self.global_transformer = nn.TransformerEncoder(transformer_layer, n_layers)
 
-        self.EOS = torch.tensor(0, device=torch.device(device))  # End of Sequence
         self.eos_embedding_layer = torch.nn.Embedding(2, transformer_layer.linear1.in_features)
+
+        if self.has_reduce_layer:
+            self.reduce_layer = torch.nn.Linear(n_algos, 1)
+
         self.to(torch.device(device))
+
+    def to(self, device):
+        self.EOS = self.EOS.to(device)
+        super(IMFASHierarchicalTransformer, self).to(device)
 
     def build_lc_embedding_layer(self, n_algos: int, d_model_transformer: int):
         return nn.Linear(1, d_model_transformer)
@@ -270,7 +291,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
         lc_values_observed = torch.cat(
             [
                 lc_values_observed,
-                torch.zeros(
+                torch.ones(
                     (len(lc_values_observed), 1), dtype=lc_values_observed.dtype, device=lc_values_observed.device
                 ),
             ],
@@ -281,12 +302,21 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
 
     def encode_lc_embeddings(self, learning_curves_embedding, lc_values_observed, lc_shape_info):
         batch_size, n_algos, lc_length = lc_shape_info
-        n_observed_lcs = lc_values_observed.sum(1).long()
+        n_observed_lcs = lc_values_observed.sum(1).long() - 1
 
         encoded_lcs_local = self.transformer_encoder(
             learning_curves_embedding, src_key_padding_mask=~lc_values_observed.bool()
         )
+
         encoded_lcs_local = encoded_lcs_local[torch.arange(len(encoded_lcs_local)), n_observed_lcs]
+
         encoded_lcs_local = encoded_lcs_local.view(batch_size, n_algos, -1)
         # TODO adjust the Meta features with this type of transformation
-        return self.global_transformer(encoded_lcs_local)
+
+        encoded_lcs = self.global_transformer(encoded_lcs_local)
+        if self.has_reduce_layer:
+            encoded_lcs = torch.transpose(encoded_lcs, 1, 2)
+            encoded_lcs = self.reduce_layer(encoded_lcs)
+            encoded_lcs = torch.transpose(encoded_lcs, 1, 2).squeeze(1)
+
+        return encoded_lcs

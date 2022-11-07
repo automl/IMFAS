@@ -85,6 +85,7 @@ def pipe_train(cfg: DictConfig) -> None:
     else:
         cfg.dynamically_computed.n_data_meta_features = 0
     cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
+    cfg.dynamically_computed.len_lc = ref.learning_curves.shape[-1]
 
     # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
@@ -98,6 +99,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model = instantiate(cfg.model)
     model.to(cfg.device)
+    model.device = cfg.device
     torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
