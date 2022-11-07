@@ -8,11 +8,11 @@ defaults:
 
 
 wandb:
-  group: 'imfas_transformer'
+  group: 'imfas_transformer_sh'
   job_type: 'train'
-  notes: 'imfas transformer'
+  notes: 'imfas transformer sh scheduler'
   tags:
-    - 'IMFAS Transformer'
+    - 'IMFAS Transformer SH Scheduler'
 
 
 # dataset:
