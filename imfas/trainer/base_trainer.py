@@ -71,7 +71,7 @@ class BaseTrainer:
                     f'y: {y["final_fidelity"]}',
                     f'lcs: {X["learning_curves"]}',
                     f'mask: {X["mask"]}',
-                    f'Dataset metafeatures {X["dataset_meta_features"]}',
+                    f'Dataset metafeatures {X.get("dataset_meta_features"), 0}',
                 )
                 print()
 
