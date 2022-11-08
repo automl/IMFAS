@@ -8,7 +8,7 @@ dataset_metaf_encoder:
 
 positional_encoder:
   _target_: imfas.models.transformer2.PositionalEncoder
-  d_model: ${dynamically_computed.n_fidelities}
+  d_model: 52 # n-fidelities + 1 if n_fidelities is
   max_len: 5000
   dropout: 0.1
 
@@ -17,15 +17,15 @@ transformer_encoder:
   num_layers: 2 # how many transformer layers to stack
   encoder_layer:
     _target_: torch.nn.TransformerEncoderLayer
-    d_model: ${dynamically_computed.n_fidelities}  # fixme: only even numbers (e.g. lcbench 51 --> 50
-    nhead: 5 # attention heads
+    d_model: 52 # ${dynamically_computed.n_fidelities}  # fixme: only even numbers (e.g. lcbench 51 --> 50
+    nhead: 13 # attention heads
     dim_feedforward: 100
     dropout: 0.1
     activation: relu
 
     batch_first: True
     norm_first: False
-  #    device: ${device}
+    device: ${device}
 
   norm:
     _target_: torch.nn.LayerNorm

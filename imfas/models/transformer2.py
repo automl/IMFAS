@@ -100,15 +100,30 @@ class IMFAS_Joint_Transformer(nn.Module):
     def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, dataset_meta_features,
                 **kwargs):
         dataset_metaf_encoding = self.dataset_metaf_encoder(dataset_meta_features)
-        pos_learning_curves = self.positional_encoder(learning_curves)
 
-        print(pos_learning_curves.shape)
+        # prepend a zero timestep to the learning curve tensor if n_fidelities is uneven
+        # reasoning: transformer n_heads must be a devisor of d_model
+
+        if learning_curves.shape[-1] % 2 == 1:
+            learning_curves = torch.cat(
+                (torch.zeros_like(learning_curves[:, :, :1]), learning_curves), dim=2)
+
+            mask = torch.cat(
+                (torch.zeros_like(mask[:, :, :1]), mask), dim=2)
+
+        pos_learning_curves = self.positional_encoder(learning_curves)
 
         # TODO check if it shouldn't be src_key_padding_mask instead?
         # fixme: check why the mask dim is not correct
+
+        # CAREFULL: this is what should be happening in attentionhead, to
+        # avoid the transformer from peaking into padded values
+        # print(mask.masked_fill(~mask.bool(), float('-inf')))
+        # but we actually need our mask to be bool and inverted for that!
+
         lc_encoding = self.transformer_encoder(
             pos_learning_curves,
-            src_key_padding_mask=mask.expand(10, -1, -1))
+            mask=mask)
 
         return self.decoder(torch.cat((lc_encoding, dataset_metaf_encoding), 1))
 
