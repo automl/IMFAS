@@ -7,7 +7,7 @@ from omegaconf import DictConfig, OmegaConf
 
 # A logger for this file
 log = logging.getLogger(__name__)
-
+import copy
 import torch
 
 OmegaConf.register_new_resolver("device_ident", lambda _: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
@@ -34,6 +34,25 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 @hydra.main(config_path="configs", config_name="base")
 def pipe_train(cfg: DictConfig) -> None:
+    model_opts = set(cfg.model.model_opts)
+
+    model_type = copy.deepcopy(cfg.wandb.group)
+
+    if 'reduce' in model_opts:
+        cfg.wandb.group = cfg.wandb.group + '_Reduce'
+        cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Reduce'
+    else:
+        cfg.wandb.group = cfg.wandb.group + '_NoReduce'
+        cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' No Reduce'
+
+    if model_type == 'imfas_H_transformer':
+        if 'pe_g' in model_opts:
+            cfg.wandb.group = cfg.wandb.group + '_GPe'
+            cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' G PE'
+        if 'eos_tail' in model_opts:
+            cfg.wandb.group = cfg.wandb.group + '_EosTail'
+            cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' EOS TAIL'
+
     housekeeping(cfg)
 
     seed_everything(cfg.seed)
@@ -87,6 +106,9 @@ def pipe_train(cfg: DictConfig) -> None:
     cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
     cfg.dynamically_computed.len_lc = ref.learning_curves.shape[-1]
 
+    if 'reduce' in model_opts and model_type == 'imfas_H_transformer':
+        cfg.model.decoder.hidden_dims[-1] = cfg.dynamically_computed.n_algos
+
     # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 
@@ -139,6 +161,9 @@ def housekeeping(cfg: DictConfig) -> None:
     cfg.wandb.job_type = f'{dataset}_{fold_idx}'
 
     cfg.wandb.tags = [dataset, f'fold_idx_{fold_idx}', f'seed_{cfg.seed}', *cfg.wandb.tags]
+
+    cfg.wandb.tags[-1] += ' Max Scaling'
+    cfg.wandb.group += '_max_scaling'
 
     log.info(get_original_cwd())
     # FIXME: W&B id???

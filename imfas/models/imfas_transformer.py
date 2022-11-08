@@ -45,6 +45,8 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
+        self.lc_max_value = None
+
         # print('PositionalEncoding -- init')
         # pdb.set_trace()
 
@@ -79,8 +81,8 @@ class AbstractIMFASTransformer(nn.Module):
         decoder: nn.Module,
         transformer_layer: torch.nn.TransformerEncoderLayer,
         n_layers=2,
-        has_reduce_layer=False,
         device: str = "cpu",
+        model_opts: list[str] = []
     ):
         """
         Abstract IMFAS Transformer models. Here I propose two types of Transformer models. The first one is to consider
@@ -93,6 +95,13 @@ class AbstractIMFASTransformer(nn.Module):
             transformer_layer:
             n_layers:
             device:
+            model_opts: model options: 
+                if any element exist in model_opts, the corresponding function will be updated:
+                    reduce: if the reduce layer is applied to the transformer
+                    pe_g (hierarchical transformer only): if positional encoding is applied to global transformer layer
+                    eos_tail (hierarchical transforemr only): if the EOS embedding is attached in the end of the padded 
+                        sequence instead of the raw sequence 
+                    
         """
         super(AbstractIMFASTransformer, self).__init__()
         self.encoder = encoder
@@ -106,8 +115,10 @@ class AbstractIMFASTransformer(nn.Module):
         self.positional_encoder = PositionalEncoding(d_model=self.d_model)
 
         self.to(device)
-        self.has_reduce_layer = has_reduce_layer
 
+        model_opts = set(model_opts)
+
+        self.has_reduce_layer = 'reduce' in model_opts
         if self.has_reduce_layer:
             self.reduce_layer = torch.nn.Linear(n_fidelities + 1, 1)
 
@@ -187,9 +198,9 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
         transformer_layer: nn.Module,
         n_layers=2,
         device: str = "cpu",
-        has_reduce_layer=False,
+        model_opts: list[str] = []
     ):
-        super(IMFASBaseTransformer, self).__init__(n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, has_reduce_layer, device)
+        super(IMFASBaseTransformer, self).__init__(n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, device, model_opts)
         # This is attached at the end of each LCs to indicate that the LC ends here and we could extrac their
         # corresponding feature values. Here I simply compute the number of observed values as an input
         # TODO: Alternative: different embeddings w.r.t. position or algos
@@ -240,13 +251,12 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
         transformer_layer: nn.Module,
         n_layers=2,
         device: str = "cpu",
-        has_reduce_layer=False,
-        pe_on_global_level=False,
+        model_opts: list[str] = []
     ):
         self.EOS = torch.tensor(0, device=torch.device(device))  # End of Sequence
 
         super(IMFASHierarchicalTransformer, self).__init__(
-            n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, has_reduce_layer, device
+            n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, device, model_opts
         )
 
         self.global_transformer = nn.TransformerEncoder(transformer_layer, n_layers)
@@ -256,7 +266,11 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
         if self.has_reduce_layer:
             self.reduce_layer = torch.nn.Linear(n_algos, 1)
 
-        self.pe_on_global_level = pe_on_global_level
+        model_opts = set(model_opts)
+
+        self.pe_on_global_level = 'pe_g' in model_opts
+        
+        self.eos_tail = 'eos_tail' in model_opts
 
         self.to(torch.device(device))
 
@@ -273,6 +287,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
 
         learning_curves = learning_curves.view(batch_size * n_algos, lc_length, 1)
         lc_values_observed = lc_values_observed.view(batch_size * n_algos, lc_length)
+
         return learning_curves, lc_values_observed, lc_shape_info
 
     def embeds_lcs(self, learning_curves, lc_values_observed):
@@ -282,24 +297,40 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
 
         # We attach the ending Embedding to the end of each sequences
         eos_embedding = self.eos_embedding_layer(self.EOS)
-        lc_embeddings = torch.cat(
-            [lc_embeddings, torch.zeros((n_lcs, 1, d_model), dtype=lc_embeddings.dtype, device=lc_embeddings.device)],
-            dim=1,
-        )
 
         n_observed_lcs = lc_values_observed.sum(1).long()
-        lc_embeddings[torch.arange(n_lcs), n_observed_lcs.long()] = eos_embedding
 
-        # we have an additional item
-        lc_values_observed = torch.cat(
-            [
-                lc_values_observed,
-                torch.ones(
-                    (len(lc_values_observed), 1), dtype=lc_values_observed.dtype, device=lc_values_observed.device
-                ),
-            ],
-            dim=1,
-        )
+        if not self.eos_tail:
+            lc_embeddings = torch.cat(
+                [lc_embeddings,
+                 torch.zeros((n_lcs, 1, d_model), dtype=lc_embeddings.dtype, device=lc_embeddings.device)],
+                dim=1,
+            )
+            lc_embeddings[torch.arange(n_lcs), n_observed_lcs.long()] = eos_embedding
+
+            # we have an additional item
+            lc_values_observed = torch.cat(
+                [
+                    lc_values_observed,
+                    torch.zeros(
+                        (len(lc_values_observed), 1), dtype=lc_values_observed.dtype, device=lc_values_observed.device
+                    ),
+                ],
+                dim=1,
+            )
+            lc_values_observed[range(n_observed_lcs.shape[0]), n_observed_lcs] = 1.
+        else:
+            lc_embeddings = torch.cat([lc_embeddings, eos_embedding.repeat(n_lcs, 1, 1)], dim=1,)
+            # we have an additional item
+            lc_values_observed = torch.cat(
+                [
+                    lc_values_observed,
+                    torch.ones(
+                        (len(lc_values_observed), 1), dtype=lc_values_observed.dtype, device=lc_values_observed.device
+                    ),
+                ],
+                dim=1,
+            )
 
         return lc_embeddings, lc_values_observed
 
