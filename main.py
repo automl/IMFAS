@@ -162,9 +162,6 @@ def housekeeping(cfg: DictConfig) -> None:
 
     cfg.wandb.tags = [dataset, f'fold_idx_{fold_idx}', f'seed_{cfg.seed}', *cfg.wandb.tags]
 
-    cfg.wandb.tags[-1] += ' Max Scaling'
-    cfg.wandb.group += '_max_scaling'
-
     log.info(get_original_cwd())
     # FIXME: W&B id???
     hydra_job = (
