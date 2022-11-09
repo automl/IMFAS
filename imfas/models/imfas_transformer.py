@@ -356,3 +356,45 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
             encoded_lcs = torch.transpose(encoded_lcs, 1, 2).squeeze(1)
 
         return encoded_lcs
+
+
+class IMFASCrossTransformer(IMFASHierarchicalTransformer):
+    """
+    An IMFAS Trasnforemr with hierarchical architecture. For the input, we first flatten them to perform local attention
+    operation with self.transformer_encoder. Then in the second stage, we perform a global attention operation with
+    self.global_transformer_encoder
+    """
+    def encode_lc_embeddings(self, learning_curves_embedding, lc_values_observed, lc_shape_info):
+        batch_size, n_algos, lc_length = lc_shape_info
+        n_observed_lcs = lc_values_observed.sum(1).long() - 1
+
+        local_encoder_input = learning_curves_embedding
+        local_encoder_output = learning_curves_embedding
+
+        for i, (local_encoder, global_encoder) in enumerate(zip(self.transformer_encoder.layers, self.global_transformer.layers)):
+            if i > 0:
+                local_encoder_input = local_encoder_output + global_encoder_output.view(batch_size * n_algos, 1, -1).repeat(1,local_encoder_output.shape[1],1)
+
+            local_encoder_output = local_encoder(
+                local_encoder_input, src_key_padding_mask=~lc_values_observed.bool()
+            )
+
+            if not self.eos_tail:
+                global_encoder_input = local_encoder_output[torch.arange(len(local_encoder_output)), n_observed_lcs]
+            else:
+                global_encoder_input = local_encoder_output[torch.arange(len(local_encoder_output)), -1]
+
+            global_encoder_input = global_encoder_input.view(batch_size, n_algos, -1)
+            if self.pe_on_global_level:
+                global_encoder_input = self.positional_encoder(global_encoder_input)
+            # TODO adjust the Meta features with this type of transformation
+
+            global_encoder_output = global_encoder(global_encoder_input)
+
+        encoded_lcs = global_encoder_output
+        if self.has_reduce_layer:
+            encoded_lcs = torch.transpose(encoded_lcs, 1, 2)
+            encoded_lcs = self.reduce_layer(encoded_lcs)
+            encoded_lcs = torch.transpose(encoded_lcs, 1, 2).squeeze(1)
+
+        return encoded_lcs

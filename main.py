@@ -34,7 +34,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 @hydra.main(config_path="configs", config_name="base")
 def pipe_train(cfg: DictConfig) -> None:
-    model_opts = set(cfg.model.model_opts)
+    model_opts = set(cfg.model.get('model_opts', []))
 
     model_type = copy.deepcopy(cfg.wandb.group)
 
@@ -45,7 +45,7 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.wandb.group = cfg.wandb.group + '_NoReduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' No Reduce'
 
-    if model_type == 'imfas_H_transformer':
+    if model_type != 'imfas_transformer':
         if 'pe_g' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_GPe'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' G PE'
@@ -106,7 +106,7 @@ def pipe_train(cfg: DictConfig) -> None:
     cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
     cfg.dynamically_computed.len_lc = ref.learning_curves.shape[-1]
 
-    if 'reduce' in model_opts and model_type == 'imfas_H_transformer':
+    if 'reduce' in model_opts and model_type != 'imfas_transformer':
         cfg.model.decoder.hidden_dims[-1] = cfg.dynamically_computed.n_algos
 
     # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
