@@ -59,6 +59,7 @@ class Dataset_Join_Dmajor(Dataset):
         if self.masking_fn is not None:
             lc_tensor, mask = self.masking_fn(self.learning_curves[it])
 
+
         else:
             lc_tensor = self.learning_curves[it]
             mask = torch.ones_like(lc_tensor, dtype=torch.bool)

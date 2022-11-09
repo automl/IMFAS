@@ -100,26 +100,33 @@ class AbstractIMFASTransformer(nn.Module):
         return learning_curves, lc_values_observed, (batch_size, n_algos, lc_length)
 
     def embeds_lcs(self, learning_curves, lc_values_observed):
-        learning_curves_embedding = self.positional_encoder(self.lc_proj_layer(learning_curves))
+        # learning_curves_embedding = self.positional_encoder(self.lc_proj_layer(learning_curves))
+        learning_curves_embedding = self.positional_encoder(learning_curves)
         return learning_curves_embedding, lc_values_observed
 
     def forward(self, dataset_meta_features, learning_curves, mask):
         # FIXME: Consider How to encode Missing values here
         encoded_D = self.encoder(dataset_meta_features)
 
+        import pdb
+        print(mask.shape)
+        pdb.set_trace()
+
+        new_mask  =  mask.transpose(1, 2)
+
         learning_curves, lc_values_observed, lc_shape_info = self.preprocessing_lcs(
             learning_curves,
-            mask
+            new_mask
         )
 
         learning_curves_embedding, lc_values_observed = self.embeds_lcs(
             learning_curves,
-            lc_values_observed
+             new_mask
         )
 
         encoded_lcs = self.encode_lc_embeddings(
             learning_curves_embedding,
-            lc_values_observed,
+            new_mask,
             lc_shape_info
         )
 
@@ -157,18 +164,36 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
         self.lc_length_embedding = nn.Linear(n_algos, transformer_layer.linear1.in_features)
         self.to(torch.device(device))
 
+        self.step  = 0
+
     def build_lc_embedding_layer(self, n_algos: int, d_model_transformer: int):
         return nn.Linear(n_algos, d_model_transformer)
 
     def encode_lc_embeddings(self, learning_curves_embedding, mask, lc_shape_info):
-        lc_length_embedding = self.lc_length_embedding(mask.sum(1)).unsqueeze(1)
+        # lc_length_embedding = self.lc_length_embedding(mask.sum(1)).unsqueeze(1)
+
+        # import pdb
+        # pdb.set_trace()
+
+        repeated_mask  = mask.repeat(5,1,1)
+
+        # import pdb
+        # print(self.step)
+        # print(mask.shape)
+        # print(repeated_mask.shape)
+        # pdb.set_trace()
 
         # lc_values_observed = lc_values_observed.transpose(1, 2)
         encoded_lcs = self.transformer_encoder(
-            torch.cat([learning_curves_embedding, lc_length_embedding], dim=1),
-        )[:, -1, :]
+            src  = learning_curves_embedding,
+            mask = ~repeated_mask.bool()
+        )
 
-        return encoded_lcs
+
+        x = encoded_lcs[:, -1, :]
+        self.step += 1
+
+        return x
 
 
 class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
