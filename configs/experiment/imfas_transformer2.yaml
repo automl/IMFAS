@@ -23,17 +23,17 @@ dataset:
 
 
   train_dataloader_class:
-    batch_size: 10
+    batch_size: 1
 
   valid_dataloader_class:
-    batch_size: 100
+    batch_size: 1
 
   test_dataloader_class:
-    batch_size: 100
+    batch_size: 1
 
 trainer:
   run_call:
-    epochs: 10
+    epochs: 10 # FIXME: multiply by (intended batch size to make comparable)
     log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
       _target_: imfas.losses.spearman.SpearmanLoss
