@@ -102,14 +102,40 @@ class IMFASTransformerMLP(nn.Module):
         )
 
 
-        # fixme: do we want to have a separate mlp for the lc_encoding, before joining?
-        return self.decoder(torch.cat((lc_encoding, dataset_metaf_encoding), 1))
+class CustomTransformerEncoderLayer(torch.nn.TransformerEncoderLayer):
+    """
+    This custom transformer encoder layer allows to alter the query vector of the self-attention block.
+    The query vector is altered by a linear layer and a ReLU activation, which in turn is
+    multiplied with the dataset meta features. (basically piping the encoded dataset meta
+    features into the self-attention block to alter the query vector). Rational: the
+    dataset_meta_features contain information regarding the scaling of the dataset i.e. context
+    to the observed learning curve. So we should alter the attention. We do this by altering the
+    query vector.
+    """
 
+    def __init__(self, reference_object, n_fidelities, *args, **kwargs):
+        """
+        :param reference_object: the object that contains the encoded dataset meta features i.e.
+        e.g. reference_object.dataset_metaf = mlp(dataset_meta_features)
+        where reference_object.dataset_metaf.shape[-1] is the encoding (/mlp output) dimension of
+        the dataset meta features
+        """
+        super(CustomTransformerEncoderLayer, self).__init__(*args, **kwargs)
 
-class IMFASTransformerSubsequent(IMFASTransformerMLP):
-    def __init__(self, transformer_algos, *args, **kwargs):
-        super(IMFASTransformerSubsequent, self).__init__(*args, **kwargs)
-        self.transformer_algos = transformer_algos
+        self.reference_object = reference_object
+        self.q_layer = nn.Linear(self.reference_object.dataset_metaf.shape[-1], n_fidelities)
+        self.q_activation = nn.ReLU()
 
-    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor, dataset_meta_features,
-                **kwargs):
+    def forward(self, *args, **kwargs):
+        return super(CustomTransformerEncoderLayer, self).forward(*args, **kwargs)
+
+    def _sa_block(self, x: torch.Tensor,
+                  attn_mask: Optional[torch.Tensor],
+                  key_padding_mask: Optional[torch.Tensor]) -> torch.Tensor:
+        q = x * self.q_activation(self.q_layer(self.reference_object.dataset_metaf))
+        k = x
+        x = self.self_attn(q, k, x,
+                           attn_mask=attn_mask,
+                           key_padding_mask=key_padding_mask,
+                           need_weights=False)[0]
+        return self.dropout1(x)
