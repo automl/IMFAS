@@ -2,10 +2,11 @@ _target_: imfas.models.transformerMLP.IMFASTransformerMLP
 
 # fixme: dataset_metaf_encoder.hidden_dims[-1] should be a variable that can be utilized in decoder.hidden_dims[0]
 
-dmetaf_dim: 100
+n_algos: ${dynamically_computed.n_algos}
+n_fidelities: ${dynamically_computed.n_fidelities}
 #
 #joint_dim: ${add:${dynamically_computed.n_data_meta_features}, ${model.dmetaf_dim}}
-
+decoder_hidden_dims: [ 100 ] # this is only intermediate layers
 dataset_metaf_encoder:
   _target_: imfas.utils.mlp.MLP
   hidden_dims:
@@ -14,8 +15,8 @@ dataset_metaf_encoder:
 
 positional_encoder:
   _target_: imfas.utils.positionalencoder.PositionalEncoder
-  d_model: 51 # n_fidelities
-  max_len: 171
+  d_model: ${dynamically_computed.n_fidelities}
+  max_len: 1000 # ${dynamically_computed.n_fidelities}
   dropout: 0.1
 
 transformer_lc:
@@ -36,12 +37,12 @@ transformer_lc:
   norm:
     _target_: torch.nn.LayerNorm
     normalized_shape: ${model.transformer_lc.encoder_layer.d_model}
-
-decoder:
-  _target_: imfas.utils.mlp.MLP
-  hidden_dims:
-    - ${add:100, 2550} # metaf encoding dim + n_fidelities * n_algos
-    #    - ${model.joint_dim} # n_d_metaf_encoding_dim + transformer output dim
-    - ${dynamically_computed.n_algos}
+#
+#decoder:
+#  _target_: imfas.utils.mlp.MLP
+#  hidden_dims:
+#    - ${add:100, 2600} # metaf encoding dim + (n_fidelities +1) * n_algos # + 1 because of nan-safeguard
+#    #    - ${model.joint_dim} # n_d_metaf_encoding_dim + transformer output dim
+#    - ${dynamically_computed.n_algos}
 
 device: ${device}

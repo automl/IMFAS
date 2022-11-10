@@ -12,7 +12,6 @@ import torch
 
 OmegaConf.register_new_resolver("device_ident", lambda _: torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"))
-
 OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
 OmegaConf.register_new_resolver("len", lambda l: len(l))
 OmegaConf.register_new_resolver("range", lambda start, stop, step: list(range(start, stop, step)))
