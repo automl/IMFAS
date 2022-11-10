@@ -65,7 +65,6 @@ class BaseTrainer:
                       f'mask: {X["mask"]}',
                       f'Dataset metafeatures {X["dataset_meta_features"]}'
                       )
-                print()
 
             if not hasattr(self.model, 'no_opt'):
                 loss = loss_fn(y_hat, y["final_fidelity"])

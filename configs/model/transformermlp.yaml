@@ -1,11 +1,16 @@
-_target_: imfas.models.transformer2.IMFASTransformerMLP
+_target_: imfas.models.transformerMLP.IMFASTransformerMLP
 
+# fixme: dataset_metaf_encoder.hidden_dims[-1] should be a variable that can be utilized in decoder.hidden_dims[0]
+
+dmetaf_dim: 100
+#
+#joint_dim: ${add:${dynamically_computed.n_data_meta_features}, ${model.dmetaf_dim}}
 
 dataset_metaf_encoder:
   _target_: imfas.utils.mlp.MLP
   hidden_dims:
     - ${dynamically_computed.n_data_meta_features}
-    - 100
+    - 100  # arbitrary value
 
 positional_encoder:
   _target_: imfas.utils.positionalencoder.PositionalEncoder
@@ -13,13 +18,13 @@ positional_encoder:
   max_len: 171
   dropout: 0.1
 
-transformer_encoder:
+transformer_lc:
   _target_: torch.nn.TransformerEncoder
   num_layers: 2 # how many transformer layers to stack
   encoder_layer:
     _target_: torch.nn.TransformerEncoderLayer
-    d_model: 50  # number of algorithms
-    nhead: 10 # attention heads  d_model / nhead = 10 must be devisible
+    d_model: 1  # batch trick: look at every curve one at a time to allow appropriate masking
+    nhead: 1 # attention heads  d_model / nhead = 1 must be devisible
     dim_feedforward: 100
     dropout: 0.1
     activation: relu
@@ -30,13 +35,13 @@ transformer_encoder:
 
   norm:
     _target_: torch.nn.LayerNorm
-    normalized_shape: 50
+    normalized_shape: ${model.transformer_lc.encoder_layer.d_model}
 
 decoder:
   _target_: imfas.utils.mlp.MLP
   hidden_dims:
-    - 100  # n_d_metaf_encoding_dim + transformer output dim
+    - ${add:100, 2550} # metaf encoding dim + n_fidelities * n_algos
+    #    - ${model.joint_dim} # n_d_metaf_encoding_dim + transformer output dim
     - ${dynamically_computed.n_algos}
-
 
 device: ${device}

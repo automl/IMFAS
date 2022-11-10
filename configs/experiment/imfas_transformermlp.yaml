@@ -4,7 +4,7 @@
 # d = MLP_d(D), t = TransformerEncoder(lcs_DA), output = MLP(concat(d,t))
 
 defaults:
-  - /model: transformer2
+  - /model: transformermlp
 
 
 wandb:
