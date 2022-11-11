@@ -52,6 +52,36 @@ class IMFASTransformerMLP(nn.Module):
         # assert output_dim_transformer + output_dim_dmetaf == decoder_indim, \
         #    "The output dimension of the transformer encoder and the dataset meta feature encoder must be equal to the input dimension of the decoder!"
 
+    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor,
+                dataset_meta_features: Optional[torch.Tensor] = None, **kwargs):
+
+        # n_datasets is batch dimension
+        self.n_datasets, self.n_algos, self.n_fidelities = learning_curves.shape
+
+        # (dataset_meta_feature encoding is optional) --------------------------
+        # TODO @difan: is there a better was to do this (when we want to cmd all datasets with a
+        #  single config)?
+        # Careful:  self.dataset_metaf_encoding must be written to self to be accessible in subclass
+        # that guides attention!
+        if dataset_meta_features is None:
+            # if dataset meta features are not available, we use a zero vector.
+            self.dataset_metaf_encoding = torch.zeros(
+                self.dataset_metaf_encoder.layers[-1].weight.shape[-1]
+            ).view(1, -1).to(self.device)
+
+        else:
+            # default case: dataset meta features are available
+            self.dataset_metaf_encoding = self.dataset_metaf_encoder(dataset_meta_features)
+
+        lc_encoding = self.forward_lc(learning_curves, mask)
+        print(lc_encoding)
+
+        # consider: do we want to have a separate mlp for the lc_encoding, before joining?
+        return self.decoder(
+            # stack flattened lc_encoding with dataset_metaf_encoding
+            torch.cat([lc_encoding.view(1, -1), self.dataset_metaf_encoding], 1)
+        )
+
     def forward_lc(self, learning_curves: torch.Tensor, mask: torch.Tensor, **kwargs):
 
         # prepend a zero timestep to the learning curve tensor if n_fidelities is uneven
@@ -92,70 +122,3 @@ class IMFASTransformerMLP(nn.Module):
         )
 
         return lc_encoding.permute(0, 1, 2)  # undo the batch trick
-
-    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor,
-                dataset_meta_features: Optional[torch.Tensor] = None, **kwargs):
-
-        # n_datasets is batch dimension
-        self.n_datasets, self.n_algos, self.n_fidelities = learning_curves.shape
-
-        # (dataset_meta_feature encoding is optional) --------------------------
-        # TODO @difan: is there a better was to do this (when we want to cmd all datasets with a
-        #  single config)?
-        if dataset_meta_features is None:
-            # if dataset meta features are not available, we use a zero vector.
-            self.dataset_metaf_encoding = torch.zeros(
-                self.dataset_metaf_encoder.layers[-1].weight.shape[-1]
-            ).view(1, -1).to(self.device)
-
-        else:
-            # default case: dataset meta features are available
-            self.dataset_metaf_encoding = self.dataset_metaf_encoder(dataset_meta_features)
-
-        lc_encoding = self.forward_lc(learning_curves, mask)
-        print(lc_encoding)
-
-        # consider: do we want to have a separate mlp for the lc_encoding, before joining?
-        return self.decoder(
-            # stack flattened lc_encoding with dataset_metaf_encoding
-            torch.cat([lc_encoding.view(1, -1), self.dataset_metaf_encoding], 1)
-        )
-
-
-class CustomTransformerEncoderLayer(torch.nn.TransformerEncoderLayer):
-    """
-    This custom transformer encoder layer allows to alter the query vector of the self-attention block.
-    The query vector is altered by a linear layer and a ReLU activation, which in turn is
-    multiplied with the dataset meta features. (basically piping the encoded dataset meta
-    features into the self-attention block to alter the query vector). Rational: the
-    dataset_meta_features contain information regarding the scaling of the dataset i.e. context
-    to the observed learning curve. So we should alter the attention. We do this by altering the
-    query vector.
-    """
-
-    def __init__(self, reference_object, n_fidelities, *args, **kwargs):
-        """
-        :param reference_object: the object that contains the encoded dataset meta features i.e.
-        e.g. reference_object.dataset_metaf = mlp(dataset_meta_features)
-        where reference_object.dataset_metaf.shape[-1] is the encoding (/mlp output) dimension of
-        the dataset meta features
-        """
-        super(CustomTransformerEncoderLayer, self).__init__(*args, **kwargs)
-
-        self.reference_object = reference_object
-        self.q_layer = nn.Linear(self.reference_object.dataset_metaf.shape[-1], n_fidelities)
-        self.q_activation = nn.ReLU()
-
-    def forward(self, *args, **kwargs):
-        return super(CustomTransformerEncoderLayer, self).forward(*args, **kwargs)
-
-    def _sa_block(self, x: torch.Tensor,
-                  attn_mask: Optional[torch.Tensor],
-                  key_padding_mask: Optional[torch.Tensor]) -> torch.Tensor:
-        q = x * self.q_activation(self.q_layer(self.reference_object.dataset_metaf))
-        k = x
-        x = self.self_attn(q, k, x,
-                           attn_mask=attn_mask,
-                           key_padding_mask=key_padding_mask,
-                           need_weights=False)[0]
-        return self.dropout1(x)

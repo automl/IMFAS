@@ -1,6 +1,3 @@
-defaults:
-  /model: transformermlp
-
 _target_: imfas.models.transformer2.IMFASTransformerMLP
 
 

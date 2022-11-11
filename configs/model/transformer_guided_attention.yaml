@@ -1,0 +1,45 @@
+_target_: imfas.models.transformer_guided_attention.IMFASTransformerGuidedAttention
+
+n_algos: ${dynamically_computed.n_algos}
+n_fidelities: ${dynamically_computed.n_fidelities}
+
+decoder_hidden_dims: [ 100 ] # this is only intermediate layers
+dataset_metaf_encoder:
+  _target_: imfas.utils.mlp.MLP
+  hidden_dims: # careful changes here imply that lc_encoder_layer.dim_dataset_metaf_encoding is also changed
+    - ${dynamically_computed.n_data_meta_features}
+    - 100  # arbitrary value
+
+positional_encoder:
+  _target_: imfas.utils.positionalencoder.PositionalEncoder
+  d_model: ${dynamically_computed.n_fidelities}
+  max_len: 1000 # ${dynamically_computed.n_fidelities}
+  dropout: 0.1
+
+
+
+lc_encoder_kwargs:
+  # arguments to torch.nn.transformerEncoder!
+  num_layers: 2
+lc_encoder_layer:
+  _partial_: true
+  _target_: imfas.models.transformer_guided_attention.CustomTransformerEncoderLayer
+  n_fidelities: ${dynamically_computed.n_fidelities}
+  dim_dataset_metaf_encoding: ${model.dataset_metaf_encoder.hidden_dims[1]}
+
+
+  d_model: 1  # batch trick: look at every curve one at a time to allow appropriate masking
+  nhead: 1 # attention heads  d_model / nhead = 1 must be devisible
+  dim_feedforward: 100
+  dropout: 0.1
+  activation: relu
+
+  batch_first: True
+  norm_first: False
+  device: ${device}
+
+norm:
+  _target_: torch.nn.LayerNorm
+  normalized_shape: ${model.lc_encoder_layer.d_model}
+
+device: ${device}
