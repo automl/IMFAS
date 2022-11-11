@@ -388,6 +388,7 @@ class IMFASCrossTransformer(IMFASHierarchicalTransformer):
             self.transformer_norms = [nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers)]
         else:
             self.transformer_norms = [nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers-1)]
+        self.to(torch.device(device))
 
 
     def encode_lc_embeddings(self, learning_curves_embedding, lc_values_observed, lc_shape_info):
