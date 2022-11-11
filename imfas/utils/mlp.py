@@ -19,10 +19,11 @@ class MLP(nn.Module):
                 self.activation[activation](),
                 # nn.BatchNorm1d(out_dim
             )
-            for in_dim, out_dim in zip(dims, dims[1:])
+            for in_dim, out_dim in zip(dims[:-2], dims[1:-1])
         ]
+        mlp.append((nn.Linear(dims[-2], dims[-1], bias=False),))
 
-        self.layers = nn.ModuleList(chain(*mlp))
+        self.layers = nn.ModuleList(sum(mlp, ()))
         # self.double() # FIXME needed for LSTM?
 
         if readout:
