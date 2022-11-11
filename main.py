@@ -52,6 +52,10 @@ def pipe_train(cfg: DictConfig) -> None:
         if 'eos_tail' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_EosTail'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' EOS TAIL'
+    if model_type == 'imfas_C_transformer':
+        if 'full_lc2global' in model_opts:
+            cfg.wandb.group = cfg.wandb.group + '_flc'
+            cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' F LC'
 
     housekeeping(cfg)
 

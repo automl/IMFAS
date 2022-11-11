@@ -59,12 +59,11 @@ class BaseTrainer:
             if self.optimizer:
                 self.optimizer.zero_grad()
 
-            y_hat = self.model.forward(**X)
+            y_hat = self.model(**X)
 
             if y_hat is None:
                 loss = 0
                 continue
-
 
             # if torch.isnan(y_hat).any():
             #     print(
@@ -156,9 +155,6 @@ class BaseTrainer:
                             self.model.train()
 
                         y_hat = self.model.forward(**X)
-
-                        
-
 
                         if j == 0:
                             self.model.eval()

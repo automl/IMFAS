@@ -108,19 +108,22 @@ class AbstractIMFASTransformer(nn.Module):
         self.decoder = decoder
         self.d_model = transformer_layer.linear1.in_features
         self.transformer_encoder = nn.TransformerEncoder(transformer_layer, n_layers)
+        self.n_layers = n_layers
         if isinstance(device, str):
             device = torch.device(device)
         self.device = device
         self.lc_proj_layer = self.build_lc_embedding_layer(n_algos, self.d_model)
         self.positional_encoder = PositionalEncoding(d_model=self.d_model)
 
-        self.to(device)
-
         model_opts = set(model_opts)
 
         self.has_reduce_layer = 'reduce' in model_opts
         if self.has_reduce_layer:
             self.reduce_layer = torch.nn.Linear(n_fidelities + 1, 1)
+
+        self.layer_norm_before_decoder = nn.LayerNorm(self.decoder.layers[0].in_features)
+
+        self.to(device)
 
         # for k, i in self.named_parameters():
         #     print(k, i.device)
@@ -143,7 +146,7 @@ class AbstractIMFASTransformer(nn.Module):
     def embeds_lcs(self, learning_curves, lc_values_observed):
         
         # learning_curves_embedding = self.positional_encoder(learning_curves)
-        
+
         learning_curves_embedding = self.positional_encoder(self.lc_proj_layer(learning_curves))
         
 
@@ -172,7 +175,8 @@ class AbstractIMFASTransformer(nn.Module):
         
         # print('AbstractIMFASTransformer -- forward')
         # pdb.set_trace()
-        return self.decoder(torch.cat((encoded_lcs, encoded_D), -1)).squeeze(-1)
+        decoder_input = self.layer_norm_before_decoder(torch.cat((encoded_lcs, encoded_D), -1))
+        return self.decoder(decoder_input).squeeze(-1)
 
     def encode_lc_embeddings(
         self,
@@ -239,7 +243,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
     """
     An IMFAS Trasnforemr with hierarchical architecture. For the input, we first flatten them to perform local attention
     operation with self.transformer_encoder. Then in the second stage, we perform a global attention operation with
-    self.global_transformer_encoder
+    self.algo_transformer_encoder
     """
 
     def __init__(
@@ -259,7 +263,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
             n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, device, model_opts
         )
 
-        self.global_transformer = nn.TransformerEncoder(transformer_layer, n_layers)
+        self.algo_transformer = nn.TransformerEncoder(transformer_layer, n_layers)
 
         self.eos_embedding_layer = torch.nn.Embedding(2, transformer_layer.linear1.in_features)
 
@@ -349,7 +353,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
             encoded_lcs_local = self.positional_encoder(encoded_lcs_local)
         # TODO adjust the Meta features with this type of transformation
 
-        encoded_lcs = self.global_transformer(encoded_lcs_local)
+        encoded_lcs = self.algo_transformer(encoded_lcs_local)
         if self.has_reduce_layer:
             encoded_lcs = torch.transpose(encoded_lcs, 1, 2)
             encoded_lcs = self.reduce_layer(encoded_lcs)
@@ -360,38 +364,99 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
 
 class IMFASCrossTransformer(IMFASHierarchicalTransformer):
     """
-    An IMFAS Trasnforemr with hierarchical architecture. For the input, we first flatten them to perform local attention
+    An IMFAS Transformer with hierarchical architecture. For the input, we first flatten them to perform local attention
     operation with self.transformer_encoder. Then in the second stage, we perform a global attention operation with
-    self.global_transformer_encoder
+    self.algo_transformer_encoder
     """
+
+    def __init__(
+            self,
+            n_algos: int,
+            n_fidelities: int,
+            encoder: nn.Module,
+            decoder: nn.Module,
+            transformer_layer: nn.Module,
+            n_layers=2,
+            device: str = "cpu",
+            model_opts: list[str] = []
+    ):
+        super(IMFASCrossTransformer, self).__init__(n_algos, n_fidelities, encoder, decoder, transformer_layer, n_layers, device, model_opts)
+        self.full_lc2global_former = 'full_lc2global' in model_opts
+        if not self.eos_tail and self.full_lc2global_former:
+            raise ValueError("Unsupported combiantion of eos_tail and full_lc2global_former")
+        if self.full_lc2global_former:
+            self.transformer_norms = [nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers)]
+        else:
+            self.transformer_norms = [nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers-1)]
+
+
     def encode_lc_embeddings(self, learning_curves_embedding, lc_values_observed, lc_shape_info):
         batch_size, n_algos, lc_length = lc_shape_info
         n_observed_lcs = lc_values_observed.sum(1).long() - 1
 
-        local_encoder_input = learning_curves_embedding
-        local_encoder_output = learning_curves_embedding
+        lc_encoder_input = learning_curves_embedding
 
-        for i, (local_encoder, global_encoder) in enumerate(zip(self.transformer_encoder.layers, self.global_transformer.layers)):
-            if i > 0:
-                local_encoder_input = local_encoder_output + global_encoder_output.view(batch_size * n_algos, 1, -1).repeat(1,local_encoder_output.shape[1],1)
+        src_key_padding_mask = ~lc_values_observed.bool()
+        if not self.full_lc2global_former:
 
-            local_encoder_output = local_encoder(
-                local_encoder_input, src_key_padding_mask=~lc_values_observed.bool()
-            )
+            for i, (lc_encoder, algo_encoder) in enumerate(zip(self.transformer_encoder.layers, self.algo_transformer.layers)):
+                lc_encoder_output = lc_encoder(
+                    lc_encoder_input, src_key_padding_mask=src_key_padding_mask
+                )
 
-            if not self.eos_tail:
-                global_encoder_input = local_encoder_output[torch.arange(len(local_encoder_output)), n_observed_lcs]
-            else:
-                global_encoder_input = local_encoder_output[torch.arange(len(local_encoder_output)), -1]
+                if not self.eos_tail:
+                    algo_encoder_input = lc_encoder_output[torch.arange(len(lc_encoder_output)), n_observed_lcs]
+                else:
+                    algo_encoder_input = lc_encoder_output[torch.arange(len(lc_encoder_output)), -1]
 
-            global_encoder_input = global_encoder_input.view(batch_size, n_algos, -1)
-            if self.pe_on_global_level:
-                global_encoder_input = self.positional_encoder(global_encoder_input)
-            # TODO adjust the Meta features with this type of transformation
+                algo_encoder_input = algo_encoder_input.view(batch_size, n_algos, -1)
+                if self.pe_on_global_level:
+                    algo_encoder_input = self.positional_encoder(algo_encoder_input)
+                # TODO adjust the Meta features with this type of transformation
 
-            global_encoder_output = global_encoder(global_encoder_input)
+                algo_encoder_output = algo_encoder(algo_encoder_input)
 
-        encoded_lcs = global_encoder_output
+                if i < self.n_layers - 1:
+                    lc_encoder_input = lc_encoder_output + algo_encoder_output.view(batch_size * n_algos, 1, -1).repeat(
+                        1, lc_encoder_output.shape[1], 1)
+                    lc_encoder_input = self.transformer_norms[i](lc_encoder_input)
+
+        else:
+            lc_seq_length = lc_length + 1
+            for i, (lc_encoder, algo_encoder) in enumerate(
+                    zip(self.transformer_encoder.layers, self.algo_transformer.layers)):
+
+                lc_encoder_output = lc_encoder(
+                    lc_encoder_input, src_key_padding_mask=src_key_padding_mask
+                )
+                lc_encoder_output = lc_encoder_output.view(batch_size, n_algos, lc_seq_length, -1).transpose(1, 2)
+                lc_encoder_output = lc_encoder_output.reshape(batch_size * lc_seq_length, n_algos, -1)
+
+                src_key_padding_mask_algo = src_key_padding_mask.reshape(batch_size, n_algos, lc_seq_length).transpose(1, 2)
+                src_key_padding_mask_algo = src_key_padding_mask_algo.reshape(batch_size * lc_seq_length, n_algos)
+
+                valid_seq = ~(src_key_padding_mask_algo.all(1))
+
+                if self.pe_on_global_level:
+                    algo_encoder_input = self.positional_encoder(lc_encoder_output[valid_seq])
+                else:
+                    algo_encoder_input = lc_encoder_output[valid_seq]
+
+                algo_encoder_out = algo_encoder(algo_encoder_input, src_key_padding_mask=src_key_padding_mask_algo[valid_seq])
+                if sum(valid_seq) < len(lc_encoder_output):
+                    algo_encoder_output = torch.zeros_like(lc_encoder_output)
+                    algo_encoder_output[valid_seq] = algo_encoder_out
+                else:
+                    algo_encoder_output = lc_encoder_output
+
+                lc_encoder_input = self.transformer_norms[i]((lc_encoder_output + algo_encoder_output))
+                lc_encoder_input = lc_encoder_input.view(batch_size, lc_seq_length, n_algos, -1).transpose(1, 2)  # [B,A,F, E]
+                lc_encoder_input = lc_encoder_input.reshape([batch_size*n_algos, lc_seq_length, -1])
+
+                if i == self.n_layers - 1:
+                    algo_encoder_output = lc_encoder_input.view(batch_size, n_algos, lc_seq_length, -1)[:, :, -1]
+
+        encoded_lcs = algo_encoder_output
         if self.has_reduce_layer:
             encoded_lcs = torch.transpose(encoded_lcs, 1, 2)
             encoded_lcs = self.reduce_layer(encoded_lcs)

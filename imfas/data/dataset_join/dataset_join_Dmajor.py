@@ -96,7 +96,7 @@ class Dataset_Join_Dmajor(Dataset):
         message = f"Dataset_Join_Dmajor(split: {self.split})\n" \
                   f"Shapes: " \
                   f"\n\tDatasetMeta: {self.meta_dataset.shape} " \
-                  f"\n\tDatasetLC: {self.lcs.shape}"
+                  f"\n\tDatasetLC: {self.learning_curves.shape}"
 
         if self.meta_algo is not None:
             message += f"\n\tAlgorithmMeta: {self.meta_algo.shape}"
