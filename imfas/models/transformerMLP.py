@@ -3,6 +3,7 @@ from typing import Optional
 import torch
 from torch import nn
 
+from imfas.models.imfas_transformer_guided_attention import IMFASGuidedAttentionTransformerEncoder
 from imfas.utils import MLP
 
 
@@ -42,15 +43,7 @@ class IMFASTransformerMLP(nn.Module):
         self.check_conformity()
 
     def check_conformity(self):
-        """This method checks if the model components are configured correctly"""
-        n_algos, n_datasets = None, None  # self.transformer_encoder.layers[0]
-
-        output_dim_transformer = None  # self.transformer_encoder.layers[-1]
-        output_dim_dmetaf = None  # self.dataset_metaf_encoder.layers[-1]
-        decoder_indim = None  # self.decoder.layers[0]
-
-        # assert output_dim_transformer + output_dim_dmetaf == decoder_indim, \
-        #    "The output dimension of the transformer encoder and the dataset meta feature encoder must be equal to the input dimension of the decoder!"
+        pass
 
     def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor,
                 dataset_meta_features: Optional[torch.Tensor] = None, **kwargs):
@@ -61,20 +54,39 @@ class IMFASTransformerMLP(nn.Module):
         # (dataset_meta_feature encoding is optional) --------------------------
         # TODO @difan: is there a better was to do this (when we want to cmd all datasets with a
         #  single config)?
-        # Careful:  self.dataset_metaf_encoding must be written to self to be accessible in subclass
-        # that guides attention!
         if dataset_meta_features is None:
             # if dataset meta features are not available, we use a zero vector.
-            self.dataset_metaf_encoding = torch.zeros(
+            dataset_metaf_encoding = torch.zeros(
                 self.dataset_metaf_encoder.layers[-1].weight.shape[-1]
             ).view(1, -1).to(self.device)
 
         else:
             # default case: dataset meta features are available
-            self.dataset_metaf_encoding = self.dataset_metaf_encoder(dataset_meta_features)
+            dataset_metaf_encoding = self.dataset_metaf_encoder(dataset_meta_features)
 
-        lc_encoding = self.forward_lc(learning_curves, mask)
-        print(lc_encoding)
+        pos_learning_curves, mask = self.convert_lc(learning_curves, mask)
+        if isinstance(self.transformer_lc, IMFASGuidedAttentionTransformerEncoder):
+            lc_encoding = self.transformer_lc(
+                pos_learning_curves,
+                src_key_padding_mask=~mask.bool().view(self.n_algos, self.n_fidelities + 1),
+                guided_attention=dataset_metaf_encoding
+            )
+        else:
+            lc_encoding = self.transformer_lc(
+                # reshape the learning curve tensor to trick the transformer in believing
+                # the algo dim is the batch dim
+                # alter mask encoding (since pytorch expects mask that indicates missing values)
+                pos_learning_curves,
+
+                # same as above regarding permutation. But we need to invert & convert the mask,
+                # since pytorch expects mask that indicates missing values & type bool,
+                # such that mask.masked_fill(~mask.bool(), float('-inf')) is performed directly before
+                # softmax in the attention head # +1 due to the prepended zero token!
+                src_key_padding_mask=~mask.bool().view(self.n_algos, self.n_fidelities + 1)
+
+            )
+
+        lc_encoding = lc_encoding.permute(0, 1, 2)  # undo the batch trick
 
         # consider: do we want to have a separate mlp for the lc_encoding, before joining?
         return self.decoder(
@@ -82,7 +94,7 @@ class IMFASTransformerMLP(nn.Module):
             torch.cat([lc_encoding.view(1, -1), self.dataset_metaf_encoding], 1)
         )
 
-    def forward_lc(self, learning_curves: torch.Tensor, mask: torch.Tensor, **kwargs):
+    def convert_lc(self, learning_curves: torch.Tensor, mask: torch.Tensor, **kwargs):
 
         # prepend a zero timestep to the learning curve tensor if n_fidelities is uneven
         # reasoning: transformer n_heads must be a devisor of d_model
@@ -108,17 +120,4 @@ class IMFASTransformerMLP(nn.Module):
         pos_learning_curves = pos_learning_curves.permute(1, 2, 0)
         mask = mask.permute(1, 2, 0)
 
-        lc_encoding = self.transformer_lc(
-            # reshape the learning curve tensor to trick the transformer in believing
-            # the algo dim is the batch dim
-            # alter mask encoding (since pytorch expects mask that indicates missing values)
-            pos_learning_curves,
-
-            # same as above regarding permutation. But we need to invert & convert the mask,
-            # since pytorch expects mask that indicates missing values & type bool,
-            # such that mask.masked_fill(~mask.bool(), float('-inf')) is performed directly before
-            # softmax in the attention head # +1 due to the prepended zero token!
-            src_key_padding_mask=~mask.bool().view(self.n_algos, self.n_fidelities + 1)
-        )
-
-        return lc_encoding.permute(0, 1, 2)  # undo the batch trick
+        return pos_learning_curves, mask
