@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import List
+from typing import List, Tuple, Union
 
 from torch import nn as nn
 
@@ -7,7 +7,7 @@ from torch import nn as nn
 class MLP(nn.Module):
     activation = {"relu": nn.ReLU, "identity": nn.Identity}
 
-    def __init__(self, hidden_dims: List[int], activation: str = "relu", readout=False):
+    def __init__(self, hidden_dims: Union[List, Tuple], activation: str = "relu", readout=False):
         super(MLP, self).__init__()
         self.hidden_dims = hidden_dims
 
