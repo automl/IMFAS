@@ -17,7 +17,8 @@ def get_taskset_data(url: str, save_path: str):
 
 
 if __name__ == '__main__':
-    url = 'https://drive.google.com/uc?id=1ILDw9hxO9qRcFzsbMBeTyVy6ddUmWQCa'
+
+    url = 'https://drive.google.com/uc?id=1I-8Bf-Q5zmM4XYZpCG53-16hPM5FwXHH'
     path = Path(__file__).parents[3] / 'data' / 'preprocessed'/ 'task_set'
     output_name = 'raw.npy'
 

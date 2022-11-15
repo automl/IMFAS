@@ -11,7 +11,6 @@ from imfas.data.preprocessings.transformpipeline import TransformPipeline
 
 from typing import Optional
 
-import pdb
 class Dataset_LC(Dataset):
     def __init__(self, path, transforms: TransformPipeline, metric: str = "None"):
         """
@@ -124,17 +123,12 @@ class DatasetTaskSet(Dataset_LC):
         raw_data = np.load(path).mean(axis=2)[:n_datasets,:n_algos,:,self.type_idx[ctype]]
         pre_processed = self._preprocess(raw_data)
 
-        # print(ctype)
-
-        # pdb.set_trace()
-
         self.transformed_df = torch.from_numpy(pre_processed)
-        
         
         self.metric = metric
         
     # TODO Make this is a preprocesing step instead of this hack
-    def _preprocess(self, np_array, Normalize=True):
+    def _preprocess(self, np_array, scale_factor=100):
         '''
         Pre-Processing the data:
             - Handle Nans and Infs:
@@ -142,13 +136,18 @@ class DatasetTaskSet(Dataset_LC):
         
         '''
         
-        for i in range(np_array.shape[0]):
-            for j in range(np_array.shape[1]):
+        for i in range(np_array.shape[0]):  # tasks
+            for j in range(np_array.shape[1]):  # AAlgorithms
+                
+                
                 
                 # # Normalize -- Min-Max
-                if Normalize:
-                    np_array[i,j,:] = 100 * (np_array[i,j,:] - np_array[i,j,:].min()) / (np_array[i,j,:].max() - np_array[i,j,:].min()) 
-                
+                np_array[i,j,:] = (np_array[i,j,:] - np_array[i,j,:].min()) / (np_array[i,j,:].max() - np_array[i,j,:].min())  
+                np_array[i,j,:] = 1 - np_array[i,j,:]
+                    
+                if scale_factor:    
+                    np_array[i,j,:] = scale_factor * np_array[i,j,:]
+
                 for k in range(np_array.shape[2]):
                     
                     # Handle Nans
