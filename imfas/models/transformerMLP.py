@@ -32,7 +32,7 @@ class IMFASTransformerMLP(nn.Module):
         dmetaf_encoder_outdim = self.dataset_metaf_encoder.layers[-2].weight.shape[-2]
         self.positional_encoder = positional_encoder
 
-        self.transformer_lc = transformer_lc
+        self.transformer_lc = transformer_lc(hidden_dims=(100, 11))
 
         # n_fidelities + 1 for nan safeguard
         decoder_input_dim = dmetaf_encoder_outdim + (n_fidelities + 1) * n_algos

@@ -8,11 +8,27 @@ from typing import Optional
 import torch
 from torch import nn
 
+from imfas.utils import MLP
+
 
 #
 class IMFASGuidedAttentionTransformerEncoder(nn.TransformerEncoder):
-    def __init__(self, *args, **kwargs):
-        super(IMFASGuidedAttentionTransformerEncoder, self).__init__(*args, **kwargs)
+    def __init__(self, dataset_metaf_embed_dim, n_fidelities, hidden_dims=tuple(), *args, **kwargs):
+        """
+        :param dataset_metaf_embed_dim: dimension of the dataset meta feature embedding
+        :param n_fidelities: number of fidelities
+        :param hidden_dims: intermediate hidden dimensions of the MLP that maps the dataset meta
+        feature embedding. input and output are predetermined & automatically computed
+        """
+
+        # to meet the transformer-nan-safeguard we need to add 1 to the output dim
+        kwargs['encoder_layer'] = kwargs['encoder_layer'](
+            guided_attention_encoder=MLP(
+                hidden_dims=[dataset_metaf_embed_dim, *hidden_dims, n_fidelities + 1]
+            )
+        )
+
+        super().__init__(self, *args, **kwargs)
 
     def forward(
             self,
@@ -38,7 +54,9 @@ class IMFASGuidedAttentionTransformerEncoder(nn.TransformerEncoder):
 class GuidedAttentionTransformerEncoderLayer(nn.TransformerEncoderLayer):
 
     def __init__(self, guided_attention_encoder, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        print('transformer layer init')
+        print(args, kwargs)
+        super().__init__(self, *args, **kwargs)
         self.guided_attention_encoder = guided_attention_encoder
 
     def forward(self, src: torch.Tensor, src_mask: Optional[torch.Tensor] = None,
