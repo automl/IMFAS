@@ -21,7 +21,7 @@ transformer_lc:
   _target_: imfas.models.imfas_transformer_guided_attention.IMFASGuidedAttentionTransformerEncoder
 
   num_layers: 2
-  dataset_metaf_embed_dim: ${model.dataset_metaf_encoder.hidden_dims[0]}
+  dataset_metaf_embed_dim: 100 # same as the last element of dataset_metaf_encoder.hidden_dims
   n_fidelities: ${dynamically_computed.n_fidelities}
 
   hidden_dims: # optional argument, to specify intermediate layers in the guided attention mlp acting on the attention

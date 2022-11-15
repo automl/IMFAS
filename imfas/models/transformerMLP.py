@@ -32,7 +32,7 @@ class IMFASTransformerMLP(nn.Module):
         dmetaf_encoder_outdim = self.dataset_metaf_encoder.layers[-2].weight.shape[-2]
         self.positional_encoder = positional_encoder
 
-        self.transformer_lc = transformer_lc(hidden_dims=(100, 11))
+        self.transformer_lc = transformer_lc
 
         # n_fidelities + 1 for nan safeguard
         decoder_input_dim = dmetaf_encoder_outdim + (n_fidelities + 1) * n_algos
@@ -87,11 +87,10 @@ class IMFASTransformerMLP(nn.Module):
             )
 
         lc_encoding = lc_encoding.permute(0, 1, 2)  # undo the batch trick
-
         # consider: do we want to have a separate mlp for the lc_encoding, before joining?
         return self.decoder(
             # stack flattened lc_encoding with dataset_metaf_encoding
-            torch.cat([lc_encoding.view(1, -1), self.dataset_metaf_encoding], 1)
+            torch.cat([lc_encoding.view(1, -1), dataset_metaf_encoding], 1)
         )
 
     def convert_lc(self, learning_curves: torch.Tensor, mask: torch.Tensor, **kwargs):
@@ -109,9 +108,9 @@ class IMFASTransformerMLP(nn.Module):
 
         # safeguard against nan values resulting from unobserved learning curves,
         # by prepending a zero token at the beginning of the fidelity sequence
-        mask = torch.cat([torch.ones(1, self.n_algos, 1), mask], dim=-1)
+        mask = torch.cat([mask.new_ones([1, self.n_algos, 1]), mask], dim=-1)
         pos_learning_curves = torch.cat(
-            [torch.zeros(1, self.n_algos, 1), pos_learning_curves],
+            [pos_learning_curves.new_zeros([1, self.n_algos, 1, ]), pos_learning_curves],
             dim=-1
         )
 

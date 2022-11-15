@@ -20,15 +20,12 @@ class IMFASGuidedAttentionTransformerEncoder(nn.TransformerEncoder):
         :param hidden_dims: intermediate hidden dimensions of the MLP that maps the dataset meta
         feature embedding. input and output are predetermined & automatically computed
         """
-
         # to meet the transformer-nan-safeguard we need to add 1 to the output dim
         kwargs['encoder_layer'] = kwargs['encoder_layer'](
-            guided_attention_encoder=MLP(
-                hidden_dims=[dataset_metaf_embed_dim, *hidden_dims, n_fidelities + 1]
-            )
+            guided_attention_encoder=MLP(hidden_dims=[dataset_metaf_embed_dim, *hidden_dims, n_fidelities + 1])
         )
 
-        super().__init__(self, *args, **kwargs)
+        super(IMFASGuidedAttentionTransformerEncoder, self).__init__(*args, **kwargs)
 
     def forward(
             self,
@@ -56,7 +53,7 @@ class GuidedAttentionTransformerEncoderLayer(nn.TransformerEncoderLayer):
     def __init__(self, guided_attention_encoder, *args, **kwargs):
         print('transformer layer init')
         print(args, kwargs)
-        super().__init__(self, *args, **kwargs)
+        super(GuidedAttentionTransformerEncoderLayer, self).__init__(*args, **kwargs)
         self.guided_attention_encoder = guided_attention_encoder
 
     def forward(self, src: torch.Tensor, src_mask: Optional[torch.Tensor] = None,
