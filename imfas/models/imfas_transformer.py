@@ -175,6 +175,7 @@ class AbstractIMFASTransformer(nn.Module):
         
         # print('AbstractIMFASTransformer -- forward')
         # pdb.set_trace()
+
         decoder_input = self.layer_norm_before_decoder(torch.cat((encoded_lcs, encoded_D), -1))
         return self.decoder(decoder_input).squeeze(-1)
 
@@ -385,11 +386,10 @@ class IMFASCrossTransformer(IMFASHierarchicalTransformer):
         if not self.eos_tail and self.full_lc2global_former:
             raise ValueError("Unsupported combiantion of eos_tail and full_lc2global_former")
         if self.full_lc2global_former:
-            self.transformer_norms = [nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers)]
+            self.transformer_norms = nn.ModuleList([nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers)])
         else:
-            self.transformer_norms = [nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers-1)]
+            self.transformer_norms = nn.ModuleList([nn.LayerNorm(transformer_layer.linear1.in_features) for _ in range(n_layers-1)])
         self.to(torch.device(device))
-
 
     def encode_lc_embeddings(self, learning_curves_embedding, lc_values_observed, lc_shape_info):
         batch_size, n_algos, lc_length = lc_shape_info
