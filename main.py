@@ -10,11 +10,11 @@ log = logging.getLogger(__name__)
 import copy
 import torch
 
-OmegaConf.register_new_resolver("device_ident", lambda _: torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+OmegaConf.register_new_resolver("device_ident", lambda _: torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"))
 
 OmegaConf.register_new_resolver("add", lambda *numbers: sum(numbers))
 OmegaConf.register_new_resolver("len", lambda l: len(l))
-
 OmegaConf.register_new_resolver("range", lambda start, stop, step: list(range(start, stop, step)))
 
 import os
@@ -49,9 +49,9 @@ def pipe_train(cfg: DictConfig) -> None:
         if 'pe_g' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_GPe'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' G PE'
-        if 'eos_tail' in model_opts:
-            cfg.wandb.group = cfg.wandb.group + '_EosTail'
-            cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' EOS TAIL'
+        if 'd_meta_guided' in model_opts:
+            cfg.wandb.group = cfg.wandb.group + '_DGuide'
+            cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' D Guided'
     if model_type == 'imfas_C_transformer':
         if 'full_lc2global' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_flc'
@@ -108,17 +108,18 @@ def pipe_train(cfg: DictConfig) -> None:
     else:
         cfg.dynamically_computed.n_data_meta_features = 0
     cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
-    cfg.dynamically_computed.len_lc = ref.learning_curves.shape[-1]
+    cfg.dynamically_computed.n_fidelities = ref.learning_curves.shape[-1]
 
     if 'reduce' in model_opts and model_type != 'imfas_transformer':
         cfg.model.decoder.hidden_dims[-1] = cfg.dynamically_computed.n_algos
+    if hasattr(train_set, 'meta_algo') and hasattr(train_set.meta_algo, 'transformed_df'):
+        cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
 
-    # cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 
     wandb.config.update(
         {
-            "dynamically_computed.n_algos": cfg.dynamically_computed.n_algo_meta_features,
+            "dynamically_computed.n_algos_meta_features": cfg.dynamically_computed.n_algo_meta_features,
             "dynamically_computed.n_data_meta_features": cfg.dynamically_computed.n_data_meta_features,
         }
     )
@@ -144,8 +145,8 @@ def pipe_train(cfg: DictConfig) -> None:
     if not obj_dir.exists():
         os.makedirs(str(obj_dir))
 
-    assert prediction.shape == ground_truth.shape
-    assert len(prediction) == len(test_split)
+    #  assert prediction.shape == ground_truth.shape
+    # assert len(prediction) == len(test_split)
     # assert train_set.learning_curves.shape[-1] == prediction.shape[-1]
 
     torch.save(prediction,  str(obj_dir / 'prediction.pt'))

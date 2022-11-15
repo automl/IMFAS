@@ -8,6 +8,14 @@ from imfas.data.dataset_meta_features import DatasetMetaFeatures
 from imfas.data.lc_dataset import Dataset_LC
 
 
+class AlgoMetaFeaturesMixin:
+    def __init__(self, transformed_df):
+        self.transformed_df = transformed_df
+
+    def __getitem__(self, item):
+        return self.transformed_df
+
+
 class Dataset_Join_Dmajor(Dataset):
     def __init__(
             self,
@@ -29,20 +37,23 @@ class Dataset_Join_Dmajor(Dataset):
             split: list of indicies, that this dataset will have access to (i.e. which
             datasets are available)
         """
+        assert all([v.shape == learning_curves.shape for v in kwargs.values()])
+        if meta_dataset is not None:
+            assert learning_curves.shape[0] == meta_dataset.shape[0]
+
+        if meta_algo is not None:
+            assert learning_curves.shape[1] == meta_algo.shape[0]
+            has_meta_algo = True
+        else:
+            meta_algo = AlgoMetaFeaturesMixin(torch.eye(learning_curves.shape[1]))
+            has_meta_algo = False
 
         self.learning_curves = learning_curves
         self.meta_dataset = meta_dataset
         self.meta_algo = meta_algo
         self.masking_fn = masking_fn
         self.kwargs = kwargs
-
-        assert all([v.shape == self.learning_curves.shape for v in kwargs.values()])
-        if meta_dataset is not None:
-            assert self.learning_curves.shape[0] == meta_dataset.shape[0]
-
-        if meta_algo is not None:
-            assert self.lcs.shape[1] == meta_algo.shape[0]
-
+        self.has_meta_algo = has_meta_algo
 
         if split is not None:
             self.split = split
@@ -65,25 +76,17 @@ class Dataset_Join_Dmajor(Dataset):
         else:
             lc_tensor = self.learning_curves[it]
             mask = torch.ones_like(lc_tensor, dtype=torch.bool)
+        X = {
+            "learning_curves": lc_tensor,
+            "mask": mask,
+            **self.kwargs
+            # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
+        }
+
         if self.meta_dataset is not None:
-
-            X = {
-                "dataset_meta_features": self.meta_dataset[it],
-                "learning_curves": lc_tensor,
-                "mask": mask,
-                **self.kwargs
-
-                # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
-
-            }
-        else:
-            X = {
-                "learning_curves": lc_tensor,
-                "mask": mask,
-                **self.kwargs
-                # "hp":self.meta_algo[a], # fixme: not needed, since constant during training in
-
-            }
+            X['dataset_meta_features'] = self.meta_dataset[it]
+        if self.meta_algo is not None:
+            X['algo_meta_features'] = self.meta_algo.transformed_df
 
         y = {"final_fidelity": self.learning_curves[it, :, -1]}
 

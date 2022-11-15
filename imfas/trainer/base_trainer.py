@@ -181,7 +181,6 @@ class BaseTrainer:
                 prediction.append(torch.cat(pred_i, 0).unsqueeze(-1))
                 ground_truth.append(torch.cat(ground_truth_i, 0).unsqueeze(-1))
 
-
                 for fn_name, fn in test_loss_fns.items():
                     wandb.log({f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(), "fidelity": fidelity})
         prediction = torch.cat(prediction, dim=-1) # prediction has shape of [num_datasets, n_algos, n_fidelities]

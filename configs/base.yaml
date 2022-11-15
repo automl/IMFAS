@@ -12,7 +12,7 @@ dynamically_computed:
   n_datasets: None
   n_data_meta_features: None
   n_algo_meta_features: None
-  len_lc: None
+  n_fidelities: None
 
 
 seed: 0
