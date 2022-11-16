@@ -213,7 +213,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
 
         if self.has_reduce_layer:
             self.reduce_layer = torch.nn.Linear(self.d_model, n_fidelities + 1)
-            self.reduce_weights = torch.nn.Linear(n_fidelities+ 1, 1)
+            self.reduce_weights = torch.nn.Linear(n_fidelities + 1, 1)
 
         model_opts = set(model_opts)
 
@@ -298,6 +298,64 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
         encoded_lcs = self.transformer_algo(encoded_lcs_local)
 
         return encoded_lcs
+
+
+class IMFASMLPTransformer(IMFASHierarchicalTransformer):
+    def __init__(
+            self,
+            n_algos: int,
+            n_fidelities: int,
+            dataset_metaf_encoder: nn.Module,
+            algo_metaf_encoder: nn.Module,
+            decoder: nn.Module,
+            transformer_lc: IMFASGuidedAttentionTransformerEncoder,
+            device: str = "cpu",
+            model_opts: list[str] = []
+    ):
+        self.EOS = torch.tensor(0, device=torch.device(device))  # End of Sequence
+        super(IMFASMLPTransformer, self).__init__(
+            n_algos, n_fidelities, dataset_metaf_encoder, algo_metaf_encoder, decoder, transformer_lc, None, device,
+            model_opts
+        )
+
+        self.has_flatten_layer = False
+        if not self.has_reduce_layer:
+            if 'flatten_t_out' in model_opts:
+                self.has_flatten_layer = False
+                self.flatten_layer = torch.nn.Linear((n_fidelities + 1) * self.d_model, self.d_model)
+        self.to(torch.device(device))
+
+    def encode_lc_embeddings(self, learning_curves_embedding,
+                             D_embedding: Optional[torch.Tensor],
+                             A_embedding: Optional[torch.Tensor], lc_values_observed, lc_shape_info):
+        batch_size, n_algos, lc_length = lc_shape_info
+
+        if D_embedding is not None and self.d_meta_guided:
+            encoded_lcs_local = self.transformer_lc(learning_curves_embedding,
+                                                    src_key_padding_mask=~lc_values_observed.bool(),
+                                                    guided_attention=D_embedding)
+        else:
+            encoded_lcs_local = self.transformer_lc(
+                learning_curves_embedding,
+                src_key_padding_mask=~lc_values_observed.bool(),
+            )
+        encoded_lcs_local = encoded_lcs_local.unflatten(0, [batch_size, -1])
+
+        if self.has_reduce_layer:
+            if D_embedding is not None:
+                encoded_lcs_local = encoded_lcs_local * self.reduce_layer(D_embedding).view([batch_size, 1, -1, 1])
+                encoded_lcs_local = self.norm_mid(torch.sum(encoded_lcs_local, -2))
+            else:
+                encoded_lcs_local = self.norm_mid(self.reduce_weights(encoded_lcs_local.transpose(-1, -2)).squeeze(-1))
+        elif self.has_flatten_layer:
+            encoded_lcs_local = self.flatten_layer(encoded_lcs_local.view([batch_size, n_algos, -1]))
+        else:
+            encoded_lcs_local = encoded_lcs_local[:, :, -1]
+        # TODO adjust the Meta features with this type of transformation
+        return encoded_lcs_local.flatten(1)
+
+
+
 
 class IMFASCrossTransformer(IMFASHierarchicalTransformer):
     """

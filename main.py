@@ -45,6 +45,10 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.wandb.group = cfg.wandb.group + '_NoReduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' No Reduce'
 
+    if 'reduce' not in model_opts and 'flatten_t_out' in model_opts and model_type.startswith("imfas_M_transformer"):
+        cfg.wandb.group = cfg.wandb.group + '_FlattenF'
+        cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Flatten Fidelites'
+
     if model_type != 'imfas_transformer':
         if 'pe_g' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_GPe'
@@ -112,6 +116,9 @@ def pipe_train(cfg: DictConfig) -> None:
 
     if hasattr(train_set, 'meta_algo') and hasattr(train_set.meta_algo, 'transformed_df'):
         cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
+
+    if model_type.startswith('imfas_M_transformer'):
+        cfg.model.decoder.hidden_dims[0] += ref.learning_curves.shape[1] * cfg.model.transformer_lc.encoder_layer.d_model
 
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 
