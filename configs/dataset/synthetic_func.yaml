@@ -2,7 +2,7 @@ defaults: # fixme: override base.yaml defaults wrt dataset - dataset/lcbench!
   - dataset_meta: null
   - lc_meta: multi_slice_np
 
-name: Synthetic
+name: Synthetic_new
 
 path:
   algo_meta: ${dir_data_processed}/${dataset.name}/config_subset.csv

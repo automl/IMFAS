@@ -38,7 +38,7 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model_type = copy.deepcopy(cfg.wandb.group)
 
-    if 'reduce' in model_opts:
+    if 'reduce' in model_opts and model_type.startswith('imfas'):
         cfg.wandb.group = cfg.wandb.group + '_Reduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Reduce'
     else:
@@ -110,8 +110,6 @@ def pipe_train(cfg: DictConfig) -> None:
     cfg.dynamically_computed.n_algos = ref.learning_curves.shape[1]
     cfg.dynamically_computed.n_fidelities = ref.learning_curves.shape[-1]
 
-    if 'reduce' in model_opts and model_type != 'imfas_transformer':
-        cfg.model.decoder.hidden_dims[-1] = cfg.dynamically_computed.n_algos
     if hasattr(train_set, 'meta_algo') and hasattr(train_set.meta_algo, 'transformed_df'):
         cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
 
