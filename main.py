@@ -49,14 +49,14 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.wandb.group = cfg.wandb.group + '_FlattenF'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Flatten Fidelites'
 
-    if model_type != 'imfas_transformer':
+    if model_type.startswith('imfas'):
         if 'pe_g' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_GPe'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' G PE'
         if 'd_meta_guided' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_DGuide'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' D Guided'
-    if model_type == 'imfas_C_transformer':
+    if model_type.startswith('imfas_C_transformer'):
         if 'full_lc2global' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_flc'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' F LC'
