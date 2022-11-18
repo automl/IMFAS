@@ -24,6 +24,8 @@ class Dataset_Join_Dmajor(Dataset):
             meta_algo: Optional[AlgorithmMetaFeatures] = None,
             split: List[int] = None,
             masking_fn: Optional[Callable] = None,
+            disable_meta_dataset: bool = False,
+            disable_meta_algo: bool = False,
             **kwargs
     ):
         """
@@ -41,7 +43,7 @@ class Dataset_Join_Dmajor(Dataset):
         if meta_dataset is not None:
             assert learning_curves.shape[0] == meta_dataset.shape[0]
 
-        if meta_algo is not None:
+        if meta_algo is not None and not disable_meta_algo:
             assert learning_curves.shape[1] == meta_algo.shape[0]
             has_meta_algo = True
         else:
@@ -49,7 +51,7 @@ class Dataset_Join_Dmajor(Dataset):
             has_meta_algo = False
 
         self.learning_curves = learning_curves
-        self.meta_dataset = meta_dataset
+        self.meta_dataset = None if disable_meta_dataset else meta_dataset
         self.meta_algo = meta_algo
         self.masking_fn = masking_fn
         self.kwargs = kwargs
