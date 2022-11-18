@@ -41,7 +41,7 @@ def pipe_train(cfg: DictConfig) -> None:
     if 'reduce' in model_opts and model_type.startswith('imfas'):
         cfg.wandb.group = cfg.wandb.group + '_Reduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Reduce'
-    else:
+    elif model_type.startswith('imfas'):
         cfg.wandb.group = cfg.wandb.group + '_NoReduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' No Reduce'
 
@@ -60,6 +60,10 @@ def pipe_train(cfg: DictConfig) -> None:
         if 'full_lc2global' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_flc'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' F LC'
+
+    if cfg.trainer.trainerobj._target_ == 'imfas.trainer.sh_scheduler.SHScheduler':
+        cfg.wandb.group = cfg.wandb.group + 'SHScheduler'
+        cfg.wandb.tags[0] = cfg.wandb.tags[0] + 'SHScheduler'
 
     housekeeping(cfg)
 

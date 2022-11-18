@@ -12,6 +12,8 @@ wandb:
   group: 'Baseline: Best Parametric'
   job_type: 'best_parametric'
   notes: 'Best Parametric Learning curve fitting.'
+  tags:
+    - 'Best Parametric Learning curve fitting.'
 
 device: 'cpu'
 
@@ -20,4 +22,33 @@ dataset:
   test_dataloader_class:
     batch_size: 1 # has to be one for successive halving. aggregate over test set in trainer.evaluate
     shuffle: False # to know on which dataset in test we perform badly
+
+
+trainer:
+  run_call:
+    epochs: 0 # since we only need a single test execution anyways (HACK)
+
+    test_loss_fns:
+      spearman:
+        _target_: imfas.losses.spearman.SpearmanLoss
+
+      top1_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 1
+
+      top3_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 3
+
+      top5_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 5
+
+      # top1_regret:
+      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   k: 1
+
+      # top3_regret:
+      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   k: 3
 

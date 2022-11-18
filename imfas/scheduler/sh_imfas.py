@@ -123,9 +123,11 @@ class SH_imfas(SuccessiveHalving):
     def kill_low_performers(self, learning_curves, k, survivors, **kwargs):
         # assuming that the model is imfas_iclr transformer
         mask = self.observed_mask
-        dataset_meta_features = kwargs.pop("dataset_meta_features")
+        dataset_meta_features = kwargs.get("dataset_meta_features", None)
+        algo_meta_features = kwargs.get("algo_meta_features", None)
         expectation = self.model(
-            learning_curves=learning_curves, mask=mask, dataset_meta_features=dataset_meta_features
+            learning_curves=learning_curves, mask=mask, dataset_meta_features=dataset_meta_features,
+            algo_meta_features=algo_meta_features
         )
 
         # we can use our (relative) expectation only on those that are still alive!
