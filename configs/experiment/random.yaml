@@ -4,12 +4,11 @@
 # learning curve aware algorithm.
 # Since we only ever care for its baseline (test) performance, this pipe is a bit hacky.
 
+
 wandb:
   group: 'RandomBaseline'
   job_type: 'random'
   notes: 'Random Baseline'
-  tags:
-    - 'Random'
 
 device: 'cpu'
 
@@ -19,7 +18,7 @@ model:
 
 dataset:
   test_dataloader_class:
-    batch_size: 1 # has to be one for successive halving. aggregate over test set in trainer.evaluate
+    batch_size: 1000 # has to be one for successive halving. aggregate over test set in trainer.evaluate
     shuffle: False # to know on which dataset in test we perform badly
 
 trainer:
@@ -33,16 +32,3 @@ trainer:
 #      spearman:
 #        #        _target_: imfas.losses.plackett_luce.PlackettLuceLoss
 #        _target_: imfas.losses.spearman.SpearmanLoss
-    test_loss_fns:
-
-      top1_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
-        k: 1
-
-      top3_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
-        k: 3
-
-      top5_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
-        k: 5
