@@ -111,7 +111,7 @@ valid_dataloader_class:
 
 test_dataloader_class:
   _target_: torch.utils.data.DataLoader
-  batch_size: ${dynamically_computed.n_datasets} # average over test datasets in one go
+  batch_size: 1 # average over test datasets in one go
   shuffle: False
   num_workers: ${num_workers}
 
