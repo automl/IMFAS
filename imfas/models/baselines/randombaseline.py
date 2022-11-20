@@ -10,6 +10,7 @@ class RandomBaseline(ModelInterface):
     def forward(self, learning_curves: torch.Tensor, **kwargs):
         # find the number of algorithms from the shape of the learning curves
         n_algos = learning_curves.shape[1]
+        n_dataset = learning_curves.shape[0]
 
         # return random performance for each algorithm
-        return torch.rand(n_algos).view(1, -1)
+        return torch.rand([n_dataset, n_algos]).view(n_dataset, -1)

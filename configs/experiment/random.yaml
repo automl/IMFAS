@@ -6,9 +6,9 @@
 
 
 wandb:
-  group: 'RandomBaseline'
-  job_type: 'random'
-  notes: 'Random Baseline'
+  group: 'RandomBaselineFIXED'
+  job_type: 'random fixed'
+  notes: 'Random Baseline Fixed'
 
 device: 'cpu'
 
