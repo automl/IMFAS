@@ -29,7 +29,7 @@ wandb:
 
 
 dataset:
-  slices: [ 51 ] # FIXME: fidelity slice to evaluate on!
+  slices: -1 # FIXME: fidelity slice to evaluate on!
   train_dataset_class:
     _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
 

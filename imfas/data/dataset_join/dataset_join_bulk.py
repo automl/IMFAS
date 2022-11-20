@@ -5,7 +5,7 @@ from imfas.data.dataset_join.dataset_join_Dmajor import Dataset_Join_Dmajor
 #  dataset.slices = [52] for instance. with dataset.dataloader.batch_size = len(self.split) -->
 #  which would need to be dynamically computed though.
 class Dataset_join_classicAS(Dataset_Join_Dmajor):
-    def __init__(self, slice: int = -1, *args, **kwargs):
+    def __init__(self, slice: int = None, *args, **kwargs):
         """
         Assuming that the model is static wrt to the fidelity, the dataset should
         return all the training/testing data at once.
@@ -23,10 +23,17 @@ class Dataset_join_classicAS(Dataset_Join_Dmajor):
         where X is a dict of dataset meta features and the (randomly masked) learning curves,
         and y is a dict of the final fidelity of the learning curves.
         """
-        X = {"dataset_meta_features": self.meta_dataset[self.split],
-             "fidelity": self.learning_curves[self.split, :, self.slice]}
+        if self.split is None:
+            X = {"dataset_meta_features": self.meta_dataset[self.split],
+                 "fidelity": self.learning_curves[self.split, :, :]}
 
-        y = {"final_fidelity": self.learning_curves[self.split, :, self.slice], }
+            y = {"final_fidelity": self.learning_curves[self.split, :, :], }
+        else:
+
+            X = {"dataset_meta_features": self.meta_dataset[self.split],
+                 "fidelity": self.learning_curves[self.split, :, self.slice]}
+
+            y = {"final_fidelity": self.learning_curves[self.split, :, self.slice], }
 
         return X, y
 
