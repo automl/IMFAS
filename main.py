@@ -149,6 +149,9 @@ def pipe_train(cfg: DictConfig) -> None:
     seed = cfg.seed
     model = cfg.wandb.tags[-1]
 
+    if not isinstance(prediction, torch.Tensor):
+        return
+
 
     obj_dir = pathlib.Path.home() / 'Project' / 'imfas_data' / dataset_name / f'fold_{fold_idx}' / model / f'seed_{seed}'
     if not obj_dir.exists():
