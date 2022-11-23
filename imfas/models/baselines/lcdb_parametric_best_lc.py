@@ -62,9 +62,8 @@ class BestParametricLC(ModelInterface):
             self.fit(self.budgets, learning_curves[:, :, : self.max_fidelity].cpu().numpy())
 
         # SAFEGUARD Against untrained models (such as n < p) at the beginning of the training
-        if hasattr(self, "parameters_lc"):  # safeguard for untrained models
+        if hasattr(self, "curve"):  # safeguard for untrained models
             return torch.tensor(self.predict(self.budgets[-1])).view(1, -1)
-
         else:
             return torch.ones(self.n_algos).view(1, -1) * float("nan")
 
