@@ -3,7 +3,7 @@ defaults:
   - _self_
 
 trainerobj:
-  _target_: imfas.trainer.sh_budget_trainer.SHBudgetTrainer
+  _target_: margret.trainer.sh_budget_trainer.SHBudgetTrainer
   sh_model:
     eta: 2
     budgets: ${dataset.slices}

@@ -17,7 +17,7 @@ wandb:
 device: 'cpu'
 
 model:
-  _target_: imfas.models.baselines.successive_halving.SuccessiveHalving
+  _target_: margret.models.baselines.successive_halving.SuccessiveHalving
   eta: 2
   budgets: ${dataset.slices}
 
@@ -32,26 +32,26 @@ trainer:
 
     test_loss_fns:
       spearman:
-        _target_: imfas.losses.spearman.SpearmanLoss
+        _target_: margret.losses.spearman.SpearmanLoss
 
       top1_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
 
       top3_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 3
 
       top5_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 5
       
       # top1_regret:
-      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   _target_: margret.evaluation.topkregret.TopkRegret
       #   k: 1
     
       # top3_regret:
-      #   _target_: imfas.evaluation.topkregret.TopkRegret
+      #   _target_: margret.evaluation.topkregret.TopkRegret
       #   k: 3
 
 

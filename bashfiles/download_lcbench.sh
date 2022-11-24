@@ -22,4 +22,3 @@ unzip '*.zip'
 rm *.zip
 
 # using wget with some input txt file specifiying the urls
-# #  wget -i /home/ruhkopf/PycharmProjects/AlgoSelectionMF/examples/lcbench_urls.txt

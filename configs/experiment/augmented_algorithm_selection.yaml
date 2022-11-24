@@ -23,14 +23,14 @@ wandb:
 dataset:
 
   train_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
+    _target_: margret.data.Dataset_Join_Dmajor
     masking_fn: null
 
   valid_dataset_class:
-    _target_: imfas.data.Dataset_Join_Test
+    _target_: margret.data.Dataset_Join_Test
 
   test_dataset_class:
-    _target_: imfas.data.Dataset_Join_Test
+    _target_: margret.data.Dataset_Join_Test
 
   train_dataloader_class:
     shuffle: True
@@ -50,7 +50,7 @@ dataset:
 
 
 model:
-  _target_: imfas.models.baselines.augmented_satzilla11.MultiAugmentedSATzilla11
+  _target_: margret.models.baselines.augmented_satzilla11.MultiAugmentedSATzilla11
   max_fidelity: 50 # ${range:1,51,1} # FIXME: adjust to the values of dataset.slices up until the
   device: 'cpu'
   n_estimators: 50
@@ -59,7 +59,7 @@ model:
 
 trainer:
   trainerobj:
-    _target_: imfas.trainer.base_trainer.BaseTrainer
+    _target_: margret.trainer.base_trainer.BaseTrainer
 
   run_call:
     epochs: 1
@@ -68,20 +68,20 @@ trainer:
     test_loss_fns:
 
       placeholder:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
 
       top1_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
       top1regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
 
       top3_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 3
 
       top5_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 5

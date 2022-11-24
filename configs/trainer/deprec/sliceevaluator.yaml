@@ -1,7 +1,7 @@
 trainerobj:
-  _target_: imfas.trainer.slice_evaluator.SliceEvaluator # TO AVOID training
+  _target_: margret.trainer.slice_evaluator.SliceEvaluator # TO AVOID training
   masking_fn:
-    _target_: imfas.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
+    _target_: margret.data.dataset_join.dataset_join_Dmajor.mask_lcs_to_max_fidelity
     _partial_: True
   max_fidelities: ${dataset.slices} #  indices on refer to base.slice fidelities (in lcbench case)
 
@@ -13,4 +13,4 @@ run_call:
   valid_loss_fns: null
   test_loss_fns:
     spearman:
-      _target_: imfas.losses.spearman.SpearmanLoss # Fixme: replace this with
+      _target_: margret.losses.spearman.SpearmanLoss # Fixme: replace this with

@@ -14,20 +14,20 @@ path:
 
 
 train_dataset_class:
-  _target_: imfas.data.Dataset_Join_Dmajor
+  _target_: margret.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   #  meta_algo: ${dataset.algo_meta}
   learning_curves: ${dataset.lc_meta}
 
 valid_dataset_class:
-  _target_: imfas.data.Dataset_Join_Dmajor
+  _target_: margret.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   #  meta_algo: ${dataset.algo_meta}
   learning_curves: ${dataset.lc_meta}
 
 
 test_dataset_class:
-  _target_: imfas.data.Dataset_Join_Dmajor
+  _target_: margret.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   #  meta_algo: ${dataset.algo_meta}
   learning_curves: ${dataset.lc_meta}
@@ -68,7 +68,7 @@ slices: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ] # ${range:0.1, 1.1, 
 #  metric: None
 
 dataset_raw:
-  _target_: imfas.data.yahpo.raw_pipe.raw_pipe
+  _target_: margret.data.yahpo.raw_pipe.raw_pipe
   enable: False  # CAREFULL: changing anything below will have to be enabled in the pipe beforehand!
   dir_data: data
   fidelity_type: trainsize

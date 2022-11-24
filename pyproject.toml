@@ -4,13 +4,13 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]   # path to the test directory
 minversion = "3.8"
-addopts = "--cov=imfas" # Should be package name
+addopts = "--cov=margret" # Should be package name
 
 [tool.coverage.run]
 branch = true
-context = "imfas" # Should be package name
+context = "margret" # Should be package name
 omit = [
-    "imfas/__init__.py", # Has variables only needed for setup.py
+    "margret/__init__.py", # Has variables only needed for setup.py
 ]
 
 [tool.coverage.report]
@@ -30,10 +30,10 @@ line-length = 120
 [tool.isort]
 py_version = "38"
 profile = "black" # Play nicely with black
-src_paths = ["imfas", "tests"]
+src_paths = ["margret", "tests"]
 known_types = ["typing", "abc"] # We put these in their own section "types"
 known_test = ["tests"]
-known_first_party = ["imfas"]
+known_first_party = ["margret"]
 sections = [
     "FUTURE",
     "TYPES",

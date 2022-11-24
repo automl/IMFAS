@@ -3,7 +3,7 @@
 cd ..
 
 for MODEL in 'random' # 'parametric_best_lc ' # 'successivehalving' # 'random' 'successivehalving'
-#for MODEL in 'imfas_iclr'  'imfas_sh_scheduler'
+#for MODEL in 'margret_iclr'  'margret_sh_scheduler'
 do
     for DATASET in 'task_set' 'synthetic_func'  'lcbench' 'openml_alex' # 'synthetic_func' 'task_set' # 'openml'
     do

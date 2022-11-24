@@ -11,14 +11,13 @@ wandb:
 
 dataset:
   train_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
+    _target_: margret.data.Dataset_Join_Dmajor
     masking_fn:
-      _target_: imfas.utils.masking.mask_lcs_randomly
+      _target_: margret.utils.masking.mask_lcs_randomly
       _partial_: True
 
   test_dataset_class:
-    _target_: imfas.data.Dataset_Join_Dmajor
-    # TODO @TIM alex proposed to hold it fix for test, but do the imfas procedure
+    _target_: margret.data.Dataset_Join_Dmajor
 
   train_dataloader_class:
     batch_size: 10
@@ -33,7 +32,7 @@ trainer:
   run_call:
     epochs: 1000
     train_loss_fn:
-      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+      _target_: margret.losses.plackett_luce.PlackettLuceLoss
       k: 10
-    #      _target_: imfas.losses.spearman.SpearmanLoss
+    #      _target_: margret.losses.spearman.SpearmanLoss
 

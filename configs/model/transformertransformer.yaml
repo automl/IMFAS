@@ -1,4 +1,4 @@
-_target_: imfas.models.transformer2.IMFASTransformerMLP
+_target_: margret.models.transformer2.margretTransformerMLP
 
 
 dmetaf_dim: 100

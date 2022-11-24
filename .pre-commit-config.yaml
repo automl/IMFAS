@@ -3,8 +3,8 @@ repos:
     rev: 5.10.1
     hooks:
       # - id: isort
-      #   name: isort imports imfas
-      #   files: imfas
+      #   name: isort imports margret
+      #   files: margret
 
       - id: isort
         name: isort imports tests
@@ -14,8 +14,8 @@ repos:
   #   rev: 22.1.0
   #   hooks:
   #     # - id: black
-  #     #   name: black formatter imfas
-  #     #   files: imfas
+  #     #   name: black formatter margret
+  #     #   files: margret
 
   #     - id: black
   #       name: black formatter tests
@@ -29,22 +29,22 @@ repos:
   #   rev: 6.1.1
   #   hooks:
   #     - id: pydocstyle
-  #       files: imfas
+  #       files: margret
   #       additional_dependencies: ["toml"] # Needed to parse pyproject.toml
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
   #   rev: v0.930
   #   hooks:
   #     - id: mypy
-  #       name: mypy imfas
-  #       files: imfas
+  #       name: mypy margret
+  #       files: margret
 
   # - repo: https://gitlab.com/pycqa/flake8
   #   rev: 4.0.1
   #   hooks:
   #     - id: flake8
-  #       name: flake8 imfas
-  #       files: imfas
+  #       name: flake8 margret
+  #       files: margret
 
   #     - id: flake8
   #       name: flake8 tests

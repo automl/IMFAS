@@ -22,7 +22,7 @@ on:
 
 env:
 
-  package-name: imfas
+  package-name: margret
   test-dir: tests
   extra-requires: "[dev]"  # "" for no extra_requires
 

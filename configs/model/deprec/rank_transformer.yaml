@@ -1,4 +1,4 @@
-_target_: imfas.models.rank_transformer.RankTransformer_Ensemble
+_target_: margret.models.rank_transformer.RankTransformer_Ensemble
 
 transformer_layers: 2
 shared_hidden_dims:

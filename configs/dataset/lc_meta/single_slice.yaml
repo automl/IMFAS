@@ -1,14 +1,14 @@
-_target_: imfas.data.Dataset_LC
+_target_: margret.data.Dataset_LC
 path: ${dataset.path.lc_meta}
 
 # the important part!
 transforms:
-  _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
   modulelist:
-    - _target_: imfas.data.preprocessings.nan_transforms.Column_Mean
-    # - _target_: imfas.data.preprocessings.table_transforms.Scalar
-    - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+    - _target_: margret.data.preprocessings.nan_transforms.Column_Mean
+    # - _target_: margret.data.preprocessings.table_transforms.Scalar
+    - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
       slices: [ 51 ]
-    # - _target_: imfas.data.preprocessings.tensor_transforms.LossScalar
+    # - _target_: margret.data.preprocessings.tensor_transforms.LossScalar
 
 metric: ${dataset.lc_metric}

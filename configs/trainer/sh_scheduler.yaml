@@ -3,7 +3,7 @@ defaults:
   - _self_
 
 trainerobj:
-  _target_: imfas.trainer.sh_scheduler.SHScheduler
+  _target_: margret.trainer.sh_scheduler.SHScheduler
   optimizer:
     _partial_: true
     _target_: torch.optim.Adam

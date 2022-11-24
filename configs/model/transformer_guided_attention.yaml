@@ -1,24 +1,24 @@
-_target_: imfas.models.transformerMLP.IMFASTransformerMLP
+_target_: margret.models.transformerMLP.margretTransformerMLP
 
 n_algos: ${dynamically_computed.n_algos}
 n_fidelities: ${dynamically_computed.n_fidelities}
 
 decoder_hidden_dims: [ 100 ] # this is only intermediate layers
 dataset_metaf_encoder:
-  _target_: imfas.utils.mlp.MLP
+  _target_: margret.utils.mlp.MLP
   hidden_dims: # careful changes here imply that lc_encoder_layer.dim_dataset_metaf_encoding is also changed
     - ${dynamically_computed.n_data_meta_features}
     - 100  # arbitrary value
 
 positional_encoder:
-  _target_: imfas.utils.positionalencoder.PositionalEncoder
+  _target_: margret.utils.positionalencoder.PositionalEncoder
   d_model: ${dynamically_computed.n_fidelities}
   max_len: 200  # arbitrary - as long as it's longer than the longest fidelity sequence
   dropout: 0.1
 
 
 transformer_lc:
-  _target_: imfas.models.imfas_transformer_guided_attention.IMFASGuidedAttentionTransformerEncoder
+  _target_: margret.models.margret_transformer_guided_attention.margretGuidedAttentionTransformerEncoder
 
   num_layers: 2
   metaf_embed_dim: 100 # same as the last element of dataset_metaf_encoder.hidden_dims
@@ -31,7 +31,7 @@ transformer_lc:
 
   encoder_layer:
 
-    _target_: imfas.models.imfas_transformer_guided_attention.GuidedAttentionTransformerEncoderLayer
+    _target_: margret.models.margret_transformer_guided_attention.GuidedAttentionTransformerEncoderLayer
     _partial_: True
 
 

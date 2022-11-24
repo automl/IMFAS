@@ -1,9 +1,9 @@
 # model is a mlp accepting dataset_meta_features only: mlp(D)
 
-_target_: imfas.models.mlpd.MLPD
+_target_: margret.models.mlpd.MLPD
 encoder:
 
-  _target_: imfas.utils.mlp.MLP
+  _target_: margret.utils.mlp.MLP
   hidden_dims:
     - ${dynamically_computed.n_data_meta_features}
     - 100

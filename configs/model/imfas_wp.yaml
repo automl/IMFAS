@@ -1,7 +1,7 @@
-_target_: imfas.models.imfas_wp.IMFAS_WP
+_target_: margret.models.margret_wp.margret_WP
 
 encoder:
-  _target_: imfas.utils.mlp.MLP
+  _target_: margret.utils.mlp.MLP
   hidden_dims:
     - ${ dynamically_computed.n_data_meta_features }
     - 300
@@ -10,7 +10,7 @@ encoder:
   activation: 'relu'
 
 decoder:
-  _target_: imfas.utils.mlp.MLP
+  _target_: margret.utils.mlp.MLP
   hidden_dims:
     - 200
     - ${dynamically_computed.n_algos}

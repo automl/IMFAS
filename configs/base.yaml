@@ -24,8 +24,8 @@ device: cpu #${device_ident:None} # FIXME: debug that all tensors are on same de
 
 wandb:
   id: null
-  entity: tnt
-  project: imfas-iclr
+  entity:
+  project: margret
   mode: 'offline'    # Change to offline or debug mode
   job_type: train
   tags: [ ]

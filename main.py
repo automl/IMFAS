@@ -25,7 +25,7 @@ import string
 import wandb
 from hydra.utils import get_original_cwd
 
-from imfas.utils.util import print_cfg, seed_everything
+from margret.utils.util import print_cfg, seed_everything
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
@@ -38,30 +38,30 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model_type = copy.deepcopy(cfg.wandb.group)
 
-    if 'reduce' in model_opts and model_type.startswith('imfas'):
+    if 'reduce' in model_opts and model_type.startswith('margret'):
         cfg.wandb.group = cfg.wandb.group + '_Reduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Reduce'
-    elif model_type.startswith('imfas'):
+    elif model_type.startswith('margret'):
         cfg.wandb.group = cfg.wandb.group + '_NoReduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' No Reduce'
 
-    if 'reduce' not in model_opts and 'flatten_t_out' in model_opts and model_type.startswith("imfas_M_transformer"):
+    if 'reduce' not in model_opts and 'flatten_t_out' in model_opts and model_type.startswith("margret_M_transformer"):
         cfg.wandb.group = cfg.wandb.group + '_FlattenF'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Flatten Fidelites'
 
-    if model_type.startswith('imfas'):
+    if model_type.startswith('margret'):
         if 'pe_g' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_GPe'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' G PE'
         if 'd_meta_guided' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_DGuide'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' D Guided'
-    if model_type.startswith('imfas_C_transformer'):
+    if model_type.startswith('margret_C_transformer'):
         if 'full_lc2global' in model_opts:
             cfg.wandb.group = cfg.wandb.group + '_flc'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' F LC'
 
-    if cfg.trainer.trainerobj._target_ == 'imfas.trainer.sh_scheduler.SHScheduler':
+    if cfg.trainer.trainerobj._target_ == 'margret.trainer.sh_scheduler.SHScheduler':
         cfg.wandb.group = cfg.wandb.group + 'SHScheduler'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + 'SHScheduler'
 
@@ -121,7 +121,7 @@ def pipe_train(cfg: DictConfig) -> None:
     if hasattr(train_set, 'meta_algo') and hasattr(train_set.meta_algo, 'transformed_df'):
         cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
 
-    if model_type.startswith('imfas_M_transformer'):
+    if model_type.startswith('margret_M_transformer'):
         cfg.model.decoder.hidden_dims[0] += ref.learning_curves.shape[1] * cfg.model.transformer_lc.encoder_layer.d_model
 
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
@@ -136,7 +136,7 @@ def pipe_train(cfg: DictConfig) -> None:
     model = instantiate(cfg.model)
     model.to(cfg.device)
     model.device = cfg.device
-    torch.device(cfg.device)  # FIXME: @Aditya why is this necessary?
+    torch.device(cfg.device)
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
 
@@ -153,7 +153,7 @@ def pipe_train(cfg: DictConfig) -> None:
         return
 
 
-    obj_dir = pathlib.Path.home() / 'Project' / 'imfas_data' / dataset_name / f'fold_{fold_idx}' / model / f'seed_{seed}'
+    obj_dir = pathlib.Path.home() / 'Project' / 'margret_data' / dataset_name / f'fold_{fold_idx}' / model / f'seed_{seed}'
     if not obj_dir.exists():
         os.makedirs(str(obj_dir))
 

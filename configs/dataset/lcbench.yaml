@@ -13,50 +13,50 @@ path:
 
 
 train_dataset_class: # -----------------------------------------------------------------------------
-  _target_: imfas.data.Dataset_Join_Dmajor
+  _target_: margret.data.Dataset_Join_Dmajor
   meta_dataset: ${dataset.dataset_meta}
   meta_algo: ${dataset.algo_meta}
   learning_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.Dataset_LC
+    _target_: margret.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
     transforms:
-      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        - _target_: imfas.data.preprocessings.table_transforms.Convert
-        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+        - _target_: margret.data.preprocessings.table_transforms.Convert
+        - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
     metric: Train/test_cross_entropy
 
 
 valid_dataset_class: # -----------------------------------------------------------------------------
-  _target_: imfas.data.Dataset_Join_Test
+  _target_: margret.data.Dataset_Join_Test
   meta_dataset: ${dataset.dataset_meta}
   meta_algo: ${dataset.algo_meta}
   learning_curves: # ${dataset.lc_meta}  # validation
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.Dataset_LC
+    _target_: margret.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
     transforms:
-      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        - _target_: imfas.data.preprocessings.table_transforms.Convert
-        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+        - _target_: margret.data.preprocessings.table_transforms.Convert
+        - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
     metric: Train/test_cross_entropy
 
   test_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.Dataset_LC
+    _target_: margret.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
     transforms:
-      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        - _target_: imfas.data.preprocessings.table_transforms.Convert
-        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+        - _target_: margret.data.preprocessings.table_transforms.Convert
+        - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
 
     metric: Train/test_cross_entropy
@@ -64,32 +64,32 @@ valid_dataset_class: # ---------------------------------------------------------
 
 
 test_dataset_class: # ------------------------------------------------------------------------------
-  _target_: imfas.data.Dataset_Join_Test
+  _target_: margret.data.Dataset_Join_Test
   meta_dataset: ${dataset.dataset_meta}
   meta_algo: ${dataset.algo_meta}
   learning_curves: # ${dataset.lc_meta}  # validation
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.Dataset_LC
+    _target_: margret.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
     transforms:
-      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        - _target_: imfas.data.preprocessings.table_transforms.Convert
-        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+        - _target_: margret.data.preprocessings.table_transforms.Convert
+        - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
     metric: Train/val_cross_entropy
 
   test_curves: # ${dataset.lc_meta}
     # FIXME: move this back to lc_meta (but make metric accessible from here!
-    _target_: imfas.data.Dataset_LC
+    _target_: margret.data.Dataset_LC
     path: ${dataset.path.lc_meta}
 
     transforms:
-      _target_: imfas.data.preprocessings.transformpipeline.TransformPipeline
+      _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
       modulelist:
-        - _target_: imfas.data.preprocessings.table_transforms.Convert
-        - _target_: imfas.data.preprocessings.lc_slice.LC_TimeSlices
+        - _target_: margret.data.preprocessings.table_transforms.Convert
+        - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
           slices: ${dataset.slices}
 
     metric: Train/test_cross_entropy
@@ -124,7 +124,7 @@ slices: [ 1,  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 
 
 dataset_raw:
-  _target_: imfas.data.lcbench.raw_pipe.raw_pipe
+  _target_: margret.data.lcbench.raw_pipe.raw_pipe
 
   #TODO Change to relative
   dir_data: data
@@ -145,7 +145,7 @@ dataset_raw:
     #       'budget', 'seed', 'instances', 'classes', 'features'
 
     algo: # fixme: move this to separate yaml
-      _target_: imfas.data.ensemble.topk.ensemble
+      _target_: margret.data.ensemble.topk.ensemble
       k: 10
 
     bench: lcbench

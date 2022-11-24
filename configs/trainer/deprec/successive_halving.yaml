@@ -1,1 +1,1 @@
-_target_: imfas.trainer.successive_halving.train_evaluate
+_target_: margret.trainer.successive_halving.train_evaluate

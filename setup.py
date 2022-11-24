@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-from imfas import (
+from margret import (
     author,
     author_email,
     description,

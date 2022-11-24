@@ -1,7 +1,7 @@
 # @package _global_
 
 
-#Workshop paper version of the IMFAS model: https://arxiv.org/pdf/2206.03130.pdf
+#Workshop paper version of the margret model: https://arxiv.org/pdf/2206.03130.pdf
 #MLP1(D) = h_0 -> for_{i=0,..k}  LSTM(h_i, f_i)=h_{i+1}  -> MLP2(h_k) = output
 #
 #D: dataset meta-features
@@ -31,12 +31,12 @@ wandb:
 dataset:
   slices: -1 # FIXME: fidelity slice to evaluate on!
   train_dataset_class:
-    _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
+    _target_: margret.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
 
   valid_dataset_class: Null
 
   test_dataset_class:
-    _target_: imfas.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
+    _target_: margret.data.dataset_join.dataset_join_bulk.Dataset_join_classicAS
 
   train_dataloader_class:
     shuffle: True
@@ -54,14 +54,14 @@ dataset:
 
 
 model:
-  _target_: imfas.models.baselines.satzilla11.SATzilla11
+  _target_: margret.models.baselines.satzilla11.SATzilla11
   max_fidelity: ${dataset.slices} # ${range:1,51,1} # FIXME: adjust to the values of dataset.slices up until the
   device: 'cpu'
 
 
 trainer:
   trainerobj:
-    _target_: imfas.trainer.base_trainer.BaseTrainer
+    _target_: margret.trainer.base_trainer.BaseTrainer
 
   run_call:
     epochs: 1
@@ -70,22 +70,22 @@ trainer:
     test_loss_fns:
 
       placeholder:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
 
       top1_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
       top1regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 1
 
       top3_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 3
 
       top5_regret:
-        _target_: imfas.evaluation.topkregret.TopkRegret
+        _target_: margret.evaluation.topkregret.TopkRegret
         k: 5
 
 

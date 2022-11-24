@@ -9,7 +9,7 @@ defaults:
 
 dataset:
   dataset_class:
-    _target_: imfas.data.Dataset_Joint_Taskswise
+    _target_: margret.data.Dataset_Joint_Taskswise
 
   dataloader_class:
     batch_size: 8
