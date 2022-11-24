@@ -1,4 +1,25 @@
-# margret: Implicit Multi-Fidelity Algorithm Selection 
+# margret: Meta leARninG AlgoRithm sElecTion
+
+
+Selecting a well-performing algorithm for a given task or dataset can be time-consuming and
+tedious, but is nevertheless required for the successful day-to-day business of developing new
+AI applications. Algorithm Selection (AS) mitigates this through a meta-model leveraging
+meta-information about tasks. However, most of the classical AS methods are error-prone
+because they aim at describing a task by either statistical meta-features of the dataset
+or cheap evaluations of proxy algorithms, called landmarks. Similarly, other approaches
+solely based on partial learning curves of the candidate algorithms have been parametric
+and/or myopic. In this work, we extend the classical AS data setup to include multi-fidelity
+information and demonstrate how meta-learning on algorithms’ learning behaviour allows
+us to exploit test-time evidence effectively and combat myopia significantly. We further
+postulate a budget-regret trade-off w.r.t. the selection process. Using this novel setup, we
+derive a new class of algorithm selectors that actively gather online evidence in the form of
+the candidate algorithms’ partial learning curves. Our new selector MARGRET leverages a
+transformer-based encoder to interpret the set of learning curves with varying lengths jointly
+in a non-parametric and non-myopic manner. This opens up new possibilities for guided
+rapid prototyping on cheaply observed partial algorithm learning curves in data science.
+We empirically demonstrate that MARGRET combats myopia effectively and can jointly
+interpret partial learning curves of the candidate algorithm
+
 
 ## Preparation
 
