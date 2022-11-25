@@ -1,4 +1,4 @@
-# MASIF: Meta-learned Algorithm Selection\\ using Implicit Fidelity Information
+# MASIF: Meta-learned Algorithm Selection using Implicit Fidelity Information
 
 Selecting a well-performing algorithm for a given task or dataset can be time-consuming and
 tedious, but is nevertheless required for the successful day-to-day business of developing new
