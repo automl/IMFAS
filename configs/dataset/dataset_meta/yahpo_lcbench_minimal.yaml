@@ -1,12 +1,12 @@
-_target_: margret.data.dataset_meta_features.DatasetMetaFeatures
+_target_: masif.data.dataset_meta_features.DatasetMetaFeatures
 path: ${dataset.path.data_meta}
 index_col: 0
 
 # the important part!
 transforms:
-  _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: masif.data.preprocessings.transformpipeline.TransformPipeline
   modulelist:
-    - _target_: margret.data.preprocessings.nan_transforms.Zero_fill
-    #- _target_: margret.data.preprocessings.table_transforms.Scalar
-    - _target_: margret.data.preprocessings.table_transforms.ToTensor
-    - _target_: margret.data.preprocessings.tensor_transforms.ScaleStd
+    - _target_: masif.data.preprocessings.nan_transforms.Zero_fill
+    #- _target_: masif.data.preprocessings.table_transforms.Scalar
+    - _target_: masif.data.preprocessings.table_transforms.ToTensor
+    - _target_: masif.data.preprocessings.tensor_transforms.ScaleStd

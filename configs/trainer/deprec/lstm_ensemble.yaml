@@ -1,4 +1,4 @@
-_target_: margret.trainer.rank_trainer.train_lstm
+_target_: masif.trainer.rank_trainer.train_lstm
 epochs: 500
 test_lim: 1
 log_freq: 3

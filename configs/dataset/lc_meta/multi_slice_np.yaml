@@ -1,16 +1,16 @@
-_target_: margret.data.DatasetLCSynthetic
+_target_: masif.data.DatasetLCSynthetic
 path: ${dataset.path.lc_meta}
 
 # the important part!
 transforms:
-  _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: masif.data.preprocessings.transformpipeline.TransformPipeline
   modulelist:
-    #    - _target_: margret.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
-    - _target_: margret.data.preprocessings.table_transforms.Convert # novelty
-    # - _target_: margret.data.preprocessings.table_transforms.Scalar
-    - _target_: margret.data.preprocessings.lc_slice.LC_TimeSlices
+    #    - _target_: masif.data.preprocessings.nan_transforms.Column_Mean # FIXME: why do we mean impute here?
+    - _target_: masif.data.preprocessings.table_transforms.Convert # novelty
+    # - _target_: masif.data.preprocessings.table_transforms.Scalar
+    - _target_: masif.data.preprocessings.lc_slice.LC_TimeSlices
       slices: ${dataset.slices}
-    # - _target_: margret.data.preprocessings.tensor_transforms.LossScalar
+    # - _target_: masif.data.preprocessings.tensor_transforms.LossScalar
 
 # fixme: currently LCbecnch and yahpo differ in Dataset_LC.metric behaviour
 #  lcbench stores the entire tensor including all metrics, so we need to select from them

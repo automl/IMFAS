@@ -1,8 +1,8 @@
 # These have been configured to only really run short tasks. Longer form tasks
 # are usually completed in github actions.
 
-NAME := margret
-PACKAGE_NAME := margret
+NAME := masif
+PACKAGE_NAME := masif
 
 DIR := "${CURDIR}"
 SOURCE_DIR := ${PACKAGE_NAME}

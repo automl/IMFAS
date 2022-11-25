@@ -1,7 +1,7 @@
 # @package _global_
 
 
-#Workshop paper version of the margret model: https://arxiv.org/pdf/2206.03130.pdf
+#Workshop paper version of the masif model: https://arxiv.org/pdf/2206.03130.pdf
 #MLP1(D) = h_0 -> for_{i=0,..k}  LSTM(h_i, f_i)=h_{i+1}  -> MLP2(h_k) = output
 #
 #D: dataset meta-features
@@ -13,26 +13,26 @@
 #MLP2: h_dim -> mlp2_hidden_dims -> algo_dim
 
 defaults:
-  - /model: margret_wp
+  - /model: masif_wp
 
 
 wandb:
-  notes: 'margret wp'
+  notes: 'masif wp'
 
 
 seed: 1
 
 dataset: # TODO : make this the standard protocol !
   train_dataset_class:
-    _target_: margret.data.Dataset_Join_Dmajor
+    _target_: masif.data.Dataset_Join_Dmajor
     masking_fn:
-      _target_: margret.utils.masking.mask_lcs_randomly  # To activate masking protocol
+      _target_: masif.utils.masking.mask_lcs_randomly  # To activate masking protocol
       _partial_: True
 
   #  valid_dataset_class:
-  #    _target_: margret.data.Dataset_Join_Test
+  #    _target_: masif.data.Dataset_Join_Test
   #    masking_fn:
-  #      _target_: margret.utils.masking.mask_lcs_to_max_fidelity  # To activate masking protocol
+  #      _target_: masif.utils.masking.mask_lcs_to_max_fidelity  # To activate masking protocol
   #      max_fidelity: 5  # How many indicies in the learning curve are available!
   #      _partial_: True
 
@@ -54,7 +54,7 @@ dataset: # TODO : make this the standard protocol !
 
 trainer:
   trainerobj:
-    _target_: margret.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
+    _target_: masif.trainer.base_trainer.BaseTrainer # todo switch out for Slice evaluator!
 
     optimizer:
       _target_: torch.optim.Adam
@@ -65,5 +65,5 @@ trainer:
     epochs: 5
     log_freq: 5         # wandb mistakes single value additions as media files, so log_freq helps mitigate that
     train_loss_fn:
-      _target_: margret.losses.spearman.SpearmanLoss
-    #      _target_: margret.losses.plackett_luce.PlackettLuceLoss
+      _target_: masif.losses.spearman.SpearmanLoss
+    #      _target_: masif.losses.plackett_luce.PlackettLuceLoss

@@ -4,13 +4,13 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]   # path to the test directory
 minversion = "3.8"
-addopts = "--cov=margret" # Should be package name
+addopts = "--cov=masif" # Should be package name
 
 [tool.coverage.run]
 branch = true
-context = "margret" # Should be package name
+context = "masif" # Should be package name
 omit = [
-    "margret/__init__.py", # Has variables only needed for setup.py
+    "masif/__init__.py", # Has variables only needed for setup.py
 ]
 
 [tool.coverage.report]
@@ -30,10 +30,10 @@ line-length = 120
 [tool.isort]
 py_version = "38"
 profile = "black" # Play nicely with black
-src_paths = ["margret", "tests"]
+src_paths = ["masif", "tests"]
 known_types = ["typing", "abc"] # We put these in their own section "types"
 known_test = ["tests"]
-known_first_party = ["margret"]
+known_first_party = ["masif"]
 sections = [
     "FUTURE",
     "TYPES",

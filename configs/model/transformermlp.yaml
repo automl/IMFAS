@@ -1,4 +1,4 @@
-_target_: margret.models.transformerMLP.margretTransformerMLP
+_target_: masif.models.transformerMLP.masifTransformerMLP
 
 # fixme: dataset_metaf_encoder.hidden_dims[-1] should be a variable that can be utilized in decoder.hidden_dims[0]
 
@@ -7,13 +7,13 @@ n_fidelities: ${dynamically_computed.n_fidelities}
 
 decoder_hidden_dims: [ 100 ] # this is only intermediate layers
 dataset_metaf_encoder:
-  _target_: margret.utils.mlp.MLP
+  _target_: masif.utils.mlp.MLP
   hidden_dims:
     - ${dynamically_computed.n_data_meta_features}
     - 100  # arbitrary value
 
 positional_encoder:
-  _target_: margret.utils.positionalencoder.PositionalEncoder
+  _target_: masif.utils.positionalencoder.PositionalEncoder
   d_model: ${dynamically_computed.n_fidelities}
   max_len: 1000 # ${dynamically_computed.n_fidelities}
   dropout: 0.1
@@ -38,7 +38,7 @@ transformer_lc:
     normalized_shape: ${model.transformer_lc.encoder_layer.d_model}
 #
 #decoder:
-#  _target_: margret.utils.mlp.MLP
+#  _target_: masif.utils.mlp.MLP
 #  hidden_dims:
 #    - ${add:100, 2600} # metaf encoding dim + (n_fidelities +1) * n_algos # + 1 because of nan-safeguard
 #    #    - ${model.joint_dim} # n_d_metaf_encoding_dim + transformer output dim

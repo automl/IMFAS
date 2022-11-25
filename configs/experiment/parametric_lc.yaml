@@ -5,7 +5,7 @@
 
 
 model:
-  _target_: margret.models.baselines.lcdb_parametric_lc.ParametricLC
+  _target_: masif.models.baselines.lcdb_parametric_lc.ParametricLC
   function: pow2
   # options
   #pow2 pow3 log2 exp3 exp2 lin2 vap3 mmf4 wbl4 exp4 expp3 pow4 expd3 logpower3 last1

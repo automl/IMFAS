@@ -30,9 +30,9 @@ trainer:
   run_call:
     epochs: 10
     train_loss_fn:
-      #      _target_: margret.losses.plackett_luce.PlackettLuceLoss
+      #      _target_: masif.losses.plackett_luce.PlackettLuceLoss
       #      k: 10
-      #      _target_: margret.losses.spearman.SpearmanLoss
+      #      _target_: masif.losses.spearman.SpearmanLoss
 
       # Documentation: https://github.com/allegro/allRank/blob/master/allrank/models/losses/neuralNDCG.py
       _target_: allrank.models.losses.neuralNDCG

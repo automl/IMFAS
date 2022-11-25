@@ -22,7 +22,7 @@ on:
 
 env:
 
-  package-name: margret
+  package-name: masif
   test-dir: tests
   extra-requires: "[dev]"  # "" for no extra_requires
 

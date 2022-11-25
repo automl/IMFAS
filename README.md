@@ -1,5 +1,4 @@
-# margret: Meta leARninG AlgoRithm sElecTion
-
+# MASIF: Meta-learned Algorithm Selection\\ using Implicit Fidelity Information
 
 Selecting a well-performing algorithm for a given task or dataset can be time-consuming and
 tedious, but is nevertheless required for the successful day-to-day business of developing new
@@ -13,11 +12,11 @@ information and demonstrate how meta-learning on algorithms’ learning behaviou
 us to exploit test-time evidence effectively and combat myopia significantly. We further
 postulate a budget-regret trade-off w.r.t. the selection process. Using this novel setup, we
 derive a new class of algorithm selectors that actively gather online evidence in the form of
-the candidate algorithms’ partial learning curves. Our new selector MARGRET leverages a
+the candidate algorithms’ partial learning curves. Our new selector masif leverages a
 transformer-based encoder to interpret the set of learning curves with varying lengths jointly
 in a non-parametric and non-myopic manner. This opens up new possibilities for guided
 rapid prototyping on cheaply observed partial algorithm learning curves in data science.
-We empirically demonstrate that MARGRET combats myopia effectively and can jointly
+We empirically demonstrate that masif combats myopia effectively and can jointly
 interpret partial learning curves of the candidate algorithm
 
 
@@ -31,9 +30,9 @@ bash scripts/download_lcbench.sh
 
 ## Installation
 ```bash
-cd margret
-conda create -n margret python=3.9.7
-conda activate margret
+cd masif
+conda create -n masif python=3.9.7
+conda activate masif
 
 # Install for usage
 pip install -e .
@@ -47,7 +46,7 @@ make install-dev
 
 An example command is fiven below
 ```bash
-python main.py '+experiment=margret_h'+model.model_opts=['reduce','pe_g','d_meta_guided']
+python main.py '+experiment=masif_h'+model.model_opts=['reduce','pe_g','d_meta_guided']
 ```
 
 The project extensively uses [hydra](https://hydra.cc/docs/intro/) for configurations and [Weights and Biases](https://wandb.ai/site) for tracking experiments. Please set-up the project and account on this and then update ```configs/base.yaml``` with the ```entity``` and ```project_name``` fields for running full tests. 
@@ -55,5 +54,5 @@ The project extensively uses [hydra](https://hydra.cc/docs/intro/) for configura
 The complete tests can be run using
 
 ```bash
-bash scripts/margret_tests.sh
+bash scripts/masif_tests.sh
 ```

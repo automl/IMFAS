@@ -5,7 +5,7 @@
 
 # Include individual files
 include LICENSE.txt
-include margret/py.typed  # This file is to export types
+include masif/py.typed  # This file is to export types
 
 prune tests
 prune examples

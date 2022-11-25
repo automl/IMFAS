@@ -9,7 +9,7 @@ defaults:
 
 dataset:
   dataset_class:
-    _target_: margret.data.Dataset_Joint_Taskwise2
+    _target_: masif.data.Dataset_Joint_Taskwise2
 
 wandb:
   group: lcbench_vanilla_10

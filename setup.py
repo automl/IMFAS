@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-from margret import (
+from masif import (
     author,
     author_email,
     description,

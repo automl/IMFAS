@@ -1,15 +1,15 @@
-_target_: margret.data.algorithm_meta_features.AlgorithmMetaFeatures
+_target_: masif.data.algorithm_meta_features.AlgorithmMetaFeatures
 path: ${dataset.path.algo_meta}
 index_col: 0 # pd.read argument
 
 # the important part!
 transforms:
-  _target_: margret.data.preprocessings.transformpipeline.TransformPipeline
+  _target_: masif.data.preprocessings.transformpipeline.TransformPipeline
   # path: some/path - we might want to automate and structure it
   modulelist:
-    - _target_: margret.data.preprocessings.nan_transforms.Zero_fill
-    #- _target_: margret.data.preprocessings.table_transforms.Scalar
-    - _target_: margret.data.preprocessings.table_transforms.Drop
+    - _target_: masif.data.preprocessings.nan_transforms.Zero_fill
+    #- _target_: masif.data.preprocessings.table_transforms.Scalar
+    - _target_: masif.data.preprocessings.table_transforms.Drop
       columns:
         # Irrelevant features (they are constant all across)
         - 'imputation_strategy'
@@ -20,10 +20,10 @@ transforms:
         - 'optimizer'
         - 'activation'
         - 'mlp_shape'
-    - _target_: margret.data.preprocessings.table_transforms.Replace
+    - _target_: masif.data.preprocessings.table_transforms.Replace
       columns:
         - 'num_layers'
       replacedict: { 'True': 1 }
-    - _target_: margret.data.preprocessings.table_transforms.Convert
-    - _target_: margret.data.preprocessings.table_transforms.ToTensor
-    - _target_: margret.data.preprocessings.tensor_transforms.ScaleStd
+    - _target_: masif.data.preprocessings.table_transforms.Convert
+    - _target_: masif.data.preprocessings.table_transforms.ToTensor
+    - _target_: masif.data.preprocessings.tensor_transforms.ScaleStd

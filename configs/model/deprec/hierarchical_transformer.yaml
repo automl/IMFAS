@@ -1,4 +1,4 @@
-_target_: margret.models.hierarchical_transformer.HierarchicalTransformer
+_target_: masif.models.hierarchical_transformer.HierarchicalTransformer
 
 input_dim_meta_feat: ${dynamically_computed.n_data_meta_features}
 input_dim_algo_feat: ${dynamically_computed.n_algo_meta_features}
