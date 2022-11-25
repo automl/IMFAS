@@ -121,7 +121,7 @@ class SH_masif(SuccessiveHalving):
     #     return dead
 
     def kill_low_performers(self, learning_curves, k, survivors, **kwargs):
-        # assuming that the model is masif_iclr transformer
+        # assuming that the model is masif_tmlr transformer
         mask = self.observed_mask
         dataset_meta_features = kwargs.get("dataset_meta_features", None)
         algo_meta_features = kwargs.get("algo_meta_features", None)

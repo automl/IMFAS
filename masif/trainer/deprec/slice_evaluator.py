@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
         # (evaluate SH) ---------------------------------------------
         budgets = list(range(1, 52))
-        wandb.init(entity="example", mode="online", project="masif-iclr", job_type="base: sh, leave one out", group="sh")
+        wandb.init(entity="example", mode="online", project="masif-tmlr", job_type="base: sh, leave one out", group="sh")
         model = SuccessiveHalving(budgets=budgets, eta=2)
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)  # batch=1, because of SH
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         wandb.init(
             entity="example",
             mode="online",
-            project="masif-iclr",
+            project="masif-tmlr",
             job_type="base: masif_wp rnd. masking, leave one out",
             group="masif_wp",
         )
