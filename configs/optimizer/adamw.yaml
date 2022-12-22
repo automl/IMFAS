@@ -11,7 +11,7 @@ adamkwargs:
   correct_bias: True
 
 lrschedulekwargs:
-  warmup_steps:
-  t_total:
+  warmup_steps: ${percent:${trainer.run_call.epochs},5}
+  t_total: ${trainer.run_call.epochs}
   cycles: 0.5
   last_epoch: -1
