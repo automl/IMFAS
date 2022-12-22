@@ -1,0 +1,17 @@
+# @package trainer.trainerobj.optimizer
+
+_target_: imfas.optimizer.adamw.AdamWLRSchedule
+_partial_: true
+
+adamkwargs:
+  lr: 1e-3
+  betas: (0.9, 0.999)
+  eps: 1e-6
+  weight_decay: 0.0
+  correct_bias: True
+
+lrschedulekwargs:
+  warmup_steps:
+  t_total:
+  cycles: 0.5
+  last_epoch: -1
