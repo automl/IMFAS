@@ -1,11 +1,11 @@
 # @package trainer.trainerobj.optimizer
 
-_target_: imfas.optimizer.adamw.AdamWLRSchedule
+_target_: imfas.optimizer.adamw_lrschedule.AdamWLRSchedule
 _partial_: true
 
 adamkwargs:
   lr: 1e-3
-  betas: (0.9, 0.999)
+  betas: [ 0.9, 0.999 ]
   eps: 1e-6
   weight_decay: 0.0
   correct_bias: True

@@ -217,4 +217,8 @@ class AdamWLRSchedule(Optimizer):
         )
 
     def step(self):
+        self.scheduler.optimizer.step()
         self.scheduler.step()
+
+    def zero_grad(self):
+        self.scheduler.optimizer.zero_grad()

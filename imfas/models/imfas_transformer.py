@@ -1,10 +1,10 @@
-from typing import Optional, Tuple
-
 import math
 import torch
 import torch.nn as nn
-from imfas.utils.positionalencoder import PositionalEncoder
+from typing import Optional, Tuple, List
+
 from imfas.models.imfas_transformer_guided_attention import IMFASGuidedAttentionTransformerEncoder
+from imfas.utils.positionalencoder import PositionalEncoder
 
 
 class AbstractIMFASTransformer(nn.Module):
@@ -17,7 +17,7 @@ class AbstractIMFASTransformer(nn.Module):
             decoder: nn.Module,
             transformer_lc: IMFASGuidedAttentionTransformerEncoder,
             device: str = "cpu",
-            model_opts: list[str] = []
+            model_opts: List[str] = []
     ):
         """
         Abstract IMFAS Transformer models. Here I propose two types of Transformer models. The first one is to consider
@@ -142,7 +142,7 @@ class IMFASBaseTransformer(AbstractIMFASTransformer):
             decoder: nn.Module,
             transformer_lc: torch.nn.TransformerEncoderLayer,
             device: str = "cpu",
-            model_opts: list[str] = []
+            model_opts: List[str] = []
     ):
         super(IMFASBaseTransformer, self).__init__(n_algos, n_fidelities, dataset_metaf_encoder, algo_metaf_encoder,
                                                    decoder, transformer_lc, device, model_opts)
@@ -198,7 +198,7 @@ class IMFASHierarchicalTransformer(AbstractIMFASTransformer):
             transformer_lc: IMFASGuidedAttentionTransformerEncoder,
             transformer_algo: IMFASGuidedAttentionTransformerEncoder,
             device: str = "cpu",
-            model_opts: list[str] = []
+            model_opts: List[str] = []
     ):
         self.EOS = torch.tensor(0, device=torch.device(device))  # End of Sequence
 
@@ -310,7 +310,7 @@ class IMFASMLPTransformer(IMFASHierarchicalTransformer):
             decoder: nn.Module,
             transformer_lc: IMFASGuidedAttentionTransformerEncoder,
             device: str = "cpu",
-            model_opts: list[str] = []
+            model_opts: List[str] = []
     ):
         self.EOS = torch.tensor(0, device=torch.device(device))  # End of Sequence
         super(IMFASMLPTransformer, self).__init__(
@@ -375,7 +375,7 @@ class IMFASCrossTransformer(IMFASHierarchicalTransformer):
             transformer_algo: IMFASGuidedAttentionTransformerEncoder,
             n_layers=2,
             device: str = "cpu",
-            model_opts: list[str] = []
+            model_opts: List[str] = []
     ):
         super(IMFASCrossTransformer, self).__init__(n_algos, n_fidelities, dataset_metaf_encoder, algo_metaf_encoder,
                                                     decoder, transformer_lc, transformer_algo, device, model_opts)
