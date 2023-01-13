@@ -4,7 +4,7 @@ defaults:
   - train_test_split: trainvalfixedtest # trainvalidtest #leave_one_out
   - dataset: lcbench
   - trainer: basetrainer
-  - optimizer@trainer.trainerobj.optimizer:optimizer: adamw
+  - optimizer@trainer.trainerobj.optimizer:optimizer: adam
   - _self_
 
 # placeholder for attributes to be computed
