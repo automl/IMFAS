@@ -61,9 +61,61 @@ def pipe_train(cfg: DictConfig) -> None:
             cfg.wandb.group = cfg.wandb.group + '_flc'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' F LC'
 
+    cfg.wandb.group = cfg.wandb.group + '_Ablation'
     if cfg.trainer.trainerobj._target_ == 'imfas.trainer.sh_scheduler.SHScheduler':
         cfg.wandb.group = cfg.wandb.group + 'SHScheduler'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + 'SHScheduler'
+
+    if 'lr' in cfg.keys():
+        if 'lr' in cfg.trainer.trainerobj.optimizer:
+            cfg.trainer.trainerobj.optimizer.lr = cfg.lr
+        else:
+            cfg.trainer.trainerobj.optimizer.adamkwargs['lr'] = cfg.lr
+        cfg.wandb.group = cfg.wandb.group + f'_lr{cfg.lr}'
+        cfg.wandb.tags.append(f'dropout={cfg.lr}')
+
+    if 'dropout' in cfg.keys():
+        cfg.wandb.group = cfg.wandb.group + f'_dp{cfg.dropout}'
+        cfg.wandb.tags.append(f'dropout={cfg.dropout}')
+        cfg.model.transformer_lc.encoder_layer.dropout = cfg.dropout
+        cfg.model.transformer_algo.encoder_layer.dropout = cfg.dropout
+
+    if 'nhead' in cfg.keys():
+        cfg.wandb.group = cfg.wandb.group + f'_nhead{cfg.nhead}'
+        cfg.wandb.tags.append(f'nhead={cfg.nhead}')
+        cfg.model.transformer_lc.encoder_layer.nhead = cfg.nhead
+        cfg.model.transformer_algo.encoder_layer.nhead = cfg.nhead
+
+    if 'ntflayers' in cfg.keys():
+        cfg.wandb.group = cfg.wandb.group + f'_ntflayers{cfg.ntflayers}'
+        cfg.wandb.tags.append(f'ntflayers={cfg.ntflayers}')
+        cfg.model.transformer_lc.num_layers = cfg.ntflayers
+        cfg.model.transformer_algo.num_layers = cfg.ntflayers
+
+    if 'dmodel' in cfg.keys():
+        cfg.wandb.group = cfg.wandb.group + f'_ntflayers{cfg.dmodel}'
+        cfg.wandb.tags.append(f'dmodel={cfg.dmodel}')
+
+        dmodel = cfg.dmodel
+        cfg.model.transformer_lc.encoder_layer.d_model = dmodel
+        cfg.model.transformer_lc.encoder_layer.dim_feedforward = dmodel * 2
+        cfg.model.transformer_lc.metaf_embed_dim = dmodel
+
+        cfg.model.transformer_algo.encoder_layer.d_model = dmodel
+        cfg.model.transformer_algo.encoder_layer.dim_feedforward = dmodel * 2
+        cfg.model.transformer_algo.metaf_embed_dim = dmodel
+
+        cfg.model.dataset_metaf_encoder.hidden_dims[-1] = dmodel
+        cfg.model.dataset_metaf_encoder.hidden_dims[-2] = dmodel * 2
+
+        cfg.model.algo_metaf_encoder.hidden_dims[-1] = dmodel
+        cfg.model.algo_metaf_encoder.hidden_dims[-2] = dmodel * 2
+
+        cfg.model.decoder.hidden_dims[0] = dmodel * 2
+
+    if cfg.trainer.trainerobj.optimizer._target_ == 'imfas.optimizer.adamw_lrschedule.AdamWLRSchedule':
+        cfg.wandb.group = cfg.wandb.group + f'_adamw'
+        cfg.wandb.tags.append(f'optimizer=adamw')
 
     housekeeping(cfg)
 
@@ -146,6 +198,7 @@ def pipe_train(cfg: DictConfig) -> None:
     dataset_name = cfg.dataset.name
 
     fold_idx = cfg.train_test_split.get('fold_idx', 0)
+
     seed = cfg.seed
     model = cfg.wandb.tags[-1]
 
