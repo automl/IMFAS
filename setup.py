@@ -71,6 +71,7 @@ setuptools.setup(
         "lcdb",
         # "pytorch_forecasting",
         # "pytables",
+        # 'pybnn @ git+ssh://git@https://github.com/automl/pybnn@59befe5#egg=pybnn',
     ],
     extras_require=extras_require,
     test_suite="pytest",
