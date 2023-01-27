@@ -1,5 +1,6 @@
-import hydra
 import logging
+
+import hydra
 from hydra.core.hydra_config import HydraConfig
 from hydra.utils import call, instantiate
 from omegaconf import DictConfig, OmegaConf
@@ -32,7 +33,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return "".join(random.choice(chars) for _ in range(size))
 
 
-@hydra.main(config_path="configs", config_name="base")
+@hydra.main(config_path="configs", config_name="base", version_base=None)
 def pipe_train(cfg: DictConfig) -> None:
     model_opts = set(cfg.model.get('model_opts', []))
 
@@ -45,7 +46,8 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.wandb.group = cfg.wandb.group + '_NoReduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' No Reduce'
 
-    if 'reduce' not in model_opts and 'flatten_t_out' in model_opts and model_type.startswith("imfas_M_transformer"):
+    if 'reduce' not in model_opts and 'flatten_t_out' in model_opts and model_type.startswith(
+            "imfas_M_transformer"):
         cfg.wandb.group = cfg.wandb.group + '_FlattenF'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Flatten Fidelites'
 
@@ -131,6 +133,8 @@ def pipe_train(cfg: DictConfig) -> None:
     # hack: dataset_meta_features must be instantiated to know n for a traintest split index
     # of the data, that can be passed on.
 
+    exit()
+
     if "dataset_meta" in cfg.dataset:
         dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
     else:
@@ -174,7 +178,8 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.dynamically_computed.n_algo_meta_features = train_set.meta_algo.transformed_df.shape[-1]
 
     if model_type.startswith('imfas_M_transformer'):
-        cfg.model.decoder.hidden_dims[0] += ref.learning_curves.shape[1] * cfg.model.transformer_lc.encoder_layer.d_model
+        cfg.model.decoder.hidden_dims[0] += ref.learning_curves.shape[
+                                                1] * cfg.model.transformer_lc.encoder_layer.d_model
 
     # cfg.dynamically_computed.n_algo_meta_features = ref.lcs.transformed_df.shape[1]
 
@@ -205,7 +210,6 @@ def pipe_train(cfg: DictConfig) -> None:
     if not isinstance(prediction, torch.Tensor):
         return
 
-
     obj_dir = pathlib.Path.home() / 'Project' / 'imfas_data' / dataset_name / f'fold_{fold_idx}' / model / f'seed_{seed}'
     if not obj_dir.exists():
         os.makedirs(str(obj_dir))
@@ -214,8 +218,8 @@ def pipe_train(cfg: DictConfig) -> None:
     # assert len(prediction) == len(test_split)
     # assert train_set.learning_curves.shape[-1] == prediction.shape[-1]
 
-    torch.save(prediction,  str(obj_dir / 'prediction.pt'))
-    torch.save(ground_truth,  str(obj_dir / 'ground_truth.pt'))
+    torch.save(prediction, str(obj_dir / 'prediction.pt'))
+    torch.save(ground_truth, str(obj_dir / 'ground_truth.pt'))
 
 
 def housekeeping(cfg: DictConfig) -> None:
@@ -235,9 +239,9 @@ def housekeeping(cfg: DictConfig) -> None:
     log.info(get_original_cwd())
     # FIXME: W&B id???
     hydra_job = (
-        os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
-        + "_"
-        + os.path.basename(HydraConfig.get().run.dir)
+            os.path.basename(os.path.abspath(os.path.join(HydraConfig.get().run.dir, "..")))
+            + "_"
+            + os.path.basename(HydraConfig.get().run.dir)
     )
     cfg.wandb.id = hydra_job + "_" + id_generator()  # FIXME: necessary?
     wandb.init(**cfg.wandb, config=dict_cfg)

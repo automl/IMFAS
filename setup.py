@@ -53,7 +53,8 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests"]),
     python_requires=">=3.8",
     install_requires=[
-        "torch==1.12.1",
+        # "torch==1.8.0"
+        "torch==1.13.1",
         "wandb==0.12.14",  # fixme: does not install properly?
         "tqdm==4.62.3",
         "absl-py==1.2.0",
