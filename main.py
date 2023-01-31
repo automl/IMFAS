@@ -133,8 +133,6 @@ def pipe_train(cfg: DictConfig) -> None:
     # hack: dataset_meta_features must be instantiated to know n for a traintest split index
     # of the data, that can be passed on.
 
-    exit()
-
     if "dataset_meta" in cfg.dataset:
         dataset_meta_features = instantiate(cfg.dataset.dataset_meta)
     else:

@@ -1,5 +1,9 @@
 # @package _global_
 
+defaults:
+  - override /model: lcnet
+  - _self_
+
 wandb:
   group: 'Baseline lcnet'
   job_type: 'lcnet+'
