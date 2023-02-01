@@ -2,6 +2,4 @@ _target_: imfas.models.baselines.lcnet.LCNetWrapper
 sampling_method: "adaptive_sghmc"
 use_double_precision: True
 print_every_n_steps: 100
-num_steps: 500
-num_burn_in_steps: 40
-lr: 1e-2
+

@@ -18,7 +18,7 @@ class BaseTrainer:
     def __init__(
         self,
         model,
-        optimizer: Optional[torch.optim.Optimizer] = None,
+        optimizer: Optional[torch.optim.Optimizer] = None, **kwargs
     ):
         """
 
@@ -198,6 +198,7 @@ class BaseTrainer:
         train_loss_fn: Union[Callable, DictConfig] = None,
         valid_loss_fns: Dict[str, Callable] = None,
         test_loss_fns: Dict[str, Callable] = None,
+        **train_kwargs,
     ):
         """
         Main loop including training & test evaluation, all of which report to wandb

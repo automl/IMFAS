@@ -1,8 +1,0 @@
-_target_: imfas.models.rank_transformer.RankTransformer_Ensemble
-
-transformer_layers: 2
-shared_hidden_dims:
-  - 300
-  - 200
-n_head: 4
-dim_feedforward: 256

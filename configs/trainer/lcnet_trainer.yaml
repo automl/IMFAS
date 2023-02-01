@@ -1,0 +1,52 @@
+trainerobj:
+  _target_: imfas.trainer.lcnet_trainer.LCNetTrainer
+  keep_every: 100
+  lr: 1e-2
+  batch_size: 20
+  epsilon: 1e-10
+  mdecay: 0.05
+  continue_training: False
+  optimizer: null
+  sampler: adaptive_sghmc
+
+run_call:
+  epochs: 0
+  log_freq: 2
+  num_steps: 13000
+  num_burn_in_steps: 3000
+
+  train_loss_fn:
+    loss_fn:
+      _target_: pybnn.bohamiann.nll
+      _partial_: True
+
+
+
+  #  valid_loss_fns:
+  #    spearman:
+  #      _target_: imfas.losses.spearman.SpearmanLoss
+  #
+  #    top1regret:
+  #      _target_: imfas.evaluation.topkregret.TopkRegret
+  #      k: 1
+  #
+  #    top3_regret:
+  #      _target_: imfas.evaluation.topkregret.TopkRegret
+  #      k: 3
+  #
+  #    top5_regret:
+  #      _target_: imfas.evaluation.topkregret.TopkRegret
+  #      k: 5
+
+  test_loss_fns:
+    top1_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 1
+
+    top3_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 3
+
+    top5_regret:
+      _target_: imfas.evaluation.topkregret.TopkRegret
+      k: 5

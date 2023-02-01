@@ -3,9 +3,9 @@
 defaults:
   - train_test_split: trainvalfixedtest # trainvalidtest #leave_one_out
   - dataset: lcbench
-  - trainer: basetrainer
+#  - trainer: basetrainer
   - model: imfas_m_transformer
-  - optimizer@trainer.trainerobj.optimizer:optimizer: adam
+#  - optimizer@trainer.trainerobj.optimizer:optimizer: adam
   - _self_
 
 # placeholder for attributes to be computed

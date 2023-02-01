@@ -1,18 +1,9 @@
-import logging
-import time
-from itertools import islice
-
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.utils.data as data_utils
+
 from pybnn.bohamiann import nll
 from pybnn.lcnet import LCNet, get_lc_net_architecture
-from pybnn.priors import weight_prior, log_variance_prior
-from pybnn.sampler import AdaptiveSGHMC, SGLD, SGHMC, PreconditionedSGLD
-from pybnn.util.infinite_dataloader import infinite_dataloader
-from pybnn.util.normalization import zero_mean_unit_var_denormalization
-from scipy.stats import norm
 
 
 class LCNetWrapper(LCNet):
@@ -24,12 +15,8 @@ class LCNetWrapper(LCNet):
             metrics=(nn.MSELoss,),
             likelihood_function=nll,
             print_every_n_steps=100,
-            num_steps=500,
-            num_burn_in_steps=40,
-            lr=1e-2
 
     ) -> None:
-
         super(LCNet, self).__init__(
             get_network=get_lc_net_architecture,
             normalize_input=True,
@@ -39,245 +26,260 @@ class LCNetWrapper(LCNet):
             metrics=metrics,
             likelihood_function=likelihood_function,
             print_every_n_steps=print_every_n_steps
+
         )
 
-        print("nll", nll, metrics)
-        self.no_opt = True  # FIXME: @Aditya - this hack should not be necessary.
-        self.num_steps = num_steps
-        self.num_burn_in_steps = num_burn_in_steps
-        self.lr = lr
+        self.sampling_method = sampling_method
 
-    def forward(self, learning_curves: torch.Tensor, mask: torch.Tensor,
-                dataset_meta_features, algo_meta_features, **kwargs) -> \
-            torch.Tensor:
+    @property
+    def network_weights(self) -> tuple:
+        """
+        Extract current network weight values as `np.ndarray`.
+        :return: Tuple containing current network weight values
+        """
+        return tuple(
+            np.asarray(parameter.data.clone().detach().numpy())
+            for parameter in self.model.parameters()
+        )
 
-        self.max_fidelity = int(mask.sum(dim=-1).max().item())
-        self.n_algos = learning_curves.shape[1]
 
-        # fixme: is this correct: the model needs to know at what fidelity value it is,
-        #  but the dataloader does not provide such a map: therefore even spacings are assumed
-        self.fidelities = torch.linspace(0., 1., learning_curves.shape[-1])
+    # def forward(
+    #         self,
+    #         learning_curves: torch.Tensor,
+    #         mask: torch.Tensor,
+    #             dataset_meta_features,
+    #         algo_meta_features,
+    #         **kwargs
+    # ) -> torch.Tensor:
+    #
+    #     self.parse_data(learning_curves, mask, dataset_meta_features, algo_meta_features)
+    #
+    #     # FIXME: what is the train test split?
+    #
+    #     if self.max_fidelity == 0:
+    #         return torch.ones(learning_curves.shape[:-1]) * float("nan")
+    #     else:
+    #         fidelity = self.fidelities[self.max_fidelity].repeat(self.n_algos, 1)
+    #
+    #         x_train = torch.cat((algo_meta_features[0], fidelity), dim=1).numpy()
+    #         y_train = learning_curves[:, :, self.max_fidelity][0].numpy()
+    #
+    #         self.training_fn(
+    #             x_train=x_train,
+    #             y_train=y_train,
+    #             num_steps=self.num_steps,
+    #             num_burn_in_steps=self.num_burn_in_steps,
+    #             lr=self.lr
+    #         )
+    #
+    #     # TODO same as x_train but with 1. as fidelity
+    #     x_test = torch.cat(
+    #         (algo_meta_features, dataset_meta_features, torch.ones_like(fidelity)), dim=1)
+    #     x_test = x_test.detach().numpy()
+    #
+    #     m, v = self.predict(x_test)
+    #     # TODO match the ranking for the respective curves!
+    #
+    #     return m[-1]
 
-        if self.max_fidelity == 0:
-            return torch.ones(learning_curves.shape[:-1]) * float("nan")
-        else:
-            fidelity = self.fidelities[self.max_fidelity].repeat(self.n_algos, 1)
+    # def train(self):
+    #     self.training = True
+    #
+    # def eval(self):
+    #     self.training = False
 
-            x_train = torch.cat((algo_meta_features[0], fidelity), dim=1).numpy()
-            y_train = learning_curves[:, :, self.max_fidelity][0].numpy()
 
-            self.training_fn(
-                x_train=x_train,
-                y_train=y_train,
-                num_steps=self.num_steps,
-                num_burn_in_steps=self.num_burn_in_steps,
-                lr=self.lr
-            )
-
-        # TODO same as x_train but with 1. as fidelity
-        x_test = torch.cat(
-            (algo_meta_features, dataset_meta_features, torch.ones_like(fidelity)), dim=1)
-        x_test = x_test.detach().numpy()
-
-        m, v = self.predict(x_test)
-        # TODO match the ranking for the respective curves!
-
-    def train(self):
-        self.training = True
-
-    def eval(self):
-        self.training = False
-        if hasattr(self, "no_opt"):
-            delattr(self, "no_opt")  # FIXME: do we also need that for the base class?
+    #     if hasattr(self, "no_opt"):
+    #         delattr(self, "no_opt")  # FIXME: do we also need that for the base class?
 
     def to(self, device):
         self.device = device
 
-    def training_fn(self, x_train: np.ndarray, y_train: np.ndarray,
-                    num_steps: int = 13000,
-                    keep_every: int = 100,
-                    num_burn_in_steps: int = 3000,
-                    lr: float = 1e-2,
-                    batch_size=20,
-                    epsilon: float = 1e-10,
-                    mdecay: float = 0.05,
-                    continue_training: bool = False,
-                    verbose: bool = False,
-                    **kwargs):
 
-        """
+if __name__ == '__main__':
 
-        # COPYED from PYBNN
-        Train a BNN using input datapoints `x_train` with corresponding targets `y_train`.
-        :param x_train: input training datapoints.
-        :param y_train: input training targets.
-        :param num_steps: Number of sampling steps to perform after burn-in is finished.
-            In total, `num_steps // keep_every` network weights will be sampled.
-        :param keep_every: Number of sampling steps (after burn-in) to perform before keeping a sample.
-            In total, `num_steps // keep_every` network weights will be sampled.
-        :param num_burn_in_steps: Number of burn-in steps to perform.
-            This value is passed to the given `optimizer` if it supports special
-            burn-in specific behavior.
-            Networks sampled during burn-in are discarded.
-        :param lr: learning rate
-        :param batch_size: batch size
-        :param epsilon: epsilon for numerical stability
-        :param mdecay: momemtum decay
-        :param continue_training: defines whether we want to continue from the last training run
-        :param verbose: verbose output
-        """
-        logging.debug("Training started.")
-        start_time = time.time()
+    file = ['lcnet', 'toy'][0]
+    # https://github.com/automl/pybnn/blob/master/test/test_lcnet.py
+    # https://github.com/automl/pybnn/blob/master/examples/example_lc_extrapolation.py
 
-        num_datapoints, input_dimensionality = x_train.shape
-        logging.debug(
-            "Processing %d training datapoints "
-            " with % dimensions each." % (num_datapoints, input_dimensionality)
-        )
-        assert batch_size >= 1, "Invalid batch size. Batches must contain at least a single sample."
-        assert len(y_train.shape) == 1 or (len(y_train.shape) == 2 and y_train.shape[
-            1] == 1), "Targets need to be in vector format, i.e (N,) or (N,1)"
+    if file == 'lcnet':
+        def toy_example(t, a, b):
+            return (10 + a * np.log(b * t)) / 10. + 10e-3 * np.random.rand()
 
-        if x_train.shape[0] < batch_size:
-            logging.warning(
-                "Not enough datapoints to form a batch. Use all datapoints in each batch")
-            batch_size = x_train.shape[0]
 
-        self.X = x_train
-        if len(y_train.shape) == 2:
-            self.y = y_train[:, 0]
-        else:
-            self.y = y_train
+        observed = 80
+        N = 5
+        n_epochs = 10
+        observed_t = int(n_epochs * (observed / 100.))
 
-        if self.do_normalize_input:
-            logging.debug(
-                "Normalizing training datapoints to "
-                " zero mean and unit variance."
-            )
-            x_train_, self.x_mean, self.x_std = self.normalize_input(x_train)
-            if self.use_double_precision:
-                x_train_ = torch.from_numpy(x_train_).double()
+        t_idx = np.arange(1, observed_t + 1) / n_epochs
+        t_grid = np.arange(1, n_epochs + 1) / n_epochs
+
+        configs = np.random.rand(N, 2)
+        learning_curves = [toy_example(t_grid, configs[i, 0], configs[i, 1]) for i in range(N)]
+
+        X_train = None
+        y_train = None
+        X_test = None
+        y_test = None
+
+        for i in range(N):
+
+            x = np.repeat(configs[i, None, :], t_idx.shape[0], axis=0)
+            x = np.concatenate((x, t_idx[:, None]), axis=1)
+
+            x_test = np.concatenate((configs[i, None, :], np.array([[1]])), axis=1)
+
+            lc = learning_curves[i][:observed_t]
+            lc_test = np.array([learning_curves[i][-1]])
+
+            if X_train is None:
+                X_train = x
+                y_train = lc
+                X_test = x_test
+                y_test = lc_test
             else:
-                x_train_ = torch.from_numpy(x_train_).float()
-        else:
-            if self.use_double_precision:
-                x_train_ = torch.from_numpy(x_train).double()
-            else:
-                x_train_ = torch.from_numpy(x_train).float()
+                X_train = np.concatenate((X_train, x), 0)
+                y_train = np.concatenate((y_train, lc), 0)
+                X_test = np.concatenate((X_test, x_test), 0)
+                y_test = np.concatenate((y_test, lc_test), 0)
 
-        if self.do_normalize_output:
-            logging.debug("Normalizing training labels to zero mean and unit variance.")
-            y_train_, self.y_mean, self.y_std = self.normalize_output(self.y)
+        # result of the following config details how the input is expected
+        # observed = 80  --> 80% of the curve is available
+        # N = 5
+        # n_epochs = 10
+        #
+        # x_train: [[0.32972551 0.08793102 0.1       ]
+        #  [0.32972551 0.08793102 0.2       ]
+        #  [0.32972551 0.08793102 0.3       ]
+        #  [0.32972551 0.08793102 0.4       ]
+        #  [0.32972551 0.08793102 0.5       ]
+        #  [0.32972551 0.08793102 0.6       ]
+        #  [0.32972551 0.08793102 0.7       ]
+        #  [0.32972551 0.08793102 0.8       ]  --> 8 samples (leading with the two config values
+        #  + fidelity level) -- meaning here the first curve terminates at 80% of the total epochs
+        #  [0.15403017 0.84915016 0.1       ]
+        #  [0.15403017 0.84915016 0.2       ]
+        #  [0.15403017 0.84915016 0.3       ]
+        #  [0.15403017 0.84915016 0.4       ]
+        #  [0.15403017 0.84915016 0.5       ]
+        #  [0.15403017 0.84915016 0.6       ]
+        #  [0.15403017 0.84915016 0.7       ]
+        #  [0.15403017 0.84915016 0.8       ] end of the second curve
+        #  [0.99019806 0.21469587 0.1       ]
+        #  [0.99019806 0.21469587 0.2       ]
+        #  [0.99019806 0.21469587 0.3       ]
+        #  [0.99019806 0.21469587 0.4       ]
+        #  [0.99019806 0.21469587 0.5       ]
+        #  [0.99019806 0.21469587 0.6       ]
+        #  [0.99019806 0.21469587 0.7       ]
+        #  [0.99019806 0.21469587 0.8       ] end of the third curve
+        #  [0.94964878 0.00566681 0.1       ]
+        #  [0.94964878 0.00566681 0.2       ]
+        #  [0.94964878 0.00566681 0.3       ]
+        #  [0.94964878 0.00566681 0.4       ]
+        #  [0.94964878 0.00566681 0.5       ]
+        #  [0.94964878 0.00566681 0.6       ]
+        #  [0.94964878 0.00566681 0.7       ]
+        #  [0.94964878 0.00566681 0.8       ] end of the fourth curve
+        #  [0.68857372 0.37327868 0.1       ]
+        #  [0.68857372 0.37327868 0.2       ]
+        #  [0.68857372 0.37327868 0.3       ]
+        #  [0.68857372 0.37327868 0.4       ]
+        #  [0.68857372 0.37327868 0.5       ]
+        #  [0.68857372 0.37327868 0.6       ]
+        #  [0.68857372 0.37327868 0.7       ]
+        #  [0.68857372 0.37327868 0.8       ]], end of the fifth curve
+        #
+        #  x_test: [[0.32972551 0.08793102 1.        ]  --> final fidelity value for these 5 configs
+        #  [0.15403017 0.84915016 1.        ]
+        #  [0.99019806 0.21469587 1.        ]
+        #  [0.94964878 0.00566681 1.        ]
+        #  [0.68857372 0.37327868 1.        ]]
+        #
+        # y_train.shape: (40,), y_test.shape: (5,),
+        #
+        # y_train:
+        # [0.85346409 0.87631892 0.88968814 0.89917376
+        #  0.90653137 0.91254297 0.91762572 0.92202859 # end of the first curve
+        #  0.96587761 0.97655417 0.98279956 0.98723073
+        #  0.99066781 0.99347612 0.9958505  0.99790729 # end of the second curve
+        #  0.62845162 0.69708692 0.737236   0.76572222
+        #  0.78781785 0.8058713  0.82113527 0.83435752 # end of the third curve
+        #  0.2972352  0.36305984 0.40156478 0.42888447
+        #  0.45007527 0.46738942 0.48202832 0.49470911 # end of the fourth curve
+        #  0.77930875 0.82703705 0.85495631 0.87476534
+        #  0.89013042 0.9026846  0.91329901 0.92249363], # end of the fifth curve
+        #
+        #  actual final fidelity values for the 5 configs of test:
+        # y_test: [0.9293862  1.00134437 0.85645315 0.51589991 0.93785871]
 
-            if self.use_double_precision:
-                y_train_ = torch.from_numpy(y_train_).double()
-            else:
-                y_train_ = torch.from_numpy(y_train_).float()
-        else:
-            if self.use_double_precision:
-                y_train_ = torch.from_numpy(y_train).double()
-            else:
-                y_train_ = torch.from_numpy(y_train).float()
+        print(f'X_train.shape: {X_train.shape}, x_test.shape: {X_test.shape}, \nx_train:'
+              f' {X_train},\n x_test: {X_test}')
+        print(
+            f'y_train.shape: {y_train.shape}, y_test.shape: {y_test.shape},\ny_train: {y_train}, \ny_test: {y_test}')
+        model = LCNet()
 
-        # had to add in
-        x_train_.requires_grad = True
-        y_train_.requires_grad = True
+        model.train(X_train, y_train, num_steps=500, num_burn_in_steps=40, lr=1e-2)
 
-        train_loader = infinite_dataloader(
-            data_utils.DataLoader(
-                data_utils.TensorDataset(x_train_, y_train_),
-                batch_size=batch_size,
-                shuffle=True
-            )
-        )
+        m, v = model.predict(X_test)
 
-        if self.use_double_precision:
-            dtype = np.float64
-        else:
-            dtype = np.float32
+    elif file == 'toy':
 
-        if not continue_training:
-            logging.debug("Clearing list of sampled weights.")
+        import numpy as np
+        import time
+        import matplotlib.pyplot as plt
+        from pybnn.lc_extrapolation.learning_curves import MCMCCurveModelCombination
 
-            self.sampled_weights.clear()
-            if self.use_double_precision:
-                self.model = self.get_network(input_dimensionality=input_dimensionality).double()
-            else:
-                self.model = self.get_network(input_dimensionality=input_dimensionality).float()
+        observed = 40
+        n_epochs = 100
 
-            if self.sampling_method == "adaptive_sghmc":
-                self.sampler = AdaptiveSGHMC(self.model.parameters(),
-                                             scale_grad=dtype(num_datapoints),
-                                             num_burn_in_steps=num_burn_in_steps,
-                                             lr=dtype(lr),
-                                             mdecay=dtype(mdecay),
-                                             epsilon=dtype(epsilon))
-            elif self.sampling_method == "sgld":
-                self.sampler = SGLD(self.model.parameters(),
-                                    lr=dtype(lr),
-                                    scale_grad=num_datapoints)
-            elif self.sampling_method == "preconditioned_sgld":
-                self.sampler = PreconditionedSGLD(self.model.parameters(),
-                                                  lr=dtype(lr),
-                                                  num_train_points=num_datapoints)
-            elif self.sampling_method == "sghmc":
-                self.sampler = SGHMC(self.model.parameters(),
-                                     scale_grad=dtype(num_datapoints),
-                                     mdecay=dtype(mdecay),
-                                     lr=dtype(lr))
+        t_idx = np.arange(1, observed + 1)
+        t_idx_full = np.arange(1, n_epochs + 1)
 
-        batch_generator = islice(enumerate(train_loader), num_steps)
 
-        for step, (x_batch, y_batch) in batch_generator:
-            self.sampler.zero_grad()
-            loss = self.likelihood_function(input=self.model(x_batch), target=y_batch)
-            # Add prior. Note the gradient is computed by: g_prior + N/n sum_i grad_theta_xi see Eq 4
-            # in Welling and Whye The 2011. Because of that we divide here by N=num of datapoints since
-            # in the sample we rescale the gradient by N again
-            loss -= log_variance_prior(self.model(x_batch)[:, 1].view((-1, 1))) / num_datapoints
-            loss -= weight_prior(self.model.parameters(), dtype=dtype) / num_datapoints
-            loss.backward()
-            self.sampler.step()
+        def toy_example(t, a, b):
+            return (10 + a * np.log(b * t + 1e-8)) / 10. + 10e-3 * np.random.rand()
 
-            if verbose and step > 0 and step % self.print_every_n_steps == 0:
 
-                # compute the training performance of the ensemble
-                if len(self.sampled_weights) > 1:
-                    mu, var = self.predict(x_train)
-                    total_nll = -np.mean(norm.logpdf(y_train, loc=mu, scale=np.sqrt(var)))
-                    total_mse = np.mean((y_train - mu) ** 2)
-                # in case we do not have an ensemble we compute the performance of the last weight sample
-                else:
-                    f = self.model(x_train_)
+        a = np.random.rand()
+        b = np.random.rand()
+        lc = [toy_example(t / n_epochs, a, b) for t in t_idx_full]
 
-                    if self.do_normalize_output:
-                        mu = zero_mean_unit_var_denormalization(f[:, 0], self.y_mean,
-                                                                self.y_std).data.numpy()
-                        var = torch.exp(f[:, 1]) * self.y_std ** 2
-                        var = var.data.numpy()
-                    else:
-                        mu = f[:, 0].data.numpy()
-                        var = np.exp(f[:, 1].data.numpy())
-                    total_nll = -np.mean(norm.logpdf(y_train, loc=mu, scale=np.sqrt(var)))
-                    total_mse = np.mean((y_train - mu) ** 2)
+        model = MCMCCurveModelCombination(n_epochs + 1,
+                                          nwalkers=50,
+                                          nsamples=800,
+                                          burn_in=500,
+                                          recency_weighting=False,
+                                          soft_monotonicity_constraint=False,
+                                          monotonicity_constraint=True,
+                                          initial_model_weight_ml_estimate=True)
+        st = time.time()
+        model.fit(t_idx, lc[:observed])
+        print("Training time: %.2f" % (time.time() - st))
 
-                t = time.time() - start_time
+        st = time.time()
+        p_greater = model.posterior_prob_x_greater_than(n_epochs + 1, .5)
+        print("Prediction time: %.2f" % (time.time() - st))
 
-                if step < num_burn_in_steps:
-                    print("Step {:8d} : NLL = {:11.4e} MSE = {:.4e} "
-                          "Time = {:5.2f}".format(step, float(total_nll),
-                                                  float(total_mse), t))
+        m = np.zeros([n_epochs])
+        s = np.zeros([n_epochs])
 
-                if step > num_burn_in_steps:
-                    print("Step {:8d} : NLL = {:11.4e} MSE = {:.4e} "
-                          "Samples= {} Time = {:5.2f}".format(step,
-                                                              float(total_nll),
-                                                              float(total_mse),
-                                                              len(self.sampled_weights), t))
+        for i in range(n_epochs):
+            p = model.predictive_distribution(i + 1)
+            m[i] = np.mean(p)
+            s[i] = np.std(p)
 
-            if step > num_burn_in_steps and (step - num_burn_in_steps) % keep_every == 0:
-                weights = self.network_weights
+        mean_mcmc = m[-1]
+        std_mcmc = s[-1]
 
-                self.sampled_weights.append(weights)
+        plt.plot(t_idx_full, m, color="purple", label="LC-Extrapolation")
+        plt.fill_between(t_idx_full, m + s, m - s, alpha=0.2, color="purple")
+        plt.plot(t_idx_full, lc)
 
-        self.is_trained = True
+        plt.xlim(1, n_epochs)
+        plt.legend()
+        plt.xlabel("Number of epochs")
+        plt.ylabel("Validation error")
+        plt.axvline(observed, linestyle="--", color="black")
+        plt.show()

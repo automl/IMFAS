@@ -7,6 +7,7 @@ from omegaconf import DictConfig, OmegaConf
 
 # A logger for this file
 log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 import copy
 import torch
 
@@ -114,10 +115,10 @@ def pipe_train(cfg: DictConfig) -> None:
         cfg.model.algo_metaf_encoder.hidden_dims[-2] = dmodel * 2
 
         cfg.model.decoder.hidden_dims[0] = dmodel * 2
-
-    if cfg.trainer.trainerobj.optimizer._target_ == 'imfas.optimizer.adamw_lrschedule.AdamWLRSchedule':
-        cfg.wandb.group = cfg.wandb.group + f'_adamw'
-        cfg.wandb.tags.append(f'optimizer=adamw')
+    #
+    # if cfg.trainer.trainerobj.optimizer._target_ == 'imfas.optimizer.adamw_lrschedule.AdamWLRSchedule':
+    #     cfg.wandb.group = cfg.wandb.group + f'_adamw'
+    #     cfg.wandb.tags.append(f'optimizer=adamw')
 
     housekeeping(cfg)
 
