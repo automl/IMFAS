@@ -5,6 +5,8 @@ import torch.nn as nn
 from pybnn.bohamiann import nll
 from pybnn.lcnet import LCNet, get_lc_net_architecture
 
+import logging
+
 
 class LCNetWrapper(LCNet):
 
@@ -30,70 +32,11 @@ class LCNetWrapper(LCNet):
         )
 
         self.sampling_method = sampling_method
-
-    @property
-    def network_weights(self) -> tuple:
-        """
-        Extract current network weight values as `np.ndarray`.
-        :return: Tuple containing current network weight values
-        """
-        return tuple(
-            np.asarray(parameter.data.clone().detach().numpy())
-            for parameter in self.model.parameters()
-        )
-
-
-    # def forward(
-    #         self,
-    #         learning_curves: torch.Tensor,
-    #         mask: torch.Tensor,
-    #             dataset_meta_features,
-    #         algo_meta_features,
-    #         **kwargs
-    # ) -> torch.Tensor:
-    #
-    #     self.parse_data(learning_curves, mask, dataset_meta_features, algo_meta_features)
-    #
-    #     # FIXME: what is the train test split?
-    #
-    #     if self.max_fidelity == 0:
-    #         return torch.ones(learning_curves.shape[:-1]) * float("nan")
-    #     else:
-    #         fidelity = self.fidelities[self.max_fidelity].repeat(self.n_algos, 1)
-    #
-    #         x_train = torch.cat((algo_meta_features[0], fidelity), dim=1).numpy()
-    #         y_train = learning_curves[:, :, self.max_fidelity][0].numpy()
-    #
-    #         self.training_fn(
-    #             x_train=x_train,
-    #             y_train=y_train,
-    #             num_steps=self.num_steps,
-    #             num_burn_in_steps=self.num_burn_in_steps,
-    #             lr=self.lr
-    #         )
-    #
-    #     # TODO same as x_train but with 1. as fidelity
-    #     x_test = torch.cat(
-    #         (algo_meta_features, dataset_meta_features, torch.ones_like(fidelity)), dim=1)
-    #     x_test = x_test.detach().numpy()
-    #
-    #     m, v = self.predict(x_test)
-    #     # TODO match the ranking for the respective curves!
-    #
-    #     return m[-1]
-
-    # def train(self):
-    #     self.training = True
-    #
-    # def eval(self):
-    #     self.training = False
-
-
-    #     if hasattr(self, "no_opt"):
-    #         delattr(self, "no_opt")  # FIXME: do we also need that for the base class?
-
     def to(self, device):
         self.device = device
+
+
+
 
 
 if __name__ == '__main__':

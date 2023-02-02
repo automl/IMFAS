@@ -18,6 +18,10 @@ defaults:
 
 wandb:
   notes: 'imfas wp'
+  group: 'imfas_wp'
+  tags:
+    - 'sth'
+  job_type: 'train'
 
 
 seed: 1
@@ -67,3 +71,15 @@ trainer:
     train_loss_fn:
       _target_: imfas.losses.spearman.SpearmanLoss
     #      _target_: imfas.losses.plackett_luce.PlackettLuceLoss
+
+
+    test_loss_fns:
+
+      top1_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 1
+
+
+      top3_regret:
+        _target_: imfas.evaluation.topkregret.TopkRegret
+        k: 3
