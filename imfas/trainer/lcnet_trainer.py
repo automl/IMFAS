@@ -72,13 +72,13 @@ class LCNetTrainer(BaseTrainer):
 
 
         self.fidelities =  torch.linspace(0.001, 1., self.n_fidelity)
-        n_algos = algo_meta_features.shape[0]
+        self.n_algos = algo_meta_features.shape[0]
 
         # filtering out constant columns (which throw an error in normalization)
         keep_cols = torch.std(algo_meta_features.transformed_df, 0) != 0
 
         # prepare x_train
-        fid = self.fidelities.repeat(n_algos).view(-1, 1)
+        fid = self.fidelities.repeat(self.n_algos).view(-1, 1)
         x_train = torch.repeat_interleave(
             algo_meta_features.transformed_df[:, keep_cols], 51, dim=0
         )
@@ -90,7 +90,7 @@ class LCNetTrainer(BaseTrainer):
 
         # final fidelity as prompt & target
         x_test = torch.cat((algo_meta_features.transformed_df[:, keep_cols],
-                            torch.ones((n_algos, 1))),
+                            torch.ones((self.n_algos, 1))),
                            dim=1)
         y_test = learning_curves.transformed_df[dataset_id, :, -1]
 
@@ -120,7 +120,7 @@ class LCNetTrainer(BaseTrainer):
                        "fidelity": 0})
 
             continue
-        for f in tqdm(range(1, self.n_fidelity)):
+        for f in tqdm(range(self.n_fidelity)):
             losses = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
 
             for i, d in enumerate(test_loader.dataset.split):
@@ -129,9 +129,9 @@ class LCNetTrainer(BaseTrainer):
                     train_loader.dataset, d)
 
                 # constrain x_train & y_train up to fidelity f
-                ind = (self.fidelities <= self.fidelities[f-1]).repeat(self.n_fidelity - 1)
+                ind = (self.fidelities <= self.fidelities[f]).repeat(self.n_algos)
                 x_train_f = x_train[ind, :]
-                y_train_f = y_train[:, :f ]
+                y_train_f = y_train[:, :f+1 ]
 
                 self.model_wrapper.train(
                     x_train_f.detach().numpy(),
@@ -159,7 +159,7 @@ class LCNetTrainer(BaseTrainer):
             # average over all test datasets
             for loss_fn in test_loss_fns.keys():
                 wandb.log({f"Test, Slice Evaluation: {loss_fn}": losses[loss_fn].mean(),
-                           "fidelity": f})
+                           "fidelity": f + 1 })
 
         # just to meet the interface. fixme: this is a hack
         return torch.ones(1), torch.ones(1)
