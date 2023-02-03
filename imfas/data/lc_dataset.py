@@ -21,7 +21,7 @@ class Dataset_LC(Dataset):
         self.df = pd.read_hdf(path, mode="r")
         self.metric = metric
 
-        if metric is not "None":
+        if metric != "None":
             self.df = self.df.xs(key=metric)
 
         # consider: is this possible by read in? - to reduce memory overhead
