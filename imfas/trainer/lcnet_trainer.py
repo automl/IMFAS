@@ -11,6 +11,15 @@ import wandb
 from tqdm import tqdm
 
 
+# srun python main.py +experiment=${MODEL}  dataset=${DATASET} wandb.mode=online seed=$SLURM_ARRAY_TASK_ID train_test_split.fold_idx=${FOLD_IDX} # dataset.dataset_raw.enable=true
+#SBATCH --array=1-5
+# for FOLDIDX in {0..9}
+# default config
+
+# TODO debug with new scaling of fidelities
+# TODO check the device is GPU
+
+
 class LCNetTrainer(BaseTrainer):
 
     def __init__(
@@ -61,10 +70,9 @@ class LCNetTrainer(BaseTrainer):
 
         self.n_fidelity = learning_curves.shape[-1]
 
-        # fixme: what is the actual fidelity range here?
-        self.fidelities = torch.linspace(0.1, 1., self.n_fidelity)
-        # fixme: is this correct: the model_wrapper needs to know at what fidelity value it is,
-        #  but the dataloader does not provide such a map: therefore even spacings are assumed
+
+        self.fidelities = torch.arange(len(self.n_fidelity)) / (len(self.n_fidelity) - 1)
+            # torch.linspace(0.001, 1., self.n_fidelity)
         n_algos = algo_meta_features.shape[0]
 
         # filtering out constant columns (which throw an error in normalization)
@@ -109,6 +117,14 @@ class LCNetTrainer(BaseTrainer):
 
         for f in tqdm(range(self.n_fidelity)):
             losses = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
+            # # FIXME: move to device!
+            # if f == 0:
+            #     # average over all test datasets
+            #     for loss_fn in test_loss_fns.keys():
+            #         wandb.log({f"Test, Slice Evaluation: {loss_fn}": float("nan"),
+            #                    "fidelity": f})
+            #
+            #     continue
 
             for i, d in enumerate(test_loader.dataset.split):
 
