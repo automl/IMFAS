@@ -71,8 +71,7 @@ class LCNetTrainer(BaseTrainer):
         self.n_fidelity = learning_curves.shape[-1]
 
 
-        self.fidelities = torch.arange(len(self.n_fidelity)) / (len(self.n_fidelity) - 1)
-            # torch.linspace(0.001, 1., self.n_fidelity)
+        self.fidelities =  torch.linspace(0.001, 1., self.n_fidelity)
         n_algos = algo_meta_features.shape[0]
 
         # filtering out constant columns (which throw an error in normalization)
@@ -115,16 +114,14 @@ class LCNetTrainer(BaseTrainer):
         # just to have the self.n_fidelity attribute :(
         _, _, _, _ = self._parse_single_dataset(test_loader.dataset, 0)
 
-        for f in tqdm(range(self.n_fidelity)):
+        # average over all test datasets
+        for loss_fn in test_loss_fns.keys():
+            wandb.log({f"Test, Slice Evaluation: {loss_fn}": float("nan"),
+                       "fidelity": 0})
+
+            continue
+        for f in tqdm(range(1, self.n_fidelity)):
             losses = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
-            # # FIXME: move to device!
-            # if f == 0:
-            #     # average over all test datasets
-            #     for loss_fn in test_loss_fns.keys():
-            #         wandb.log({f"Test, Slice Evaluation: {loss_fn}": float("nan"),
-            #                    "fidelity": f})
-            #
-            #     continue
 
             for i, d in enumerate(test_loader.dataset.split):
 
@@ -132,9 +129,9 @@ class LCNetTrainer(BaseTrainer):
                     train_loader.dataset, d)
 
                 # constrain x_train & y_train up to fidelity f
-                ind = (self.fidelities <= self.fidelities[f]).repeat(self.n_fidelity - 1)
+                ind = (self.fidelities <= self.fidelities[f-1]).repeat(self.n_fidelity - 1)
                 x_train_f = x_train[ind, :]
-                y_train_f = y_train[:, :f + 1]
+                y_train_f = y_train[:, :f ]
 
                 self.model_wrapper.train(
                     x_train_f.detach().numpy(),
