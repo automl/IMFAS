@@ -3,9 +3,11 @@ import torch
 import torch.nn as nn
 
 from pybnn.bohamiann import nll
-from pybnn.lcnet import LCNet, get_lc_net_architecture
-
+# from pybnn.lcnet import
 import logging
+
+from imfas.models.baselines.lcnet_backend import LCNet,  get_lc_net_architecture
+
 
 
 class LCNetWrapper(LCNet):

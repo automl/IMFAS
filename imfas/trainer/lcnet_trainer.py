@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 
 # srun python main.py +experiment=${MODEL}  dataset=${DATASET} wandb.mode=online seed=$SLURM_ARRAY_TASK_ID train_test_split.fold_idx=${FOLD_IDX} # dataset.dataset_raw.enable=true
-#SBATCH --array=1-5
+# SBATCH --array=1-5
 # for FOLDIDX in {0..9}
 # default config
 
@@ -70,8 +70,7 @@ class LCNetTrainer(BaseTrainer):
 
         self.n_fidelity = learning_curves.shape[-1]
 
-
-        self.fidelities =  torch.linspace(0.001, 1., self.n_fidelity)
+        self.fidelities = torch.linspace(0.001, 1., self.n_fidelity)
         self.n_algos = algo_meta_features.shape[0]
 
         # filtering out constant columns (which throw an error in normalization)
@@ -121,6 +120,7 @@ class LCNetTrainer(BaseTrainer):
 
             continue
         for f in tqdm(range(self.n_fidelity)):
+        # for f in [20]:
             losses = {k: torch.zeros(len(test_loader)) for k in test_loss_fns.keys()}
 
             for i, d in enumerate(test_loader.dataset.split):
@@ -131,7 +131,7 @@ class LCNetTrainer(BaseTrainer):
                 # constrain x_train & y_train up to fidelity f
                 ind = (self.fidelities <= self.fidelities[f]).repeat(self.n_algos)
                 x_train_f = x_train[ind, :]
-                y_train_f = y_train[:, :f+1 ]
+                y_train_f = y_train[:, :f + 1]
 
                 self.model_wrapper.train(
                     x_train_f.detach().numpy(),
@@ -148,9 +148,14 @@ class LCNetTrainer(BaseTrainer):
                     sampling_method=self.sampling_method,
                 )
 
+                # self.plot_fidelity(x_train, y_train, max_fidelity=self.fidelities[f])
+
+
+
                 x_train, y_train, x_test, y_test = self._parse_single_dataset(
                     test_loader.dataset, d
                 )
+
                 for loss_name, loss_fn in test_loss_fns.items():
                     m, v = self.model_wrapper.predict(x_test.detach().numpy())
                     losses[loss_name][i] = instantiate(loss_fn)(torch.tensor(m).view(1, -1),
@@ -159,7 +164,72 @@ class LCNetTrainer(BaseTrainer):
             # average over all test datasets
             for loss_fn in test_loss_fns.keys():
                 wandb.log({f"Test, Slice Evaluation: {loss_fn}": losses[loss_fn].mean(),
-                           "fidelity": f + 1 })
+                           "fidelity": f + 1})
 
         # just to meet the interface. fixme: this is a hack
         return torch.ones(1), torch.ones(1)
+
+    def plot_fidelity(self, x_train, y_train, max_fidelity):
+        import matplotlib.pyplot as plt
+        import os
+        os.getcwd()
+
+        from pathlib import Path
+
+        path = Path('/home/ruhkopf/PycharmProjects/IMFAS/plots')
+        path.mkdir(parents=True, exist_ok=True)
+
+        for idx in range(20):
+            fig, ax = plt.subplots()
+            self.plot_single(ax, x_train, y_train, idx, max_fidelity=max_fidelity)
+            fig.savefig(path / f"lcnet_lcbench_prediction_{idx}.png")
+
+            plt.close()
+
+    def plot_single(self, ax, x_train, y_train, idx, max_fidelity):
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+
+
+
+        configs = torch.unique(x_train[:, :-1], sorted=False, dim=0 )
+        config = configs[idx, :]
+        x = config.repeat(self.n_fidelity, 1 )
+        x = torch.cat((x, self.fidelities.view(-1, 1)), dim=1)
+
+        m, v = self.model_wrapper.predict(x.detach().numpy())
+        sd = np.sqrt(v)
+
+        # plot ground truth
+        ax.plot(
+            self.fidelities.detach().numpy(),
+            y_train[idx, :],
+            "o",
+            color="yellow",
+            label="ground truth"
+        )
+
+        # plot predictions
+        ax.plot(
+            self.fidelities.detach().numpy(),
+            m,
+            "x",
+            color="red",
+            label="LCNet"
+        )
+
+        ax.vlines(
+            x=max_fidelity,
+            color="red",
+            ymin=min(y_train[idx, :].min(), m.min()),
+            ymax=max(y_train[idx, :].max(), m.max()),
+            label="fidelity horizon"
+        )
+
+        ax.fill_between(
+            self.fidelities.detach().numpy(),
+            m - 2 * sd,
+            m + 2 * sd,
+        )
+        ax.legend()
