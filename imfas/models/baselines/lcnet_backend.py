@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import time
 import typing
 from itertools import islice
@@ -479,17 +480,23 @@ class Bohamiann(BaseModel):
             self.network_weights = weights
 
         if self.use_double_precision:
-            x = torch.autograd.Variable(torch.from_numpy(x_test_[None, :]).double(), requires_grad=True)
+            x = torch.autograd.Variable(torch.from_numpy(x_test_[None, :]).double(),
+                                        requires_grad=True)
         else:
-            x = torch.autograd.Variable(torch.from_numpy(x_test_[None, :]).float(), requires_grad=True)
+            x = torch.autograd.Variable(torch.from_numpy(x_test_[None, :]).float(),
+                                        requires_grad=True)
 
         if self.do_normalize_input:
             if self.use_double_precision:
-                x_mean = torch.autograd.Variable(torch.from_numpy(self.x_mean).double(), requires_grad=False)
-                x_std = torch.autograd.Variable(torch.from_numpy(self.x_std).double(), requires_grad=False)
+                x_mean = torch.autograd.Variable(torch.from_numpy(self.x_mean).double(),
+                                                 requires_grad=False)
+                x_std = torch.autograd.Variable(torch.from_numpy(self.x_std).double(),
+                                                requires_grad=False)
             else:
-                x_mean = torch.autograd.Variable(torch.from_numpy(self.x_mean).float(), requires_grad=False)
-                x_std = torch.autograd.Variable(torch.from_numpy(self.x_std).float(), requires_grad=False)
+                x_mean = torch.autograd.Variable(torch.from_numpy(self.x_mean).float(),
+                                                 requires_grad=False)
+                x_std = torch.autograd.Variable(torch.from_numpy(self.x_std).float(),
+                                                requires_grad=False)
 
             x_norm = (x - x_mean) / x_std
             m = self.model(x_norm)[0][0]
@@ -500,11 +507,14 @@ class Bohamiann(BaseModel):
             if self.use_double_precision:
                 y_mean = torch.autograd.Variable(torch.from_numpy(np.array([self.y_mean])).double(),
                                                  requires_grad=False)
-                y_std = torch.autograd.Variable(torch.from_numpy(np.array([self.y_std])).double(), requires_grad=False)
+                y_std = torch.autograd.Variable(torch.from_numpy(np.array([self.y_std])).double(),
+                                                requires_grad=False)
 
             else:
-                y_mean = torch.autograd.Variable(torch.from_numpy(np.array([self.y_mean])).float(), requires_grad=False)
-                y_std = torch.autograd.Variable(torch.from_numpy(np.array([self.y_std])).float(), requires_grad=False)
+                y_mean = torch.autograd.Variable(torch.from_numpy(np.array([self.y_mean])).float(),
+                                                 requires_grad=False)
+                y_std = torch.autograd.Variable(torch.from_numpy(np.array([self.y_std])).float(),
+                                                requires_grad=False)
 
             m = m * y_std + y_mean
 
@@ -516,7 +526,8 @@ class Bohamiann(BaseModel):
     def predictive_mean_gradient(self, x_test: np.ndarray):
 
         # compute the individual gradients for each weight vector
-        grads = np.array([self.f_gradient(x_test, weights=weights) for weights in self.sampled_weights])
+        grads = np.array(
+            [self.f_gradient(x_test, weights=weights) for weights in self.sampled_weights])
 
         # the gradient of the mean is mean of all individual gradients
         g = np.mean(grads, axis=0)
@@ -526,16 +537,16 @@ class Bohamiann(BaseModel):
     def predictive_variance_gradient(self, x_test: np.ndarray):
         m, v, funcs = self.predict(x_test[None, :], return_individual_predictions=True)
 
-        grads = np.array([self.f_gradient(x_test, weights=weights) for weights in self.sampled_weights])
+        grads = np.array(
+            [self.f_gradient(x_test, weights=weights) for weights in self.sampled_weights])
 
         dmdx = self.predictive_mean_gradient(x_test)
 
-        g = np.mean([2 * (funcs[i] - m) * (grads[i] - dmdx) for i in range(len(self.sampled_weights))], axis=0)
+        g = np.mean(
+            [2 * (funcs[i] - m) * (grads[i] - dmdx) for i in range(len(self.sampled_weights))],
+            axis=0)
 
         return g
-
-
-
 
 
 from copy import deepcopy
@@ -543,7 +554,6 @@ from copy import deepcopy
 import numpy as np
 import torch
 import torch.nn as nn
-
 
 from pybnn.util.layers import AppendLayer
 
@@ -577,8 +587,6 @@ def bf_layer(theta, t):
     y_c = hill_3(t, theta[:, 6], theta[:, 7], theta[:, 8])
 
     return torch.stack([y_a, y_b, y_c], dim=1)
-
-
 
 
 def get_lc_net_architecture(input_dimensionality: int) -> torch.nn.Module:
