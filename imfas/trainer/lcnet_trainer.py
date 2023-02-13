@@ -97,11 +97,12 @@ class LCNetTrainer(BaseTrainer):
         # prepare y_train
         y_train = learning_curves.transformed_df[dataset_id]
         y_test = learning_curves.transformed_df[dataset_id, :, -1]
-        miny = 0
-        maxy = min(y_train.min(), y_test.min())
 
-        def scale_flip(x):
-            return (x ** -1 - miny) / (maxy** -1 - miny)
+        maxy = max(y_train.max(), y_test.max())
+        miny = min(y_train.min(), y_test.min())
+
+        def scale_flip(y):
+            return - (y - miny) / (maxy - miny) + 1
 
         y_train = scale_flip(y_train)
         y_test = scale_flip(y_test)
@@ -121,14 +122,14 @@ class LCNetTrainer(BaseTrainer):
 
         if not (torch.all(x_train > 0) and torch.all(x_train <= 1)):
             logger.warning("x_train is not normalized to (0, 1]")
-        #
-        # import numpy as np
-        # import matplotlib.pyplot as plt
-        #
-        # for lc in y_train:
-        #     plt.plot(np.arange(len(lc)), lc.numpy())
-        #     plt.ylim((0, 1))
-        # plt.show()
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        for lc in y_train:
+            plt.plot(np.arange(len(lc)), lc.numpy())
+            # plt.ylim((0, 1))
+        plt.show()
 
         return x_train, y_train, x_test, y_test
 
