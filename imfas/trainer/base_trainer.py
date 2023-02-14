@@ -112,6 +112,7 @@ class BaseTrainer:
         self,
         test_loader,
         test_loss_fns,
+        epochs_start=0,
     ):
         """
         Slice Evaluation Protocol;
@@ -124,9 +125,10 @@ class BaseTrainer:
         """
         prediction = []
         ground_truth = []
+        recorded_loss = {f"Test, Slice Evaluation: {fn_name}": [] for fn_name in test_loss_fns.keys()}
         with torch.no_grad():
             max_fidelity = test_loader.dataset.learning_curves.shape[-1]
-            for fidelity in tqdm(range(max_fidelity), desc="Fidelity"):
+            for fidelity in tqdm(range(epochs_start, max_fidelity), desc="Fidelity"):
 
                 # fixme: figure out how wandb can recieve the actual fidelity label.
 
@@ -172,21 +174,17 @@ class BaseTrainer:
                             log.error(f"Error in test loss fn {fn_name}:\n{e}")
                             losses[fn_name][i] = float("nan")
 
-                    pred_i.append(y_hat)
-                    if hasattr(self.model, 'no_opt'):
-                        ground_truth_i.append(y["final_fidelity"][0])
-                    else:
-                        ground_truth_i.append(y["final_fidelity"])
-
-                prediction.append(torch.cat(pred_i, 0).unsqueeze(-1))
-                ground_truth.append(torch.cat(ground_truth_i, 0).unsqueeze(-1))
+                #prediction.append(torch.cat(pred_i, 0).unsqueeze(-1).mean())
+                #ground_truth.append(torch.cat(ground_truth_i, 0).unsqueeze(-1).mean())
 
                 for fn_name, fn in test_loss_fns.items():
                     wandb.log({f"Test, Slice Evaluation: {fn_name}": losses[fn_name].mean(), "fidelity": fidelity})
-        prediction = torch.cat(prediction, dim=-1) # prediction has shape of [num_datasets, n_algos, n_fidelities]
-        ground_truth = torch.cat(ground_truth, dim=-1)
+                    recorded_loss[f"Test, Slice Evaluation: {fn_name}"].append(losses[fn_name].mean().numpy().item())
 
-        return prediction, ground_truth
+        #prediction = torch.cat(prediction, dim=-1) # prediction has shape of [num_datasets, n_algos, n_fidelities]
+        #ground_truth = torch.cat(ground_truth, dim=-1)
+
+        return prediction, ground_truth, recorded_loss
 
     def run(
         self,
@@ -194,6 +192,7 @@ class BaseTrainer:
         valid_loader: torch.utils.data.DataLoader = None,
         test_loader: torch.utils.data.DataLoader = None,
         epochs: int = 0,
+        epochs_start: int = 0,
         log_freq: int = 5,
         train_loss_fn: Union[Callable, DictConfig] = None,
         valid_loss_fns: Dict[str, Callable] = None,
@@ -208,7 +207,9 @@ class BaseTrainer:
         if isinstance(train_loss_fn, DictConfig):
             train_loss_fn = instantiate(train_loss_fn)
 
-        for epoch in tqdm(range(epochs), desc="Training epochs"):
+        for epoch in tqdm(range(epochs), desc="Training epochs",):
+            import pdb
+            pdb.set_trace()
             if isinstance(self.model, nn.Module):
                 self.train(train_loader, epoch, train_loss_fn)
 
@@ -230,8 +231,9 @@ class BaseTrainer:
 
                 self.model.train()
 
+
         # Test loss for comparison of selectors
         self.model.eval()
 
-        prediction, ground_truth = self.test(test_loader, test_loss_fns)
-        return prediction, ground_truth
+        prediction, ground_truth, losses = self.test(test_loader, test_loss_fns, epochs_start)
+        return prediction, ground_truth, losses

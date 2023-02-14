@@ -8,6 +8,8 @@ from omegaconf import DictConfig, OmegaConf
 log = logging.getLogger(__name__)
 import copy
 import torch
+import pandas as pds
+import numpy as np
 
 OmegaConf.register_new_resolver("device_ident", lambda _: torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"))
@@ -38,6 +40,27 @@ def pipe_train(cfg: DictConfig) -> None:
 
     model_type = copy.deepcopy(cfg.wandb.group)
 
+    fold_idx = cfg.train_test_split.get('fold_idx', 0)
+
+    res_path = pathlib.Path.home() / pathlib.Path(
+        'Project/imfas/PLres') / f"fold_{fold_idx}" / f"seed_{cfg.seed}"
+
+    if not res_path.exists():
+        return
+    else:
+        res = pds.read_csv(res_path / 'res.csv', index_col=0)
+        successful_runs = res.shape[0]
+        if successful_runs == 51:
+            res_path_new = pathlib.Path.home() / pathlib.Path(
+                'Project/imfas/PLresNew') / f"fold_{fold_idx}" / f"seed_{cfg.seed}"
+            if not res_path_new.exists():
+                os.makedirs(res_path_new)
+
+            res.to_csv(f"{res_path_new / 'res.csv'}")
+        else:
+            cfg.wandb.group = "Partial_" + cfg.wandb.group
+
+
     if 'reduce' in model_opts and model_type.startswith('imfas'):
         cfg.wandb.group = cfg.wandb.group + '_Reduce'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' Reduce'
@@ -61,7 +84,7 @@ def pipe_train(cfg: DictConfig) -> None:
             cfg.wandb.group = cfg.wandb.group + '_flc'
             cfg.wandb.tags[0] = cfg.wandb.tags[0] + ' F LC'
 
-    cfg.wandb.group = cfg.wandb.group + '_Ablation'
+    # cfg.wandb.group = cfg.wandb.group + '_Ablation'
     if cfg.trainer.trainerobj._target_ == 'imfas.trainer.sh_scheduler.SHScheduler':
         cfg.wandb.group = cfg.wandb.group + 'SHScheduler'
         cfg.wandb.tags[0] = cfg.wandb.tags[0] + 'SHScheduler'
@@ -140,6 +163,7 @@ def pipe_train(cfg: DictConfig) -> None:
     train_split, valid_split, test_split = call(cfg.train_test_split, n=len(dataset_meta_features))
 
     cfg.dynamically_computed.n_datasets = dataset_meta_features.shape[0]
+
     del dataset_meta_features
 
     loaders = {}
@@ -192,7 +216,21 @@ def pipe_train(cfg: DictConfig) -> None:
 
     trainer = instantiate(cfg.trainer.trainerobj, model)
 
-    prediction, ground_truth = trainer.run(**loaders, **cfg.trainer.run_call)
+    prediction, ground_truth, losses = trainer.run(**loaders, **cfg.trainer.run_call, epochs_start = successful_runs)
+
+    res_new = pds.DataFrame(losses).drop('Test, Slice Evaluation: spearman', 1)
+    res_new.index = np.arange(successful_runs, 51)
+
+    res = pds.concat([res, res_new])
+
+    res_path_new = pathlib.Path.home() / pathlib.Path(
+        'Project/imfas/PLresNew') / f"fold_{fold_idx}" / f"seed_{cfg.seed}"
+    if not res_path_new.exists():
+        os.makedirs(res_path_new)
+
+    res.to_csv(f"{res_path_new / 'res.csv'}")
+    return
+
     log.info("Done!")
 
     dataset_name = cfg.dataset.name
@@ -205,10 +243,11 @@ def pipe_train(cfg: DictConfig) -> None:
     if not isinstance(prediction, torch.Tensor):
         return
 
-
     obj_dir = pathlib.Path.home() / 'Project' / 'imfas_data' / dataset_name / f'fold_{fold_idx}' / model / f'seed_{seed}'
     if not obj_dir.exists():
-        os.makedirs(str(obj_dir))
+        os.makedirs(obj_dir)
+
+
 
     #  assert prediction.shape == ground_truth.shape
     # assert len(prediction) == len(test_split)
